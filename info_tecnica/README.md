@@ -1,4 +1,4 @@
-# info_tecnica
+#  Informação Técnica GATE
 Repositório de script para extrair e mover os arquivos PDFs de Informação Técnica GATE para o HDFS
 
 ## Configuração e ambiente
