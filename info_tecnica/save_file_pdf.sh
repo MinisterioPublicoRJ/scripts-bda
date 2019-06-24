@@ -8,5 +8,6 @@ spark2-submit \
     --num-executors 50 \
     --executor-cores 1 \
     --executor-memory 8g \
+    --conf spark.hadoop.hive.mapred.supports.subdirectories=true \
     --py-files src/timer.py,src/base.py,packages/*.whl,packages/*.egg \
     src/save_file_pdf.py
