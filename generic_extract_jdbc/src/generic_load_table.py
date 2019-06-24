@@ -2,7 +2,6 @@ from base import spark
 from decouple import config
 import params_table
 
-
 url_oracle_server = config('ORACLE_SERVER')
 user_oracle = config("ORACLE_USER")
 passwd_oracle = config("ORACLE_PASSWORD")
