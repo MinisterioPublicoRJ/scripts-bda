@@ -5,8 +5,6 @@ import params_table
 url_oracle_server = config('ORACLE_SERVER')
 user_oracle = config("ORACLE_USER")
 passwd_oracle = config("ORACLE_PASSWORD")
-table_oracle_param = config('TABLE_ORACLE')
-table_hive_param = config('TABLE_HIVE')
 
 config_params = params_table.params
 
