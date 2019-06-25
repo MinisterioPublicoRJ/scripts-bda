@@ -1,13 +1,18 @@
-import copy
+from base import spark
+
+import pandas as pd
+import numpy as np
 import re
 
+from copy import deepcopy
 from unidecode import unidecode
 from decouple import config
-from base import spark
-from pyspark.ml.feature import HashingTF, IDF, Tokenizer
-from pyspark.ml.classification import LogisticRegression
-from pyspark.sql.functions import udf, lit, collect_set, array, explode, split
-from pyspark.sql.types import IntegerType, ArrayType, StringType
+
+from sklearn.preprocessing import MultiLabelBinarizer
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.multiclass import OneVsRestClassifier
 
 rules = {
     2: ['USUARI[OA] DE (DROGA|ENTORPECENTE)S?', 'ALCOOLATRA', 'COCAINA', 'VICIAD[OA]', 'DEPENDENTE QUIMICO', 'MACONHA', 'ALCOOL', 'CRACK'],
