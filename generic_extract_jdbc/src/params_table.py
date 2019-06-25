@@ -1,4 +1,5 @@
 params = {
+    "driver" : "oracle.jdbc.driver.OracleDriver",
     "table_oracle" : "MCPR.MCPR_PERSONAGEM",
     "table_hive_stg" : "exadata_stg_dev.mcpr_personagem",
     "table_hive" : "exadata_dev.mcpr_personagem",
