@@ -8,52 +8,40 @@ passwd_oracle = config("ORACLE_PASSWORD")
 
 config_params = params_table.params
 
-#Get minimum and maximum record from table oracle for just used to decide the partition stride
-query_primarykeys = " (select min({key}), max({key}) from {table_oracle}) p ".format(key=config_params['key_table'], table_oracle=config_params['table_oracle'])
+for table in config_params['tables']:
 
-if config_params['columns_table_stg']:
-    columns = ",".join(config_params['columns_table_stg'])
-    query_table = " ( SELECT {qr} FROM {table_oracle} ) q ".format(qr=columns, table_oracle=config_params['table_oracle'])
-else:
-    query_table = config_params['table_oracle']
+    #Get minimum and maximum record from table oracle for just used to decide the partition stride
+    query_primarykeys = " (select min({key}), max({key}) from {table_oracle}) p ".format(key=table['key_table_oracle'], table_oracle=table['table_oracle'])
+    query_table = table['table_oracle']
 
+    min_max_table = spark.read.format("jdbc") \
+    .option("url", url_oracle_server) \
+    .option("dbtable", query_primarykeys) \
+    .option("user", user_oracle) \
+    .option("password", passwd_oracle) \
+    .option("driver", config_params['driver']) \
+    .load()
+    print('Geting min and max from table oracle')
 
-min_max_table = spark.read.format("jdbc") \
-.option("url", url_oracle_server) \
-.option("dbtable", query_primarykeys) \
-.option("user", user_oracle) \
-.option("password", passwd_oracle) \
-.option("driver", config_params['driver']) \
-.load()
-print('Geting min and max from table oracle')
+    minimum = int(min_max_table.first()[0])
+    maximum = int(min_max_table.first()[1])
 
-minimum = int(min_max_table.first()[0])
-maximum = int(min_max_table.first()[1])
+    oracle_table = spark.read.format("jdbc") \
+    .option("url", url_oracle_server) \
+    .option("driver", config_params['driver']) \
+    .option("lowerBound", minimum) \
+    .option("upperBound", maximum) \
+    .option("numPartitions", 50) \
+    .option("partitionColumn", table['key_table_oracle']) \
+    .option("dbtable", query_table) \
+    .option("user", user_oracle) \
+    .option("password", passwd_oracle) \
+    .load()
+    print('Geting all data from table oracle')
 
-oracle_table = spark.read.format("jdbc") \
-.option("url", url_oracle_server) \
-.option("driver", config_params['driver']) \
-.option("lowerBound", minimum) \
-.option("upperBound", maximum) \
-.option("numPartitions", 50) \
-.option("partitionColumn", config_params['key_table']) \
-.option("dbtable", query_table) \
-.option("user", user_oracle) \
-.option("password", passwd_oracle) \
-.load()
-print('Geting all data from table oracle')
+    #oracle_table.repartition(20).write.insertInto(tableName=table['table_hive'], overwrite=True)
+    oracle_table.repartition(20).write.mode('overwrite').saveAsTable(table['table_hive'])
+    print('Inserting data into final table %s' % table['table_hive'])
 
-final_df = oracle_table.repartition(20).cache()
-
-final_df.write.insertInto(tableName=config_params['table_hive_stg'], overwrite=True)
-print('Inserting data into staging table %s' % config_params['table_hive_stg'])
-
-if config_params['columns_table']:
-    final_df.select(config_params['columns_table']).write.insertInto(tableName=config_params['table_hive'], overwrite=True)
-else:
-    final_df.write.insertInto(tableName=config_params['table_hive'], overwrite=True)
-print('Inserting data into final table %s' % config_params['table_hive'])
-
-spark.sql("ANALYZE TABLE {} COMPUTE STATISTICS".format(config_params['table_hive']))
-spark.sql("ANALYZE TABLE {} COMPUTE STATISTICS FOR COLUMNS".format(config_params['table_hive']))
-spark.catalog.clearCache()
+    spark.sql("ANALYZE TABLE {} COMPUTE STATISTICS".format(table['table_hive']))
+    spark.sql("ANALYZE TABLE {} COMPUTE STATISTICS FOR COLUMNS".format(table['table_hive']))
