@@ -13,7 +13,7 @@ with timer():
     print('Creating Spark Session')
     spark = pyspark.sql.session.SparkSession\
         .builder\
-        .appName("export_opg")\
+        .appName("GENERIC_LOAD_TABLE")\
         .enableHiveSupport()\
         .getOrCreate()
 

@@ -23,32 +23,37 @@ min_max_table = spark.read.format("jdbc") \
 .option("dbtable", query_primarykeys) \
 .option("user", user_oracle) \
 .option("password", passwd_oracle) \
-.option("driver", "oracle.jdbc.driver.OracleDriver") \
+.option("driver", config_params['driver']) \
 .load()
+print('Geting min and max from table oracle')
 
 minimum = int(min_max_table.first()[0])
 maximum = int(min_max_table.first()[1])
 
 oracle_table = spark.read.format("jdbc") \
 .option("url", url_oracle_server) \
-.option("driver", "oracle.jdbc.driver.OracleDriver") \
+.option("driver", config_params['driver']) \
 .option("lowerBound", minimum) \
 .option("upperBound", maximum) \
-.option("numPartitions", 200) \
+.option("numPartitions", 50) \
 .option("partitionColumn", config_params['key_table']) \
 .option("dbtable", query_table) \
 .option("user", user_oracle) \
 .option("password", passwd_oracle) \
 .load()
+print('Geting all data from table oracle')
 
-final_df = oracle_table.repartition(10).cache()
+final_df = oracle_table.repartition(20).cache()
 
 final_df.write.insertInto(tableName=config_params['table_hive_stg'], overwrite=True)
+print('Inserting data into staging table %s' % config_params['table_hive_stg'])
 
 if config_params['columns_table']:
     final_df.select(config_params['columns_table']).write.insertInto(tableName=config_params['table_hive'], overwrite=True)
 else:
     final_df.write.insertInto(tableName=config_params['table_hive'], overwrite=True)
+print('Inserting data into final table %s' % config_params['table_hive'])
 
 spark.sql("ANALYZE TABLE {} COMPUTE STATISTICS".format(config_params['table_hive']))
+spark.sql("ANALYZE TABLE {} COMPUTE STATISTICS FOR COLUMNS".format(config_params['table_hive']))
 spark.catalog.clearCache()
