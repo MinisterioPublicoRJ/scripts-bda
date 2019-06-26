@@ -1,2 +1,3 @@
 unidecode
 python-decouple
+cx_Oracle
