@@ -12,24 +12,6 @@ def clean_text(x):
         x = u''
     return re.sub('[^a-zA-Z ]', '', unidecode(x).upper())
 
-def splitDataFrameList(df,target_column):
-    ''' df = dataframe to split,
-    target_column = the column containing the values to split
-    separator = the symbol used to perform the split
-    returns: a dataframe with each entry for the target column separated, with each element moved into a new row. 
-    The values in the other columns are duplicated across the newly divided rows.
-    '''
-    def splitListToRows(row,row_accumulator,target_column):
-        split_row = row[target_column]
-        for s in split_row:
-            new_row = row.to_dict()
-            new_row[target_column] = s
-            row_accumulator.append(new_row)
-    new_rows = []
-    df.apply(splitListToRows,axis=1,args = (new_rows,target_column))
-    new_df = pd.DataFrame(new_rows)
-    return new_df
-
 
 class OneVsRestLogisticRegression:
     def __init__(self, negative_column_index=None, **kwargs):
