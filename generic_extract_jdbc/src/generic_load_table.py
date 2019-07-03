@@ -1,6 +1,7 @@
 from base import spark
 from decouple import config
 from datetime import date
+import ast
 import params_table
 
 url_oracle_server = config('ORACLE_SERVER')
@@ -95,6 +96,7 @@ def load_part_data(table):
     spark.catalog.clearCache()
 
 
+load_all = ast.literal_eval(load_all)
 config_params = params_table.params
 
 for table in config_params['tables']:
