@@ -13,7 +13,7 @@ command="${1}"
 if [ ${command} = 'test' ]; then
     /opt/cloudera/parcels/Anaconda-5.0.1/bin/python run_tests.py
 else
-    spark2-submit --py-files base.py,packages/*.whl,packages/*.egg \
+    spark2-submit --py-files packages/*.whl,packages/*.egg \
         --jars /opt/cloudera/parcels/CDH-5.14.2-1.cdh5.14.2.p0.3/jars/ojdbc6.jar \
-        ${command}.py 2>> error.log
+        src/${command}.py 2>> error.log
 fi

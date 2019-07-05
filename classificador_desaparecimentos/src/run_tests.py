@@ -1,4 +1,3 @@
-#!/bin/sh
 import os
 import sys
 import pytest
