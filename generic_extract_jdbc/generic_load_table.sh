@@ -5,9 +5,8 @@ spark2-submit \
     --queue root.mpmapas \
     --num-executors 50 \
     --executor-cores 1 \
-    --executor-memory 15g \
+    --executor-memory 22g \
     --conf spark.debug.maxToStringFields=2000 \
-    --conf spark.sql.shuffle.partitions=50 \
-    --conf spark.default.parallelism=50 \
+    --conf spark.executor.memoryOverhead=4096 \
     --py-files src/timer.py,src/base.py,packages/*.whl,packages/*.egg \
     src/generic_load_table.py 2>> error.log
