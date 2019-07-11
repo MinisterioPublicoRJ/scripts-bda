@@ -5,3 +5,6 @@ Arquivos base.py e timer.py disponibilizados aqui para serem usados nos projetos
 
 
 info-tecnica - Copia PDFs de Informação Técnica GATE para o HDFS
+
+
+generic-extract-jdbc - Modulo genérico para extrair dados de uma fonte jdbc (ex: tabelas oracle) para o HDFS como tabela hive (BDA).
