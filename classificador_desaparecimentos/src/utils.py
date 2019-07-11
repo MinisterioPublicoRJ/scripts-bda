@@ -27,7 +27,7 @@ class OneVsRestLogisticRegression:
     def predict(self, X):
         p = self.model_.predict(X)
         if self.negative_column_index_:
-            p = np.insert(p, 12, values=(p.sum(axis=1) == 0).astype(int), axis=1)
+            p = np.insert(p, self.negative_column_index_, values=(p.sum(axis=1) == 0).astype(int), axis=1)
         return p
 
 
