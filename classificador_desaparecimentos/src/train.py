@@ -3,6 +3,7 @@ import pandas as pd
 import pickle
 import jaydebeapi as jdbc
 
+from datetime import datetime
 from decouple import config
 from sklearn.preprocessing import MultiLabelBinarizer
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -73,14 +74,15 @@ vectorizer_pickle = pickle.dumps(vectorizer)
 clf_pickle = pickle.dumps(clf)
 
 formatted_hdfs_path = "/".join(HDFS_MODEL_DIR.split('/')[5:])
+current_time = datetime.now().strftime('%Y%m%d%H%M%S')
 
-client.write('{}/mlb_binarizer.pkl'.format(formatted_hdfs_path), 
+client.write('{}/{}/mlb_binarizer.pkl'.format(formatted_hdfs_path, current_time), 
              mlb_pickle, 
              overwrite=True)
-client.write('{}/vectorizer.pkl'.format(formatted_hdfs_path), 
+client.write('{}/{}/vectorizer.pkl'.format(formatted_hdfs_path, current_time), 
              vectorizer_pickle, 
              overwrite=True)
-client.write('{}/model.pkl'.format(formatted_hdfs_path), 
+client.write('{}/{}/model.pkl'.format(formatted_hdfs_path, current_time), 
              clf_pickle, 
              overwrite=True)
 
