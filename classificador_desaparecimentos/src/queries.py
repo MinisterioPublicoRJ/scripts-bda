@@ -5,9 +5,9 @@ import pandas as pd
 TRAIN_QUERY = """
     SELECT DISTINCT B.SNCA_DK, B.SNCA_DS_FATO, D.DMDE_MDEC_DK
     FROM SILD.SILD_ATIVIDADE_SINDICANCIA A
-    INNER JOIN SILD.SILD_SINDICANCIA B 
+    INNER JOIN SILD.SILD_SINDICANCIA B
         ON A.ATSD_SNCA_DK = B.SNCA_DK
-    INNER JOIN SILD.SILD_DESAPARE_MOT_DECLARADO D 
+    INNER JOIN SILD.SILD_DESAPARE_MOT_DECLARADO D
         ON D.DMDE_SDES_DK = B.SNCA_DK
     WHERE A.ATSD_TPSN_DK = 22
 """
@@ -26,7 +26,8 @@ PREDICT_QUERY = """
         WHERE B.ATSD_SNCA_DK = A.ATSD_SNCA_DK AND B.ATSD_TPSN_DK = 22)
 """
 
-SET_MODULE_QUERY = "CALL dbms_application_info.set_module('SILD', 'Funcionalidade')"
+SET_MODULE_QUERY = ("CALL dbms_application_info.set_module("
+                    "'SILD', 'Funcionalidade')")
 SET_CLIENT_QUERY = "CALL dbms_application_info.set_client_info(?)"
 
 ATIV_SINDICANCIA_QUERY = """
@@ -67,7 +68,7 @@ def get_predict_data(cursor, UFED_DK=None):
         raise TypeError('UFED_DK must be None or integer!')
 
     query = PREDICT_QUERY
-    
+
     if UFED_DK:
         query += " AND B.SNCA_UFED_DK = {}".format(UFED_DK)
 
@@ -87,15 +88,15 @@ def get_max_dk(cursor, table_name, column_name):
     return int(cursor.fetchall()[0][0])
 
 
-def update_atividade_sindicancia(cursor, ativ_dk, snca_dk, 
+def update_atividade_sindicancia(cursor, ativ_dk, snca_dk,
                                  user_name, user_number):
     cursor.execute(ATIV_SINDICANCIA_QUERY,
                    (int(ativ_dk), int(snca_dk), user_name, user_number))
 
 
 def update_motivo_declarado(cursor, snca_dk, labels):
-    cursor.execute(DELETE_MOT_DECLARADO_QUERY, 
+    cursor.execute(DELETE_MOT_DECLARADO_QUERY,
                    (int(snca_dk),))
-    for label in labels: 
-        cursor.execute(INSERT_MOT_DECLARADO_QUERY, 
+    for label in labels:
+        cursor.execute(INSERT_MOT_DECLARADO_QUERY,
                        (int(snca_dk), int(label)))

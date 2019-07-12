@@ -2,7 +2,7 @@
 import unittest
 import numpy as np
 import mock
-from unittest import TestCase
+
 from utils import clean_text, RegexClassifier, OneVsRestLogisticRegression
 from sklearn.multiclass import OneVsRestClassifier
 
@@ -68,9 +68,10 @@ class TestOneVsRestLogisticRegression(unittest.TestCase):
         clf.fit(X_TEST, Y_TEST)
 
         _mocked_fit.assert_called_once()
-        self.assertListEqual(_mocked_fit.call_args_list[0][0][0].tolist(), X_TEST.tolist())
-        self.assertListEqual(_mocked_fit.call_args_list[0][0][1].tolist(), np.delete(Y_TEST, 2, axis=1).tolist())
-
+        self.assertListEqual(_mocked_fit.call_args_list[0][0][0].tolist(),
+                             X_TEST.tolist())
+        self.assertListEqual(_mocked_fit.call_args_list[0][0][1].tolist(),
+                             np.delete(Y_TEST, 2, axis=1).tolist())
 
     @mock.patch.object(OneVsRestClassifier, 'fit')
     def test_fit_without_negative_column(self, _mocked_fit):
@@ -78,8 +79,10 @@ class TestOneVsRestLogisticRegression(unittest.TestCase):
         clf.fit(X_TEST, Y_TEST)
 
         _mocked_fit.assert_called_once()
-        self.assertListEqual(_mocked_fit.call_args_list[0][0][0].tolist(), X_TEST.tolist())
-        self.assertListEqual(_mocked_fit.call_args_list[0][0][1].tolist(), Y_TEST.tolist())
+        self.assertListEqual(_mocked_fit.call_args_list[0][0][0].tolist(),
+                             X_TEST.tolist())
+        self.assertListEqual(_mocked_fit.call_args_list[0][0][1].tolist(),
+                             Y_TEST.tolist())
 
     # Predict return result with right size
     @mock.patch.object(OneVsRestClassifier, 'predict')
@@ -90,7 +93,6 @@ class TestOneVsRestLogisticRegression(unittest.TestCase):
 
         _mocked_predict.assert_called_once()
         self.assertListEqual(Y_TEST.tolist(), saida.tolist())
-
 
     @mock.patch.object(OneVsRestClassifier, 'predict')
     def test_predict_without_negative_column(self, _mocked_predict):

@@ -1,7 +1,22 @@
 import os
 import sys
 import pytest
+import glob
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))+'/../packages/Unidecode-1.1.1-py2.py3-none-any.whl')
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))+'/../packages/mock-3.0.5-py2.py3-none-any.whl')
+IS_TRAVIS = os.environ.get('IS_TRAVIS', '')
+
+if not IS_TRAVIS:
+    types = ['whl', 'egg']
+    filenames = []
+    for filetype in types:
+        filenames.extend(
+            glob.glob("packages/*.{}".format(filetype)))
+
+    abspath = os.path.dirname(os.path.abspath(__file__))
+
+    for filename in filenames:
+        sys.path.insert(
+            0,
+            abspath + "/../" + filename)
+
 pytest.main()

@@ -19,19 +19,19 @@ from queries import (
 )
 
 
-#execute, description, fetch_all
+# execute, description, fetch_all
 @mock.patch('jaydebeapi.Cursor')
 def test_get_train_data_without_UFED(_MockCursor):
     _MockCursor.execute.return_value = None
     _MockCursor.description = [['teste1'], ['teste2']]
-    _MockCursor.fetchall.return_value = [['sda', 'afgg'],['ff', 'wrw']]
+    _MockCursor.fetchall.return_value = [['sda', 'afgg'], ['ff', 'wrw']]
 
     expected_query = TRAIN_QUERY
 
     saida = get_train_data(_MockCursor, None)
-    expected_output = pd.DataFrame([['sda', 'afgg'],['ff', 'wrw']],
+    expected_output = pd.DataFrame([['sda', 'afgg'], ['ff', 'wrw']],
                                    columns=['teste1', 'teste2'])
-    
+
     assert_frame_equal(saida, expected_output)
     _MockCursor.execute.assert_called_with(expected_query)
 
@@ -40,14 +40,14 @@ def test_get_train_data_without_UFED(_MockCursor):
 def test_get_train_data_with_UFED(_MockCursor):
     _MockCursor.execute.return_value = None
     _MockCursor.description = [['teste1'], ['teste2']]
-    _MockCursor.fetchall.return_value = [['sda', 'afgg'],['ff', 'wrw']]
+    _MockCursor.fetchall.return_value = [['sda', 'afgg'], ['ff', 'wrw']]
 
     expected_query = TRAIN_QUERY + " AND B.SNCA_UFED_DK = 33"
 
     saida = get_train_data(_MockCursor, 33)
-    expected_output = pd.DataFrame([['sda', 'afgg'],['ff', 'wrw']],
+    expected_output = pd.DataFrame([['sda', 'afgg'], ['ff', 'wrw']],
                                    columns=['teste1', 'teste2'])
-    
+
     assert_frame_equal(saida, expected_output)
     _MockCursor.execute.assert_called_with(expected_query)
 
@@ -55,8 +55,8 @@ def test_get_train_data_with_UFED(_MockCursor):
 @mock.patch('jaydebeapi.Cursor')
 def test_get_train_data_UFED_not_int(_MockCursor):
     _MockCursor.description = [['teste1'], ['teste2']]
-    _MockCursor.fetchall.return_value = [['sda', 'afgg'],['ff', 'wrw']]
-    with pytest.raises(TypeError) as err:
+    _MockCursor.fetchall.return_value = [['sda', 'afgg'], ['ff', 'wrw']]
+    with pytest.raises(TypeError):
         get_train_data(_MockCursor, 'not an int')
 
 
@@ -64,14 +64,14 @@ def test_get_train_data_UFED_not_int(_MockCursor):
 def test_get_predict_data_without_UFED(_MockCursor):
     _MockCursor.execute.return_value = None
     _MockCursor.description = [['teste1'], ['teste2']]
-    _MockCursor.fetchall.return_value = [['sda', 'afgg'],['ff', 'wrw']]
+    _MockCursor.fetchall.return_value = [['sda', 'afgg'], ['ff', 'wrw']]
 
     expected_query = PREDICT_QUERY
 
     saida = get_predict_data(_MockCursor, None)
-    expected_output = pd.DataFrame([['sda', 'afgg'],['ff', 'wrw']],
+    expected_output = pd.DataFrame([['sda', 'afgg'], ['ff', 'wrw']],
                                    columns=['teste1', 'teste2'])
-    
+
     assert_frame_equal(saida, expected_output)
     _MockCursor.execute.assert_called_with(expected_query)
 
@@ -80,14 +80,14 @@ def test_get_predict_data_without_UFED(_MockCursor):
 def test_get_predict_data_with_UFED(_MockCursor):
     _MockCursor.execute.return_value = None
     _MockCursor.description = [['teste1'], ['teste2']]
-    _MockCursor.fetchall.return_value = [['sda', 'afgg'],['ff', 'wrw']]
+    _MockCursor.fetchall.return_value = [['sda', 'afgg'], ['ff', 'wrw']]
 
     expected_query = PREDICT_QUERY + " AND B.SNCA_UFED_DK = 33"
 
     saida = get_predict_data(_MockCursor, 33)
-    expected_output = pd.DataFrame([['sda', 'afgg'],['ff', 'wrw']],
+    expected_output = pd.DataFrame([['sda', 'afgg'], ['ff', 'wrw']],
                                    columns=['teste1', 'teste2'])
-    
+
     assert_frame_equal(saida, expected_output)
     _MockCursor.execute.assert_called_with(expected_query)
 
@@ -95,8 +95,8 @@ def test_get_predict_data_with_UFED(_MockCursor):
 @mock.patch('jaydebeapi.Cursor')
 def test_get_predict_data_UFED_not_int(_MockCursor):
     _MockCursor.description = [['teste1'], ['teste2']]
-    _MockCursor.fetchall.return_value = [['sda', 'afgg'],['ff', 'wrw']]
-    with pytest.raises(TypeError) as err:
+    _MockCursor.fetchall.return_value = [['sda', 'afgg'], ['ff', 'wrw']]
+    with pytest.raises(TypeError):
         get_predict_data(_MockCursor, 'not an int')
 
 
@@ -126,7 +126,8 @@ def test_get_max_dk(_MockCursor):
 @mock.patch('jaydebeapi.Cursor')
 def test_update_atividade(_MockCursor):
     update_atividade_sindicancia(_MockCursor, 1, 2, 'ROBO', 100)
-    _MockCursor.execute.assert_called_with(ATIV_SINDICANCIA_QUERY, (1, 2, 'ROBO', 100))
+    _MockCursor.execute.assert_called_with(ATIV_SINDICANCIA_QUERY,
+                                           (1, 2, 'ROBO', 100))
 
 
 @mock.patch('jaydebeapi.Cursor')
@@ -136,5 +137,5 @@ def test_update_motivo_declarado(_MockCursor):
         mock.call(INSERT_MOT_DECLARADO_QUERY, (20, 1)),
         mock.call(INSERT_MOT_DECLARADO_QUERY, (20, 2))
     ]
-    update_motivo_declarado(_MockCursor, 20, [1,2])
+    update_motivo_declarado(_MockCursor, 20, [1, 2])
     _MockCursor.execute.assert_has_calls(expected_calls, any_order=True)

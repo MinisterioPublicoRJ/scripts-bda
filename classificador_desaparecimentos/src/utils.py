@@ -1,11 +1,11 @@
 import re
 import numpy as np
-import pandas as pd
 
 from copy import deepcopy
 from unidecode import unidecode
 from sklearn.linear_model import LogisticRegression
 from sklearn.multiclass import OneVsRestClassifier
+
 
 def clean_text(x):
     if not x:
@@ -20,21 +20,29 @@ class OneVsRestLogisticRegression:
 
     def fit(self, X, y):
         if self.negative_column_index_:
-            self.model_.fit(X, np.delete(y, self.negative_column_index_, axis=1))
+            self.model_.fit(
+                X,
+                np.delete(y, self.negative_column_index_, axis=1))
         else:
-            self.model_.fit(X, y)
+            self.model_.fit(
+                X,
+                y)
 
     def predict(self, X):
         p = self.model_.predict(X)
         if self.negative_column_index_:
-            p = np.insert(p, self.negative_column_index_, values=(p.sum(axis=1) == 0).astype(int), axis=1)
+            p = np.insert(
+                p,
+                self.negative_column_index_,
+                values=(p.sum(axis=1) == 0).astype(int),
+                axis=1)
         return p
 
 
 class RegexClassifier:
     def __init__(self, rules):
         self.rules = deepcopy(rules)
-    
+
     def predict(self, texts):
         results = []
         for t in texts:
