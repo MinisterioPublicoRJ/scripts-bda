@@ -287,10 +287,10 @@ params = {
 ->  Query to generate the dict parameters for tables that don't have columns blob or clob. 
     Theses tables will be load with all columns and doesn't need parameter fields
 
-    SELECT 	'{ "table_oracle" : ' AS t, '"' || cons.owner || '.' || cols.table_name || '",', 
-            '"pk_table_oracle" : ' AS keyt, '"' || cols.column_name || '",', 
-            '"update_date_table_oracle" : ' AS up, '"' || '' || '",' AS up, 
-            '"table_hive" : ' AS th, '"' || LOWER(cols.table_name) || '" },'
+    SELECT 	'{ "table_oracle" : ' AS label_table_oracle, '"' || cons.owner || '.' || cols.table_name || '",' as table_oracle, 
+            '"pk_table_oracle" : ' AS label_pk_table_oracle, '"' || cols.column_name || '",' AS pk_table_oracle, 
+            '"update_date_table_oracle" : ' AS label_update_date_table_oracle, '"' || '' || '",' AS table_hive, 
+            '"table_hive" : ' AS label_table_hive, '"' || LOWER(cols.table_name) || '" },' AS table_hive
     FROM all_constraints cons 
     JOIN all_cons_columns cols
     ON cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner
@@ -324,11 +324,11 @@ params = {
 ->  Query to generate the params for tables that have columns blob or clob.
     Theses tables will be load without columns blob or clob and need parameter fields
 
-    SELECT 	'{ "table_oracle" : ' AS t, '"' || cons.owner || '.' || cols.table_name || '",', 
-            '"pk_table_oracle" : ' AS keyt, '"' || cols.column_name || '",', 
-            '"update_date_table_oracle" : ' AS up, '"' || '' || '",' AS up, 
-            '"table_hive" : ' AS th, '"' || LOWER(cols.table_name) || '",',
-            '"query" : ' AS qr, '"' || p.elements || '" },'
+    SELECT 	'{ "table_oracle" : ' AS label_table_oracle, '"' || cons.owner || '.' || cols.table_name || '",' AS table_oracle, 
+            '"pk_table_oracle" : ' AS label_pk_table_oracle, '"' || cols.column_name || '",' AS pk_table_oracle, 
+            '"update_date_table_oracle" : ' AS label_update_date_table_oracle, '"' || '' || '",' AS update_date_table_oracle, 
+            '"table_hive" : ' AS th, '"' || LOWER(cols.table_name) || '",'  AS table_hive,
+            '"fields" : ' AS qr, '"' || p.elements || '" },' AS fields
     FROM all_constraints cons 
     JOIN all_cons_columns cols
     ON cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner
