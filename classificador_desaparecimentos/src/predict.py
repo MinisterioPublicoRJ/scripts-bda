@@ -137,9 +137,9 @@ print('Writing results to tables...')
 for labels, snca_dk in zip(df_results[LABEL_COLUMN].values,
                            df_results[ID_COLUMN]):
     max_atsd_dk += 1
+    update_motivo_declarado(curs, snca_dk, labels)
     update_atividade_sindicancia(
         curs, max_atsd_dk, snca_dk, ROBOT_NAME, ROBOT_NUMBER)
-    update_motivo_declarado(curs, snca_dk, labels)
 
 conn.commit()
 
