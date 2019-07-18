@@ -83,13 +83,13 @@ X = np.array(df[TEXT_COLUMN])
 print('Loading models...')
 formatted_hdfs_path = "/".join(HDFS_MODEL_DIR.split('/')[5:])
 most_recent_date = sorted(client.list(formatted_hdfs_path))[-1]
-with client.read('{}/{}/mlb_binarizer.pkl'.format(
+with client.read('{}/{}/model/mlb_binarizer.pkl'.format(
         formatted_hdfs_path, most_recent_date)) as mlb_reader:
     mlb = pickle.loads(mlb_reader.read())
-with client.read('{}/{}/vectorizer.pkl'.format(
+with client.read('{}/{}/model/vectorizer.pkl'.format(
         formatted_hdfs_path, most_recent_date)) as vectorizer_reader:
     vectorizer = pickle.loads(vectorizer_reader.read())
-with client.read('{}/{}/model.pkl'.format(
+with client.read('{}/{}/model/model.pkl'.format(
         formatted_hdfs_path, most_recent_date)) as clf_reader:
     clf = pickle.loads(clf_reader.read())
 
@@ -119,7 +119,7 @@ print('Writing results to HDFS...')
 formatted_hdfs_path = "/".join(HDFS_MODEL_DIR.split('/')[5:])
 current_time = datetime.now().strftime('%Y%m%d%H%M%S')
 client.write(
-    '{}/{}/results_{}.csv'.format(formatted_hdfs_path,
+    '{}/{}/results/{}.csv'.format(formatted_hdfs_path,
                                   most_recent_date,
                                   current_time),
     df_results.to_csv(index=False),
