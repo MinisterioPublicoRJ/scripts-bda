@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
-
 import pickle
+
 import numpy as np
 import pandas as pd
 import jaydebeapi as jdbc

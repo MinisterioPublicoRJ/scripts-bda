@@ -1,8 +1,8 @@
 import re
 import pickle
+
 import numpy as np
 import pandas as pd
-
 from copy import deepcopy
 from unidecode import unidecode
 from sklearn.linear_model import LogisticRegression
