@@ -1,9 +1,10 @@
 import mock
 import io
 import ast
-import pandas as pd
 
+import pandas as pd
 from pandas.util.testing import assert_frame_equal
+
 from queries import (
     EVALUATE_QUERY,
     get_evaluate_data
