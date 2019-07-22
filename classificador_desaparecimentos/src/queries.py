@@ -19,12 +19,20 @@ PREDICT_QUERY = """
         ON A.ATSD_SNCA_DK = B.SNCA_DK
     INNER JOIN SILD.SILD_DESAPARE_MOT_DECLARADO D
         ON D.DMDE_SDES_DK = B.SNCA_DK
-    WHERE A.ATSD_TPSN_DK = 2 AND D.MDEC_DK = 13
+    WHERE A.ATSD_TPSN_DK = 2 AND D.DMDE_MDEC_DK = 13
     AND NOT EXISTS (
         SELECT ATSD_SNCA_DK
         FROM SILD.SILD_ATIVIDADE_SINDICANCIA B
         WHERE B.ATSD_SNCA_DK = A.ATSD_SNCA_DK
         AND (B.ATSD_TPSN_DK = 22 OR B.ATSD_TPSN_DK = 23))
+"""
+
+EVALUATE_QUERY = """
+    SELECT DISTINCT A.DMDE_SDES_DK AS SNCA_DK, A.DMDE_MDEC_DK AS MDEC_DK
+    FROM SILD.SILD_DESAPARE_MOT_DECLARADO A
+    INNER JOIN SILD.SILD_ATIVIDADE_SINDICANCIA D
+        ON A.DMDE_SDES_DK = D.ATSD_SNCA_DK
+    WHERE D.ATSD_TPSN_DK = 22
 """
 
 SET_MODULE_QUERY = ("CALL dbms_application_info.set_module("
@@ -77,6 +85,15 @@ def get_predict_data(cursor, UFED_DK=None):
 
     columns = [desc[0] for desc in cursor.description]
     return pd.DataFrame(cursor.fetchall(), columns=columns)
+
+
+def get_evaluate_data(cursor, keys):
+    cursor.execute(EVALUATE_QUERY)
+
+    columns = [desc[0] for desc in cursor.description]
+    result = pd.DataFrame(cursor.fetchall(), columns=columns)
+
+    return result[result['SNCA_DK'].isin(keys)]
 
 
 def set_module_and_client(cursor, client_name):

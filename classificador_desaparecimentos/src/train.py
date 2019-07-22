@@ -1,14 +1,19 @@
-import numpy as np
 import pickle
-import jaydebeapi as jdbc
 
+import jaydebeapi as jdbc
+import numpy as np
 from datetime import datetime
 from decouple import config
 from sklearn.preprocessing import MultiLabelBinarizer
 from sklearn.feature_extraction.text import TfidfVectorizer
-from utils import clean_text, OneVsRestLogisticRegression
 from hdfs import InsecureClient
+
+from utils import (
+    clean_text, 
+    OneVsRestLogisticRegression
+)
 from queries import get_train_data
+
 
 URL_ORACLE_SERVER = config('URL_ORACLE_SERVER')
 USER_ORACLE = config('USER_ORACLE')
@@ -18,13 +23,11 @@ HDFS_URL = config('HDFS_URL')
 HDFS_USER = config('HDFS_USER')
 HDFS_MODEL_DIR = config('HDFS_MODEL_DIR')
 
-client = InsecureClient(HDFS_URL, user=HDFS_USER)
-
 NEGATIVE_CLASS_VALUE = 13
 ID_COLUMN = 'SNCA_DK'
 TEXT_COLUMN = 'SNCA_DS_FATO'
 LABEL_COLUMN = 'DMDE_MDEC_DK'
-# DK for RJ
+# 33 = RJ
 UFED_DK = 33
 NGRAM_RANGE = (1, 3)
 MAX_DF = 0.6
@@ -32,6 +35,7 @@ MIN_DF = 5
 
 print('Running train script:')
 print('Querying database...')
+client = InsecureClient(HDFS_URL, user=HDFS_USER)
 conn = jdbc.connect("oracle.jdbc.driver.OracleDriver",
                     URL_ORACLE_SERVER,
                     [USER_ORACLE, PASSWD_ORACLE],
@@ -76,15 +80,15 @@ formatted_hdfs_path = "/".join(HDFS_MODEL_DIR.split('/')[5:])
 current_time = datetime.now().strftime('%Y%m%d%H%M%S')
 
 client.write(
-    '{}/{}/mlb_binarizer.pkl'.format(formatted_hdfs_path, current_time),
+    '{}/{}/model/mlb_binarizer.pkl'.format(formatted_hdfs_path, current_time),
     mlb_pickle,
     overwrite=True)
 client.write(
-    '{}/{}/vectorizer.pkl'.format(formatted_hdfs_path, current_time),
+    '{}/{}/model/vectorizer.pkl'.format(formatted_hdfs_path, current_time),
     vectorizer_pickle,
     overwrite=True)
 client.write(
-    '{}/{}/model.pkl'.format(formatted_hdfs_path, current_time),
+    '{}/{}/model/model.pkl'.format(formatted_hdfs_path, current_time),
     clf_pickle,
     overwrite=True)
 

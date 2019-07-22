@@ -1,18 +1,21 @@
 # -*- coding: utf-8 -*-
+import sys
+import pickle
+
 import numpy as np
 import pandas as pd
-import pickle
 import jaydebeapi as jdbc
-
 from datetime import datetime
 from decouple import config
-from utils import clean_text, RegexClassifier
 from hdfs import InsecureClient
+
+from utils import clean_text, RegexClassifier
 from queries import (get_predict_data,
                      set_module_and_client,
                      get_max_dk,
                      update_atividade_sindicancia,
                      update_motivo_declarado)
+
 
 URL_ORACLE_SERVER = config('URL_ORACLE_SERVER')
 USER_ORACLE = config('USER_ORACLE')
@@ -23,8 +26,6 @@ ROBOT_NUMBER = config('ROBOT_NUMBER')
 HDFS_URL = config('HDFS_URL')
 HDFS_USER = config('HDFS_USER')
 HDFS_MODEL_DIR = config('HDFS_MODEL_DIR')
-
-client = InsecureClient(HDFS_URL, user=HDFS_USER)
 
 ID_COLUMN = 'SNCA_DK'
 TEXT_COLUMN = 'SNCA_DS_FATO'
@@ -60,14 +61,18 @@ RULES = {
          'SEQUESTRAD[OA]']
 }
 
-print('Running predict script:')
-print('Querying database...')
+
+print('Running predict script:\n')
+
+print('Connecting to HDFS and to database...')
+client = InsecureClient(HDFS_URL, user=HDFS_USER)
 conn = jdbc.connect("oracle.jdbc.driver.OracleDriver",
                     URL_ORACLE_SERVER,
                     [USER_ORACLE, PASSWD_ORACLE],
                     ORACLE_DRIVER_PATH)
 curs = conn.cursor()
 
+print('Querying database...')
 df = get_predict_data(curs, UFED_DK=UFED_DK)
 
 print('Preparing data...')
@@ -78,18 +83,25 @@ df = df.groupby([ID_COLUMN, TEXT_COLUMN])\
        .agg(lambda x: set(x))\
        .reset_index()
 
+nb_new_documents = len(df)
+if nb_new_documents == 0:
+    print('No new data to predict!')
+    sys.exit()
+else:
+    print('{} new documents to predict.\n'.format(nb_new_documents))
+
 X = np.array(df[TEXT_COLUMN])
 
 print('Loading models...')
 formatted_hdfs_path = "/".join(HDFS_MODEL_DIR.split('/')[5:])
 most_recent_date = sorted(client.list(formatted_hdfs_path))[-1]
-with client.read('{}/{}/mlb_binarizer.pkl'.format(
+with client.read('{}/{}/model/mlb_binarizer.pkl'.format(
         formatted_hdfs_path, most_recent_date)) as mlb_reader:
     mlb = pickle.loads(mlb_reader.read())
-with client.read('{}/{}/vectorizer.pkl'.format(
+with client.read('{}/{}/model/vectorizer.pkl'.format(
         formatted_hdfs_path, most_recent_date)) as vectorizer_reader:
     vectorizer = pickle.loads(vectorizer_reader.read())
-with client.read('{}/{}/model.pkl'.format(
+with client.read('{}/{}/model/model.pkl'.format(
         formatted_hdfs_path, most_recent_date)) as clf_reader:
     clf = pickle.loads(clf_reader.read())
 
@@ -114,12 +126,11 @@ df_results = pd.DataFrame(
     columns=[ID_COLUMN, LABEL_COLUMN]
 )
 
-# Write results to HDFS
 print('Writing results to HDFS...')
 formatted_hdfs_path = "/".join(HDFS_MODEL_DIR.split('/')[5:])
 current_time = datetime.now().strftime('%Y%m%d%H%M%S')
 client.write(
-    '{}/{}/results_{}.csv'.format(formatted_hdfs_path,
+    '{}/{}/results/{}.csv'.format(formatted_hdfs_path,
                                   most_recent_date,
                                   current_time),
     df_results.to_csv(index=False),
@@ -127,6 +138,7 @@ client.write(
 
 # Should only commit everything at the end, in a single transaction
 conn.jconn.setAutoCommit(False)
+
 set_module_and_client(curs, 'DUNANT IA')
 
 max_atsd_dk = get_max_dk(curs,
@@ -142,7 +154,6 @@ for labels, snca_dk in zip(df_results[LABEL_COLUMN].values,
         curs, max_atsd_dk, snca_dk, ROBOT_NAME, ROBOT_NUMBER)
 
 conn.commit()
-
 curs.close()
 conn.close()
 print('Done!')
