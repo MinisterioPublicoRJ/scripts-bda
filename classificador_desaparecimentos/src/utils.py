@@ -60,18 +60,20 @@ class RegexClassifier:
         return results
 
 
-def get_results_from_hdfs(client, path, month):
+def get_results_from_hdfs(client, path, model_date=None):
     results = []
 
-    most_recent_model_date = sorted(client.list(path))[-1]
+    # Get most recent model if no model_date is given
+    if not model_date:
+        model_date = sorted(client.list(path))[-1]
+
     result_list = client.list('{}/{}/results'.format(
         path,
-        most_recent_model_date))
-
+        model_date))
     for r in result_list:
         with client.read('{}/{}/results/{}'.format(
                 path,
-                most_recent_model_date,
+                model_date,
                 r)) as results_reader:
             results.append(pd.read_table(results_reader, sep=','))
 
