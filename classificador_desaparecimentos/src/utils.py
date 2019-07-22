@@ -65,12 +65,12 @@ def get_results_from_hdfs(client, path, month):
 
     most_recent_model_date = sorted(client.list(path))[-1]
     result_list = client.list('{}/{}/results'.format(
-        path, 
+        path,
         most_recent_model_date))
 
     for r in result_list:
         with client.read('{}/{}/results/{}'.format(
-                path, 
+                path,
                 most_recent_model_date,
                 r)) as results_reader:
             results.append(pd.read_table(results_reader, sep=','))
@@ -82,17 +82,18 @@ def expand_results(df, target_column='MDEC_DK'):
     '''df = dataframe to split,
     target_column = the column containing the values to split
     separator = the symbol used to perform the split
-    returns: a dataframe with each entry for the target column separated, with each element moved into a new row. 
-    The values in the other columns are duplicated across the newly divided rows.
+    returns: a dataframe with each entry for the target column separated, with
+    each element moved into a new row. The values in the other columns are
+    duplicated across the newly divided rows.
     '''
-    def splitListToRows(row,row_accumulator,target_column):
+    def splitListToRows(row, row_accumulator, target_column):
         split_row = row[target_column]
         for s in split_row:
             new_row = row.to_dict()
             new_row[target_column] = int(s)
             row_accumulator.append(new_row)
     new_rows = []
-    df.apply(splitListToRows,axis=1,args = (new_rows,target_column))
+    df.apply(splitListToRows, axis=1, args=(new_rows, target_column))
     new_df = pd.DataFrame(new_rows)
     return new_df
 
@@ -119,11 +120,17 @@ def get_number_of_modifications(data_hdfs, data_oracle):
     hdfs_ind['FROM'] = 'HDFS'
     oracle_ind['FROM'] = 'ORACLE'
 
-    diffs = pd.concat([hdfs_ind, oracle_ind]).drop_duplicates(subset=['SNCA_DK', 'MDEC_DK'], keep=False)
-    diffs = diffs.groupby(['SNCA_DK', 'FROM']).count().reset_index().pivot('SNCA_DK', columns='FROM', values='MDEC_DK')
+    diffs = pd.concat([hdfs_ind, oracle_ind])\
+              .drop_duplicates(subset=['SNCA_DK', 'MDEC_DK'], keep=False)
+    diffs = diffs.groupby(['SNCA_DK', 'FROM'])\
+                 .count()\
+                 .reset_index()\
+                 .pivot('SNCA_DK', columns='FROM', values='MDEC_DK')
 
-    n_remove = (diffs['HDFS'] - diffs['ORACLE']).apply(lambda x: x if x >= 0 else 0).sum()
-    n_add = (diffs['ORACLE'] - diffs['HDFS']).apply(lambda x: x if x >= 0 else 0).sum()
+    n_remove = (diffs['HDFS'] - diffs['ORACLE']).apply(
+        lambda x: x if x >= 0 else 0).sum()
+    n_add = (diffs['ORACLE'] - diffs['HDFS']).apply(
+        lambda x: x if x >= 0 else 0).sum()
     n_swaps = diffs.min(axis=1).sum()
 
     return n_remove, n_add, n_swaps
@@ -133,12 +140,12 @@ def save_metrics_to_hdfs(client, path, **kwargs):
     most_recent_model_date = sorted(client.list(path))[-1]
     for key, value in kwargs.items():
         client.write(
-        '{}/{}/evaluate/{}.txt'.format(
-            path, 
-            most_recent_model_date,
-            key),
-        str(value),
-        overwrite=True)
+            '{}/{}/evaluate/{}.txt'.format(
+                path,
+                most_recent_model_date,
+                key),
+            str(value),
+            overwrite=True)
 
 
 def get_binarizer(client, path):
@@ -152,7 +159,7 @@ def get_binarizer(client, path):
 def generate_report(data_hdfs, data_oracle, binarizer):
     predictions = binarizer.transform(data_hdfs['MDEC_DK'])
     true_values = binarizer.transform(
-        data_oracle.groupby('SNCA_DK')\
-                   .agg({lambda x: set(x)})\
+        data_oracle.groupby('SNCA_DK')
+                   .agg({lambda x: set(x)})
                    .reset_index()['MDEC_DK'])
     return classification_report(np.array(true_values), np.array(predictions))
