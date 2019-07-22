@@ -5,12 +5,14 @@ import pandas as pd
 import pytest
 
 from pandas.util.testing import assert_frame_equal
-from evaluate import (
+from queries import (
     EVALUATE_QUERY,
+    get_evaluate_data
+)
+from utils import (
     get_results_from_hdfs,
     expand_results,
     get_keys,
-    read_from_database,
     get_percentage_of_change,
     get_number_of_modifications,
     generate_report,
@@ -58,7 +60,7 @@ def test_get_results_from_hdfs(_MockClient):
         io.BytesIO(b'SNCA_DK,MDEC_DK\n2,"(1.0, 2.0)"')]
 
     expected_output = HDFS_RESULT_EXAMPLE
-    output = get_results_from_hdfs(_MockClient, 7)
+    output = get_results_from_hdfs(_MockClient, 'path', 7)
     assert_frame_equal(expected_output, output, check_like=True)
 
 
@@ -77,14 +79,14 @@ def test_get_keys():
 
 
 @mock.patch('jaydebeapi.Cursor')
-def test_read_from_database(_MockCursor):
+def test_get_evaluate_data(_MockCursor):
     _MockCursor.execute.return_value = None
     _MockCursor.description = [['SNCA_DK'], ['MDEC_DK']]
     _MockCursor.fetchall.return_value = [[1, 4], [2, 5]]
 
     expected_query = EVALUATE_QUERY
     expected_output = ORACLE_RESULT_EXAMPLE
-    output = read_from_database(_MockCursor, GET_KEYS_RESULT_EXAMPLE)
+    output = get_evaluate_data(_MockCursor, GET_KEYS_RESULT_EXAMPLE)
 
     assert_frame_equal(expected_output, output, check_like=True)
     _MockCursor.execute.assert_called_with(expected_query)
