@@ -9,7 +9,8 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from hdfs import InsecureClient
 
 from utils import (
-    clean_text, 
+    clean_text,
+    get_keys,
     OneVsRestLogisticRegression
 )
 from queries import get_train_data
@@ -43,6 +44,7 @@ conn = jdbc.connect("oracle.jdbc.driver.OracleDriver",
 curs = conn.cursor()
 
 df = get_train_data(curs, UFED_DK=UFED_DK)
+train_keys = get_keys(df, ID_COLUMN)
 
 print('Preparing data...')
 df[TEXT_COLUMN] = df[TEXT_COLUMN].apply(clean_text)
@@ -82,14 +84,24 @@ current_time = datetime.now().strftime('%Y%m%d%H%M%S')
 client.write(
     '{}/{}/model/mlb_binarizer.pkl'.format(formatted_hdfs_path, current_time),
     mlb_pickle,
-    overwrite=True)
+    overwrite=True
+)
 client.write(
     '{}/{}/model/vectorizer.pkl'.format(formatted_hdfs_path, current_time),
     vectorizer_pickle,
-    overwrite=True)
+    overwrite=True
+)
 client.write(
     '{}/{}/model/model.pkl'.format(formatted_hdfs_path, current_time),
     clf_pickle,
-    overwrite=True)
+    overwrite=True
+)
+
+keys_string = 'SNCA_DK\n' + "\n".join([str(int(k)) for k in train_keys])
+client.write(
+    '{}/{}/model/train_keys.csv'.format(formatted_hdfs_path, current_time),
+    keys_string,
+    overwrite=True
+)
 
 print('Done!')
