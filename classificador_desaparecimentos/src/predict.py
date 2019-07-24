@@ -26,6 +26,7 @@ ROBOT_NUMBER = config('ROBOT_NUMBER')
 HDFS_URL = config('HDFS_URL')
 HDFS_USER = config('HDFS_USER')
 HDFS_MODEL_DIR = config('HDFS_MODEL_DIR')
+UPDATE_TABLES = config('UPDATE_TABLES', cast=bool)
 
 ID_COLUMN = 'SNCA_DK'
 TEXT_COLUMN = 'SNCA_DS_FATO'
@@ -145,15 +146,19 @@ max_atsd_dk = get_max_dk(curs,
                          table_name='SILD.SILD_ATIVIDADE_SINDICANCIA',
                          column_name='ATSD_DK')
 
-print('Writing results to tables...')
-for labels, snca_dk in zip(df_results[LABEL_COLUMN].values,
-                           df_results[ID_COLUMN]):
-    max_atsd_dk += 1
-    update_motivo_declarado(curs, snca_dk, labels)
-    update_atividade_sindicancia(
-        curs, max_atsd_dk, snca_dk, ROBOT_NAME, ROBOT_NUMBER)
+if UPDATE_TABLES: 
+    print('Writing results to tables...')
+    for labels, snca_dk in zip(df_results[LABEL_COLUMN].values,
+                            df_results[ID_COLUMN]):
+        max_atsd_dk += 1
+        update_motivo_declarado(curs, snca_dk, labels)
+        update_atividade_sindicancia(
+            curs, max_atsd_dk, snca_dk, ROBOT_NAME, ROBOT_NUMBER)
 
-conn.commit()
+    conn.commit()
+else:
+    print('UPDATE_TABLES is False, not updating tables...')
+
 curs.close()
 conn.close()
 print('Done!')
