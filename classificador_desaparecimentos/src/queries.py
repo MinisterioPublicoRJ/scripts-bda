@@ -57,12 +57,13 @@ INSERT_MOT_DECLARADO_QUERY = """
 """
 
 
-def get_train_data(cursor, UFED_DK=None):
+def get_train_data(cursor, UFED_DK=None, start_date=None):
     """Get the data that will be used to train the model.
     
     Parameters:
         cursor: The jdbc cursor to execute the queries.
         UFED_DK: The dk corresponding to the state to get data from.
+        start_date: The date after which the data should be retrieved.
 
     Returns:
         A Pandas DataFrame containing the training data.
@@ -74,6 +75,8 @@ def get_train_data(cursor, UFED_DK=None):
 
     if UFED_DK:
         query += " AND B.SNCA_UFED_DK = {}".format(UFED_DK)
+    if start_date:
+        query += " AND A.ATSD_DT_REGISTRO >= TO_DATE('{}', 'YYYY-MM-DD')".format(start_date)
 
     cursor.execute(query)
 
@@ -81,12 +84,13 @@ def get_train_data(cursor, UFED_DK=None):
     return pd.DataFrame(cursor.fetchall(), columns=columns)
 
 
-def get_predict_data(cursor, UFED_DK=None):
+def get_predict_data(cursor, UFED_DK=None, start_date=None):
     """Get the data that will be used for the predictions.
     
     Parameters:
         cursor: The jdbc cursor to execute the queries.
         UFED_DK: The dk corresponding to the state to get data from.
+        start_date: The date after which the data should be retrieved.
 
     Returns:
         A Pandas DataFrame containing the data to predict labels for.
@@ -98,6 +102,8 @@ def get_predict_data(cursor, UFED_DK=None):
 
     if UFED_DK:
         query += " AND B.SNCA_UFED_DK = {}".format(UFED_DK)
+    if start_date:
+        query += " AND A.ATSD_DT_REGISTRO >= TO_DATE('{}', 'YYYY-MM-DD')".format(start_date)
 
     cursor.execute(query)
 
