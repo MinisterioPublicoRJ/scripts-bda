@@ -5,6 +5,7 @@ from pandas.util.testing import assert_frame_equal
 from queries import (
     TRAIN_QUERY,
     PREDICT_QUERY,
+    POSSIBLE_CLASSES_QUERY,
     SET_MODULE_QUERY,
     SET_CLIENT_QUERY,
     ATIV_SINDICANCIA_QUERY,
@@ -12,6 +13,7 @@ from queries import (
     INSERT_MOT_DECLARADO_QUERY,
     get_train_data,
     get_predict_data,
+    get_list_of_classes,
     set_module_and_client,
     get_max_dk,
     update_atividade_sindicancia,
@@ -19,18 +21,22 @@ from queries import (
 )
 
 
-# execute, description, fetch_all
+MOCK_DESCRIPTION = [['SNCA_DK'], ['DMDE_MDEC_DK']]
+MOCK_COLUMNS = ['SNCA_DK', 'DMDE_MDEC_DK']
+MOCK_VALUES = [[1, 2], [3, 4]]
+
+
 @mock.patch('jaydebeapi.Cursor')
 def test_get_train_data_without_UFED(_MockCursor):
     _MockCursor.execute.return_value = None
-    _MockCursor.description = [['teste1'], ['teste2']]
-    _MockCursor.fetchall.return_value = [['sda', 'afgg'], ['ff', 'wrw']]
+    _MockCursor.description = MOCK_DESCRIPTION
+    _MockCursor.fetchall.return_value = MOCK_VALUES
 
     expected_query = TRAIN_QUERY
 
     saida = get_train_data(_MockCursor, None)
-    expected_output = pd.DataFrame([['sda', 'afgg'], ['ff', 'wrw']],
-                                   columns=['teste1', 'teste2'])
+    expected_output = pd.DataFrame(MOCK_VALUES,
+                                   columns=MOCK_COLUMNS)
 
     assert_frame_equal(saida, expected_output)
     _MockCursor.execute.assert_called_with(expected_query)
@@ -39,14 +45,14 @@ def test_get_train_data_without_UFED(_MockCursor):
 @mock.patch('jaydebeapi.Cursor')
 def test_get_train_data_with_UFED(_MockCursor):
     _MockCursor.execute.return_value = None
-    _MockCursor.description = [['teste1'], ['teste2']]
-    _MockCursor.fetchall.return_value = [['sda', 'afgg'], ['ff', 'wrw']]
+    _MockCursor.description = MOCK_DESCRIPTION
+    _MockCursor.fetchall.return_value = MOCK_VALUES
 
     expected_query = TRAIN_QUERY + " AND B.SNCA_UFED_DK = 33"
 
     saida = get_train_data(_MockCursor, 33)
-    expected_output = pd.DataFrame([['sda', 'afgg'], ['ff', 'wrw']],
-                                   columns=['teste1', 'teste2'])
+    expected_output = pd.DataFrame(MOCK_VALUES,
+                                   columns=MOCK_COLUMNS)
 
     assert_frame_equal(saida, expected_output)
     _MockCursor.execute.assert_called_with(expected_query)
@@ -54,23 +60,40 @@ def test_get_train_data_with_UFED(_MockCursor):
 
 @mock.patch('jaydebeapi.Cursor')
 def test_get_train_data_UFED_not_int(_MockCursor):
-    _MockCursor.description = [['teste1'], ['teste2']]
-    _MockCursor.fetchall.return_value = [['sda', 'afgg'], ['ff', 'wrw']]
+    _MockCursor.description = MOCK_DESCRIPTION
+    _MockCursor.fetchall.return_value = MOCK_VALUES
     with pytest.raises(TypeError):
         get_train_data(_MockCursor, 'not an int')
 
 
 @mock.patch('jaydebeapi.Cursor')
+def test_get_train_data_with_start_date(_MockCursor):
+    _MockCursor.execute.return_value = None
+    _MockCursor.description = MOCK_DESCRIPTION
+    _MockCursor.fetchall.return_value = MOCK_VALUES
+
+    expected_query = TRAIN_QUERY + (" AND A.ATSD_DT_REGISTRO >= "
+                                    "TO_DATE('2018-01-01', 'YYYY-MM-DD')")
+
+    saida = get_train_data(_MockCursor, start_date='2018-01-01')
+    expected_output = pd.DataFrame(MOCK_VALUES,
+                                   columns=MOCK_COLUMNS)
+
+    assert_frame_equal(saida, expected_output)
+    _MockCursor.execute.assert_called_with(expected_query)
+
+
+@mock.patch('jaydebeapi.Cursor')
 def test_get_predict_data_without_UFED(_MockCursor):
     _MockCursor.execute.return_value = None
-    _MockCursor.description = [['teste1'], ['teste2']]
-    _MockCursor.fetchall.return_value = [['sda', 'afgg'], ['ff', 'wrw']]
+    _MockCursor.description = MOCK_DESCRIPTION
+    _MockCursor.fetchall.return_value = MOCK_VALUES
 
     expected_query = PREDICT_QUERY
 
     saida = get_predict_data(_MockCursor, None)
-    expected_output = pd.DataFrame([['sda', 'afgg'], ['ff', 'wrw']],
-                                   columns=['teste1', 'teste2'])
+    expected_output = pd.DataFrame(MOCK_VALUES,
+                                   columns=MOCK_COLUMNS)
 
     assert_frame_equal(saida, expected_output)
     _MockCursor.execute.assert_called_with(expected_query)
@@ -79,14 +102,14 @@ def test_get_predict_data_without_UFED(_MockCursor):
 @mock.patch('jaydebeapi.Cursor')
 def test_get_predict_data_with_UFED(_MockCursor):
     _MockCursor.execute.return_value = None
-    _MockCursor.description = [['teste1'], ['teste2']]
-    _MockCursor.fetchall.return_value = [['sda', 'afgg'], ['ff', 'wrw']]
+    _MockCursor.description = MOCK_DESCRIPTION
+    _MockCursor.fetchall.return_value = MOCK_VALUES
 
     expected_query = PREDICT_QUERY + " AND B.SNCA_UFED_DK = 33"
 
     saida = get_predict_data(_MockCursor, 33)
-    expected_output = pd.DataFrame([['sda', 'afgg'], ['ff', 'wrw']],
-                                   columns=['teste1', 'teste2'])
+    expected_output = pd.DataFrame(MOCK_VALUES,
+                                   columns=MOCK_COLUMNS)
 
     assert_frame_equal(saida, expected_output)
     _MockCursor.execute.assert_called_with(expected_query)
@@ -94,10 +117,41 @@ def test_get_predict_data_with_UFED(_MockCursor):
 
 @mock.patch('jaydebeapi.Cursor')
 def test_get_predict_data_UFED_not_int(_MockCursor):
-    _MockCursor.description = [['teste1'], ['teste2']]
-    _MockCursor.fetchall.return_value = [['sda', 'afgg'], ['ff', 'wrw']]
+    _MockCursor.description = MOCK_DESCRIPTION
+    _MockCursor.fetchall.return_value = MOCK_VALUES
     with pytest.raises(TypeError):
         get_predict_data(_MockCursor, 'not an int')
+
+
+@mock.patch('jaydebeapi.Cursor')
+def test_get_predict_data_with_start_date(_MockCursor):
+    _MockCursor.execute.return_value = None
+    _MockCursor.description = MOCK_DESCRIPTION
+    _MockCursor.fetchall.return_value = MOCK_VALUES
+
+    expected_query = PREDICT_QUERY + (" AND A.ATSD_DT_REGISTRO >= "
+                                      "TO_DATE('2018-01-01', 'YYYY-MM-DD')")
+
+    saida = get_predict_data(_MockCursor, start_date='2018-01-01')
+    expected_output = pd.DataFrame(MOCK_VALUES,
+                                   columns=MOCK_COLUMNS)
+
+    assert_frame_equal(saida, expected_output)
+    _MockCursor.execute.assert_called_with(expected_query)
+
+
+@mock.patch('jaydebeapi.Cursor')
+def test_get_list_of_classes(_MockCursor):
+    _MockCursor.execute.return_value = None
+    _MockCursor.fetchall.return_value = [(1,), (2,)]
+
+    expected_query = POSSIBLE_CLASSES_QUERY
+
+    saida = get_list_of_classes(_MockCursor)
+    expected_output = [1, 2]
+
+    assert saida == expected_output
+    _MockCursor.execute.assert_called_with(expected_query)
 
 
 @mock.patch('jaydebeapi.Cursor')
