@@ -74,8 +74,11 @@ def get_train_data(cursor, UFED_DK=None, start_date=None):
     Returns:
         A Pandas DataFrame containing the training data.
     """
-    if not isinstance(UFED_DK, int) and UFED_DK is not None:
-        raise TypeError('UFED_DK must be None or integer!')
+    if UFED_DK is not None:
+        try:
+            int(UFED_DK)
+        except:
+            raise TypeError('UFED_DK must be None or integer!')
 
     query = TRAIN_QUERY
 
@@ -117,8 +120,11 @@ def get_predict_data(cursor, UFED_DK=None, start_date=None):
     Returns:
         A Pandas DataFrame containing the data to predict labels for.
     """
-    if not isinstance(UFED_DK, int) and UFED_DK is not None:
-        raise TypeError('UFED_DK must be None or integer!')
+    if UFED_DK is not None:
+        try:
+            int(UFED_DK)
+        except:
+            raise TypeError('UFED_DK must be None or integer!')
 
     query = PREDICT_QUERY
 

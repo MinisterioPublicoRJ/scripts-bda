@@ -43,7 +43,7 @@ conn = jdbc.connect("oracle.jdbc.driver.OracleDriver",
 curs = conn.cursor()
 
 print('Retrieving prediction results from HDFS...')
-data_hdfs = get_results_from_hdfs(client, FORMATTED_HDFS_PATH, 1)
+data_hdfs = get_results_from_hdfs(client, FORMATTED_HDFS_PATH)
 data_hdfs['MDEC_DK'] = data_hdfs['MDEC_DK'].apply(
     lambda x: ast.literal_eval(x))
 
