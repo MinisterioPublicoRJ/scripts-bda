@@ -27,6 +27,7 @@ HDFS_URL = config('HDFS_URL')
 HDFS_USER = config('HDFS_USER')
 HDFS_MODEL_DIR = config('HDFS_MODEL_DIR')
 UPDATE_TABLES = config('UPDATE_TABLES', cast=bool)
+START_DATE = config('START_DATE')
 
 ID_COLUMN = 'SNCA_DK'
 TEXT_COLUMN = 'SNCA_DS_FATO'
@@ -74,7 +75,7 @@ conn = jdbc.connect("oracle.jdbc.driver.OracleDriver",
 curs = conn.cursor()
 
 print('Querying database...')
-df = get_predict_data(curs, UFED_DK=UFED_DK)
+df = get_predict_data(curs, UFED_DK=UFED_DK, start_date=START_DATE)
 
 print('Preparing data...')
 df[TEXT_COLUMN] = df[TEXT_COLUMN].apply(clean_text)

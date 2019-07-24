@@ -23,6 +23,7 @@ ORACLE_DRIVER_PATH = config('ORACLE_DRIVER_PATH')
 HDFS_URL = config('HDFS_URL')
 HDFS_USER = config('HDFS_USER')
 HDFS_MODEL_DIR = config('HDFS_MODEL_DIR')
+START_DATE = config('START_DATE')
 
 NEGATIVE_CLASS_VALUE = 13
 ID_COLUMN = 'SNCA_DK'
@@ -43,7 +44,7 @@ conn = jdbc.connect("oracle.jdbc.driver.OracleDriver",
                     ORACLE_DRIVER_PATH)
 curs = conn.cursor()
 
-df = get_train_data(curs, UFED_DK=UFED_DK)
+df = get_train_data(curs, UFED_DK=UFED_DK, start_date=START_DATE)
 train_keys = get_keys(df, ID_COLUMN)
 
 print('Preparing data...')
