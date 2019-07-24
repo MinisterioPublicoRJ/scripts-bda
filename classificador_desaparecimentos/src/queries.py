@@ -62,6 +62,7 @@ def get_train_data(cursor, UFED_DK=None):
     
     Parameters:
         cursor: The jdbc cursor to execute the queries.
+        UFED_DK: The dk corresponding to the state to get data from.
 
     Returns:
         A Pandas DataFrame containing the training data.
@@ -85,6 +86,7 @@ def get_predict_data(cursor, UFED_DK=None):
     
     Parameters:
         cursor: The jdbc cursor to execute the queries.
+        UFED_DK: The dk corresponding to the state to get data from.
 
     Returns:
         A Pandas DataFrame containing the data to predict labels for.
@@ -108,6 +110,7 @@ def get_evaluate_data(cursor, keys):
     
     Parameters:
         cursor: The jdbc cursor to execute the queries.
+        keys: The keys to use for evaluation.
 
     Returns:
         A Pandas DataFrame containing the evaluation data.
