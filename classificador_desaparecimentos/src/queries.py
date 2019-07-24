@@ -58,6 +58,14 @@ INSERT_MOT_DECLARADO_QUERY = """
 
 
 def get_train_data(cursor, UFED_DK=None):
+    """Get the data that will be used to train the model.
+    
+    Parameters:
+        cursor: The jdbc cursor to execute the queries.
+
+    Returns:
+        A Pandas DataFrame containing the training data.
+    """
     if not isinstance(UFED_DK, int) and UFED_DK is not None:
         raise TypeError('UFED_DK must be None or integer!')
 
@@ -73,6 +81,14 @@ def get_train_data(cursor, UFED_DK=None):
 
 
 def get_predict_data(cursor, UFED_DK=None):
+    """Get the data that will be used for the predictions.
+    
+    Parameters:
+        cursor: The jdbc cursor to execute the queries.
+
+    Returns:
+        A Pandas DataFrame containing the data to predict labels for.
+    """
     if not isinstance(UFED_DK, int) and UFED_DK is not None:
         raise TypeError('UFED_DK must be None or integer!')
 
@@ -88,6 +104,14 @@ def get_predict_data(cursor, UFED_DK=None):
 
 
 def get_evaluate_data(cursor, keys):
+    """Get the data that will be used to evaluate the model.
+    
+    Parameters:
+        cursor: The jdbc cursor to execute the queries.
+
+    Returns:
+        A Pandas DataFrame containing the evaluation data.
+    """
     cursor.execute(EVALUATE_QUERY)
 
     columns = [desc[0] for desc in cursor.description]
@@ -97,22 +121,54 @@ def get_evaluate_data(cursor, keys):
 
 
 def set_module_and_client(cursor, client_name):
+    """Sets the module and client info on the database.
+    
+    Parameters:
+        cursor: The jdbc cursor to execute the queries.
+        client_name: The client name to set the client info to.
+    """
     cursor.execute(SET_MODULE_QUERY)
     cursor.execute(SET_CLIENT_QUERY, (client_name,))
 
 
 def get_max_dk(cursor, table_name, column_name):
+    """Get the max value for a given column in the table.
+    
+    Parameters:
+        cursor: The jdbc cursor to execute the queries.
+        table_name: The table to get the max value from.
+        column_name: The column to get the max value from.
+
+    Returns:
+        An int corresponding to the max value.
+    """
     cursor.execute("SELECT MAX({}) FROM {}".format(column_name, table_name))
     return int(cursor.fetchall()[0][0])
 
 
 def update_atividade_sindicancia(cursor, ativ_dk, snca_dk,
                                  user_name, user_number):
+    """Updates the data in the ATIVIDADE_SINDICANCIA table.
+    
+    Parameters:
+        cursor: The jdbc cursor to execute the queries.
+        ativ_dk: The dk to set the new row to.
+        snca_dk: The dk relative to the document being updated.
+        user_name: The name of the user making the update.
+        user_number: The number of the user making the update.
+    """
     cursor.execute(ATIV_SINDICANCIA_QUERY,
                    (int(ativ_dk), int(snca_dk), user_name, user_number))
 
 
 def update_motivo_declarado(cursor, snca_dk, labels):
+    """Updates the data in the DESAPARE_MOT_DECLARADO table.
+    
+    Parameters:
+        cursor: The jdbc cursor to execute the queries.
+        snca_dk: The dk relative to the document being updated.
+        labels: The labels the given document will be set to.
+    """
     cursor.execute(DELETE_MOT_DECLARADO_QUERY,
                    (int(snca_dk),))
     for label in labels:
