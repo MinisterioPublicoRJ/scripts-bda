@@ -12,6 +12,12 @@ TRAIN_QUERY = """
     WHERE A.ATSD_TPSN_DK = 22
 """
 
+POSSIBLE_CLASSES_QUERY = """
+    SELECT DISTINCT DMDE_MDEC_DK
+    FROM SILD.SILD_DESAPARE_MOT_DECLARADO
+    ORDER BY DMDE_MDEC_DK ASC
+"""
+
 PREDICT_QUERY = """
     SELECT DISTINCT B.SNCA_DK, B.SNCA_DS_FATO, D.DMDE_MDEC_DK
     FROM SILD.SILD_ATIVIDADE_SINDICANCIA A
@@ -81,7 +87,23 @@ def get_train_data(cursor, UFED_DK=None, start_date=None):
     cursor.execute(query)
 
     columns = [desc[0] for desc in cursor.description]
-    return pd.DataFrame(cursor.fetchall(), columns=columns)
+    df = pd.DataFrame(cursor.fetchall(), columns=columns)
+    return df.astype({'SNCA_DK': int, 'DMDE_MDEC_DK': int})
+
+
+def get_list_of_classes(cursor):
+    """Get the list of possible classes in the database.
+    
+    Parameters:
+        cursor: The jdbc cursor to execute the queries.
+
+    Returns:
+        List containing the possible classes, in ascending order.
+    """
+    query = POSSIBLE_CLASSES_QUERY
+
+    cursor.execute(query)
+    return [int(x[0]) for x in cursor.fetchall()]
 
 
 def get_predict_data(cursor, UFED_DK=None, start_date=None):
@@ -108,7 +130,8 @@ def get_predict_data(cursor, UFED_DK=None, start_date=None):
     cursor.execute(query)
 
     columns = [desc[0] for desc in cursor.description]
-    return pd.DataFrame(cursor.fetchall(), columns=columns)
+    df = pd.DataFrame(cursor.fetchall(), columns=columns)
+    return df.astype({'SNCA_DK': int, 'DMDE_MDEC_DK': int})
 
 
 def get_evaluate_data(cursor, keys):
@@ -125,6 +148,7 @@ def get_evaluate_data(cursor, keys):
 
     columns = [desc[0] for desc in cursor.description]
     result = pd.DataFrame(cursor.fetchall(), columns=columns)
+    result = result.astype({'SNCA_DK': int, 'MDEC_DK': int})
 
     return result[result['SNCA_DK'].isin(keys)]
 
