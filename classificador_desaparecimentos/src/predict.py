@@ -27,12 +27,12 @@ HDFS_URL = config('HDFS_URL')
 HDFS_USER = config('HDFS_USER')
 HDFS_MODEL_DIR = config('HDFS_MODEL_DIR')
 UPDATE_TABLES = config('UPDATE_TABLES', cast=bool)
-START_DATE = config('START_DATE')
+START_DATE = config('START_DATE', default=None)
+UFED_DK = config('UFED_DK', default=None)
 
 ID_COLUMN = 'SNCA_DK'
 TEXT_COLUMN = 'SNCA_DS_FATO'
 LABEL_COLUMN = 'MDEC_DK'
-UFED_DK = 33
 
 RULES = {
     2:  ['USUARI[OA] DE (DROGA|ENTORPECENTE)S?',
@@ -123,7 +123,7 @@ y = mlb.inverse_transform(y)
 
 df_results = pd.DataFrame(
     np.concatenate(
-        (df[ID_COLUMN].values.reshape(-1, 1), np.array(y).reshape(-1, 1)),
+        (df[ID_COLUMN].values.reshape(-1, 1), np.array([str(p) for p in y]).reshape(-1, 1)),
         axis=1),
     columns=[ID_COLUMN, LABEL_COLUMN]
 )
@@ -149,8 +149,7 @@ max_atsd_dk = get_max_dk(curs,
 
 if UPDATE_TABLES: 
     print('Writing results to tables...')
-    for labels, snca_dk in zip(df_results[LABEL_COLUMN].values,
-                            df_results[ID_COLUMN]):
+    for labels, snca_dk in zip(y, df[ID_COLUMN].values):
         max_atsd_dk += 1
         update_motivo_declarado(curs, snca_dk, labels)
         update_atividade_sindicancia(
