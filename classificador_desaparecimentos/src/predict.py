@@ -123,7 +123,8 @@ y = mlb.inverse_transform(y)
 
 df_results = pd.DataFrame(
     np.concatenate(
-        (df[ID_COLUMN].values.reshape(-1, 1), np.array([str(p) for p in y]).reshape(-1, 1)),
+        (df[ID_COLUMN].values.reshape(-1, 1),
+            np.array([str(p) for p in y]).reshape(-1, 1)),
         axis=1),
     columns=[ID_COLUMN, LABEL_COLUMN]
 )
@@ -147,7 +148,7 @@ max_atsd_dk = get_max_dk(curs,
                          table_name='SILD.SILD_ATIVIDADE_SINDICANCIA',
                          column_name='ATSD_DK')
 
-if UPDATE_TABLES: 
+if UPDATE_TABLES:
     print('Writing results to tables...')
     for labels, snca_dk in zip(y, df[ID_COLUMN].values):
         max_atsd_dk += 1

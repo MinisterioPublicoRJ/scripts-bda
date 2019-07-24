@@ -65,7 +65,7 @@ INSERT_MOT_DECLARADO_QUERY = """
 
 def get_train_data(cursor, UFED_DK=None, start_date=None):
     """Get the data that will be used to train the model.
-    
+
     Parameters:
         cursor: The jdbc cursor to execute the queries.
         UFED_DK: The dk corresponding to the state to get data from.
@@ -77,7 +77,7 @@ def get_train_data(cursor, UFED_DK=None, start_date=None):
     if UFED_DK is not None:
         try:
             int(UFED_DK)
-        except:
+        except ValueError:
             raise TypeError('UFED_DK must be None or integer!')
 
     query = TRAIN_QUERY
@@ -85,7 +85,8 @@ def get_train_data(cursor, UFED_DK=None, start_date=None):
     if UFED_DK:
         query += " AND B.SNCA_UFED_DK = {}".format(UFED_DK)
     if start_date:
-        query += " AND A.ATSD_DT_REGISTRO >= TO_DATE('{}', 'YYYY-MM-DD')".format(start_date)
+        query += " AND A.ATSD_DT_REGISTRO >= TO_DATE('{}', 'YYYY-MM-DD')"\
+            .format(start_date)
 
     cursor.execute(query)
 
@@ -96,7 +97,7 @@ def get_train_data(cursor, UFED_DK=None, start_date=None):
 
 def get_list_of_classes(cursor):
     """Get the list of possible classes in the database.
-    
+
     Parameters:
         cursor: The jdbc cursor to execute the queries.
 
@@ -111,7 +112,7 @@ def get_list_of_classes(cursor):
 
 def get_predict_data(cursor, UFED_DK=None, start_date=None):
     """Get the data that will be used for the predictions.
-    
+
     Parameters:
         cursor: The jdbc cursor to execute the queries.
         UFED_DK: The dk corresponding to the state to get data from.
@@ -123,7 +124,7 @@ def get_predict_data(cursor, UFED_DK=None, start_date=None):
     if UFED_DK is not None:
         try:
             int(UFED_DK)
-        except:
+        except ValueError:
             raise TypeError('UFED_DK must be None or integer!')
 
     query = PREDICT_QUERY
@@ -131,7 +132,8 @@ def get_predict_data(cursor, UFED_DK=None, start_date=None):
     if UFED_DK:
         query += " AND B.SNCA_UFED_DK = {}".format(UFED_DK)
     if start_date:
-        query += " AND A.ATSD_DT_REGISTRO >= TO_DATE('{}', 'YYYY-MM-DD')".format(start_date)
+        query += " AND A.ATSD_DT_REGISTRO >= TO_DATE('{}', 'YYYY-MM-DD')"\
+            .format(start_date)
 
     cursor.execute(query)
 
@@ -142,7 +144,7 @@ def get_predict_data(cursor, UFED_DK=None, start_date=None):
 
 def get_evaluate_data(cursor, keys):
     """Get the data that will be used to evaluate the model.
-    
+
     Parameters:
         cursor: The jdbc cursor to execute the queries.
         keys: The keys to use for evaluation.
@@ -161,7 +163,7 @@ def get_evaluate_data(cursor, keys):
 
 def set_module_and_client(cursor, client_name):
     """Sets the module and client info on the database.
-    
+
     Parameters:
         cursor: The jdbc cursor to execute the queries.
         client_name: The client name to set the client info to.
@@ -172,7 +174,7 @@ def set_module_and_client(cursor, client_name):
 
 def get_max_dk(cursor, table_name, column_name):
     """Get the max value for a given column in the table.
-    
+
     Parameters:
         cursor: The jdbc cursor to execute the queries.
         table_name: The table to get the max value from.
@@ -188,7 +190,7 @@ def get_max_dk(cursor, table_name, column_name):
 def update_atividade_sindicancia(cursor, ativ_dk, snca_dk,
                                  user_name, user_number):
     """Updates the data in the ATIVIDADE_SINDICANCIA table.
-    
+
     Parameters:
         cursor: The jdbc cursor to execute the queries.
         ativ_dk: The dk to set the new row to.
@@ -202,7 +204,7 @@ def update_atividade_sindicancia(cursor, ativ_dk, snca_dk,
 
 def update_motivo_declarado(cursor, snca_dk, labels):
     """Updates the data in the DESAPARE_MOT_DECLARADO table.
-    
+
     Parameters:
         cursor: The jdbc cursor to execute the queries.
         snca_dk: The dk relative to the document being updated.

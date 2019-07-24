@@ -35,14 +35,14 @@ class OneVsRestLogisticRegression:
         Parameters:
             negative_column_index: The index of the column indicating the
                 absence of other classes. None by default.
-            kwargs: Arguments to be passed to the LogisticRegression class.        
+            kwargs: Arguments to be passed to the LogisticRegression class.
         """
         self.model_ = OneVsRestClassifier(LogisticRegression(**kwargs))
         self.negative_column_index_ = negative_column_index
 
     def fit(self, X, y):
         """Fits the model to the data and its labels.
-        
+
         If negative_column_index_ is not None, then the corresponding column
         in y is removed before fitting the model.
 
@@ -95,7 +95,7 @@ class RegexClassifier:
 
     def __init__(self, rules):
         """The constructor for the RegexClassifier.
-        
+
         Parameters:
             rules: A dictionary where each key corresponds to a class label,
                 and the values are lists of expressions corresponding to that
@@ -127,7 +127,7 @@ class RegexClassifier:
 
 def get_results_from_hdfs(client, path, model_date=None):
     """Gets the predictions made by a model saved on HDFS.
-    
+
     The models are saved in the given file structure:
         path/
             /model_date1
@@ -193,10 +193,10 @@ def expand_results(df, target_column='MDEC_DK'):
     Parameters:
         df: Pandas DataFrame to split.
         target_column: The column containing the values to split.
-    
-    Returns: 
+
+    Returns:
         A Pandas DataFrame with each entry for the target column separated,
-        with each element moved into a new row. The values in the other 
+        with each element moved into a new row. The values in the other
         columns are duplicated across the newly divided rows.
     """
     def splitListToRows(row, row_accumulator, target_column):
@@ -213,7 +213,7 @@ def expand_results(df, target_column='MDEC_DK'):
 
 def get_keys(data, key_column):
     """Gets the unique keys present in the key_column of the data.
-    
+
     Parameters:
         data: A Pandas DataFrame containing the data.
         key_column: The name of the column from which to get the keys.
@@ -226,7 +226,7 @@ def get_keys(data, key_column):
 
 def get_percentage_of_change(data_hdfs, data_oracle):
     """Get the percentage of documents that were altered after prediction.
-    
+
     Parameters:
         data_hdfs: The predictions made by the model, coming from HDFS.
         data_oracle: The final classifications, coming from Oracle.
@@ -255,12 +255,12 @@ def get_number_of_modifications(data_hdfs, data_oracle):
     the other hand, the number of additions give how many new additions had to
     be made. Lastly, the number of swaps give the number of modifications that
     had to be made to existing predictions (without adding or removing, just
-    changing in place). 
-    
+    changing in place).
+
     Parameters:
         data_hdfs: The predictions made by the model, coming from HDFS.
         data_oracle: The final classifications, coming from Oracle.
-    
+
     Returns:
         n_remove: Number of removals made from the predictions.
         n_add: Number of additions made to the predictions.
@@ -310,11 +310,11 @@ def save_metrics_to_hdfs(client, path, **kwargs):
 
 def get_binarizer(client, path):
     """Get the binarizer for the given model.
-    
+
     Parameters:
         client: The HDFS client to retrieve the binarizer from.
         path: The path to the model file structure.
-    
+
     Returns:
         mlb: The MultiLabel Binarizer.
     """
@@ -327,12 +327,12 @@ def get_binarizer(client, path):
 
 def generate_report(data_hdfs, data_oracle, binarizer):
     """Generate a classification report for the predictions.
-    
+
     Parameters:
         data_hdfs: The predictions made by the model, coming from HDFS.
         data_oracle: The final classifications, coming from Oracle.
         binarizer: The MultiLabel Binarizer to one-hot encode the labels.
-        
+
     Returns:
         A classification report for the given predictions and true values.
     """
