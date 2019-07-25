@@ -308,23 +308,6 @@ def save_metrics_to_hdfs(client, path, **kwargs):
             overwrite=True)
 
 
-def get_binarizer(client, path):
-    """Get the binarizer for the given model.
-
-    Parameters:
-        client: The HDFS client to retrieve the binarizer from.
-        path: The path to the model file structure.
-
-    Returns:
-        mlb: The MultiLabel Binarizer.
-    """
-    most_recent_date = sorted(client.list(path))[-1]
-    with client.read('{}/{}/model/mlb_binarizer.pkl'.format(
-            path, most_recent_date)) as mlb_reader:
-        mlb = pickle.loads(mlb_reader.read())
-    return mlb
-
-
 def generate_report(data_hdfs, data_oracle, binarizer):
     """Generate a classification report for the predictions.
 

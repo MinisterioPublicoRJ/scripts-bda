@@ -10,7 +10,6 @@ from queries import (
 )
 from utils import (
     get_results_from_hdfs,
-    get_binarizer,
     expand_results,
     get_keys,
     get_percentage_of_change,
@@ -55,7 +54,11 @@ if len(data_oracle) == 0:
     sys.exit('No validated documents available!')
 
 print('Generating classification report...')
-mlb = get_binarizer(client, FORMATTED_HDFS_PATH)
+most_recent_date = sorted(client.list(FORMATTED_HDFS_PATH))[-1]
+with client.read('{}/{}/model/mlb_binarizer.pkl'.format(
+        formatted_hdfs_path, most_recent_date)) as mlb_reader:
+    mlb = pickle.loads(mlb_reader.read())
+
 report = generate_report(data_hdfs, data_oracle, mlb)
 
 print('Preparing HDFS data for next metrics...')
