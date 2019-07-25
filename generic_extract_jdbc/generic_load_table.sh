@@ -8,5 +8,6 @@ spark2-submit \
     --executor-memory 22g \
     --conf spark.debug.maxToStringFields=2000 \
     --conf spark.executor.memoryOverhead=4096 \
+    --conf spark.network.timeout=300 \
     --py-files src/timer.py,src/base.py,packages/*.whl,packages/*.egg \
     src/generic_load_table.py 2>> error.log
