@@ -120,8 +120,8 @@ def load_part_data(table):
 
         table_hive = "%s.%s" % (config_params['schema_hdfs'],
                                 table['table_hive'])
-        spark.read.table(table_hive).createOrReplaceTempView("table_all")
-        spark.catalog.cacheTable("table_all")
+        #spark.read.table(table_hive).createOrReplaceTempView("table_all")
+        #spark.catalog.cacheTable("table_all")
 
         # Get count and max from hive table.
         # Count for check if table has data and max
@@ -129,9 +129,9 @@ def load_part_data(table):
         total_max_table = spark \
             .sql("""
                 select count(1) as total,
-                max(%s)
-                from table_all
-                """ % table['pk_table_oracle'])
+                max({})
+                from {}
+                """.format(table['pk_table_oracle'], table_hive))
 
         total = total_max_table.first()[0]
 
@@ -190,14 +190,15 @@ def load_part_data(table):
             if total > 0:
                 # Join the actual data hive table
                 # with the updated data to replace old data with new data
-                update_df = spark.sql("""
-                select table_all.*
-                from table_all
-                join table_delta
-                on table_all.{key} = table_delta.{key} """.format(
-                    key=table['pk_table_oracle']))
 
-                table_all_df = spark.sql("from table_all")
+                #update_df = spark.sql("""
+                #select table_all.*
+                #from table_all
+                #join table_delta
+                #on table_all.{key} = table_delta.{key} """.format(
+                #    key=table['pk_table_oracle']))
+
+                #table_all_df = spark.sql("from table_all")
                 table_delta_df = spark.sql("from table_delta")
 
                 print("""
@@ -205,21 +206,21 @@ def load_part_data(table):
                 hive with new data from table oracle
                 """)
 
-                total_df = table_all_df \
-                    .subtract(update_df) \
-                    .union(table_delta_df)
+                #total_df = table_all_df \
+                #    .subtract(update_df) \
+                #    .union(table_delta_df)
 
                 print('Writing data in hdfs like table %s ' % table_hive)
-                total_df.write.mode("overwrite").saveAsTable("temp_table")
-                temp_table = spark.table("temp_table")
-                temp_table.coalesce(20) \
-                    .write.mode('overwrite') \
+                #total_df.write.mode("overwrite").saveAsTable("temp_table")
+                #temp_table = spark.table("temp_table")
+                table_delta_df.coalesce(20) \
+                    .write.mode('append') \
                     .saveAsTable(table_hive)
 
                 print('Update impala table %s' % table_hive)
                 _update_impala_table(table_hive)
 
-                spark.sql("drop table temp_table")
+                #spark.sql("drop table temp_table")
 
             spark.catalog.clearCache()
 

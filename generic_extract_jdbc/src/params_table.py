@@ -1,13 +1,12 @@
 """
-Observações feitas pelos ADS (Oracle):
+Observacoes feitas pelos ADS (Oracle):
 Retirar as tabelas
 -> MCPR.MCPR_DOCUMENTO_ALTERACAO (tabela de uso interno)
--> Todas que começam AD$ (Auditoria)
--> Todas que terminam com _parcial (são copias de tabelas)
+-> Todas que comecam AD$ (Auditoria)
+-> Todas que terminam com _parcial (sao copias de tabelas)
 """
 params = {
-    "driver":
-    "oracle.jdbc.driver.OracleDriver",
+    "driver": "oracle.jdbc.driver.OracleDriver",
     "schema_hdfs": "exadata",
     "tables": [
         # Schema MCPR
