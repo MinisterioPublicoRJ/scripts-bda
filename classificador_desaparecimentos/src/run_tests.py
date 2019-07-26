@@ -19,4 +19,4 @@ if not IS_TRAVIS:
             0,
             abspath + "/../" + filename)
 
-pytest.main()
+pytest.main(['--cov=src'])
