@@ -1,5 +1,4 @@
 import re
-import pickle
 
 import numpy as np
 import pandas as pd
@@ -128,29 +127,6 @@ class RegexClassifier:
 def get_results_from_hdfs(client, path, model_date=None):
     """Gets the predictions made by a model saved on HDFS.
 
-    The models are saved in the given file structure:
-        path/
-            /model_date1
-                /model
-                /results
-                /evaluate
-            /model_date2
-                /model
-                /results
-                /evaluate
-    Where /model_date is the date on which the model has been trained,
-    using a YearMonthDayHourMinuteSecond notation.
-
-    The /model directory contains the model components, such as the model
-    itself, the multilabel binarizer, and vectorizer used, as well as the
-    documents keys that were used for training.
-
-    The /results directory contains the results given by the 'predict' phase,
-    in a .csv format.
-
-    The /evaluate directory holds the metrics calculated by the 'evaluate'
-    phase
-
     Parameters:
         client: The HDFS Client to use to retrieve the predictions.
         path: The path on HDFS where the model is saved. This path should
@@ -269,6 +245,7 @@ def get_number_of_modifications(data_hdfs, data_oracle):
     hdfs_ind = data_hdfs.copy()
     oracle_ind = data_oracle.copy()
 
+    # Need to keep track of where each row is from after aggregation
     hdfs_ind['FROM'] = 'HDFS'
     oracle_ind['FROM'] = 'ORACLE'
 
