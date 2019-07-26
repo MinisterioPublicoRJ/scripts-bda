@@ -9,12 +9,17 @@ from datetime import datetime
 from decouple import config
 from hdfs import InsecureClient
 
-from utils import clean_text, RegexClassifier
-from queries import (get_predict_data,
-                     set_module_and_client,
-                     get_max_dk,
-                     update_atividade_sindicancia,
-                     update_motivo_declarado)
+from utils import (
+    clean_text,
+    RegexClassifier
+)
+from queries import (
+    get_predict_data,
+    set_module_and_client,
+    get_max_dk,
+    update_atividade_sindicancia,
+    update_motivo_declarado
+)
 
 
 URL_ORACLE_SERVER = config('URL_ORACLE_SERVER')
@@ -27,8 +32,8 @@ HDFS_URL = config('HDFS_URL')
 HDFS_USER = config('HDFS_USER')
 HDFS_MODEL_DIR = config('HDFS_MODEL_DIR')
 UPDATE_TABLES = config('UPDATE_TABLES', cast=bool)
-START_DATE = config('START_DATE', default=None)
-END_DATE = config('END_DATE', default=None)
+START_DATE = config('START_DATE', default='')
+END_DATE = config('END_DATE', default='')
 UFED_DK = config('UFED_DK', default=None)
 
 ID_COLUMN = 'SNCA_DK'
@@ -69,6 +74,7 @@ print('Running predict script:\n')
 
 print('Connecting to HDFS and to database...')
 client = InsecureClient(HDFS_URL, user=HDFS_USER)
+
 conn = jdbc.connect("oracle.jdbc.driver.OracleDriver",
                     URL_ORACLE_SERVER,
                     [USER_ORACLE, PASSWD_ORACLE],
@@ -76,12 +82,11 @@ conn = jdbc.connect("oracle.jdbc.driver.OracleDriver",
 curs = conn.cursor()
 
 print('Querying database...')
-df = get_predict_data(curs, UFED_DK=UFED_DK, 
+df = get_predict_data(curs, UFED_DK=UFED_DK,
                       start_date=START_DATE, end_date=END_DATE)
 
 print('Preparing data...')
 df[TEXT_COLUMN] = df[TEXT_COLUMN].apply(clean_text)
-df[ID_COLUMN] = df[ID_COLUMN].astype(int)
 
 df = df.groupby([ID_COLUMN, TEXT_COLUMN])\
        .agg(lambda x: set(x))\
@@ -123,6 +128,8 @@ y = np.where(
     y_logreg)
 y = mlb.inverse_transform(y)
 
+# y has to be given in str format here, so as to store the results as tuples
+# even if they have a single element
 df_results = pd.DataFrame(
     np.concatenate(
         (df[ID_COLUMN].values.reshape(-1, 1),
@@ -150,6 +157,7 @@ max_atsd_dk = get_max_dk(curs,
                          table_name='SILD.SILD_ATIVIDADE_SINDICANCIA',
                          column_name='ATSD_DK')
 
+# Some applications of the model should not update the database tables
 if UPDATE_TABLES:
     print('Writing results to tables...')
     for labels, snca_dk in zip(y, df[ID_COLUMN].values):

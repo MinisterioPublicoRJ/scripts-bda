@@ -18,6 +18,7 @@ POSSIBLE_CLASSES_QUERY = """
     ORDER BY DMDE_MDEC_DK ASC
 """
 
+# A condition for dates might or might not be inserted in the {} slots
 PREDICT_QUERY = """
     SELECT DISTINCT B.SNCA_DK, B.SNCA_DS_FATO, D.DMDE_MDEC_DK
     FROM SILD.SILD_ATIVIDADE_SINDICANCIA A
@@ -82,6 +83,7 @@ def get_train_data(cursor, UFED_DK=None, start_date=None, end_date=None):
 
     query = TRAIN_QUERY
 
+    # Additional conditions to be added at the end of the query
     if UFED_DK:
         query += " AND B.SNCA_UFED_DK = {}".format(UFED_DK)
     if start_date:
@@ -113,7 +115,7 @@ def get_list_of_classes(cursor):
     return [int(x[0]) for x in cursor.fetchall()]
 
 
-def get_predict_data(cursor, UFED_DK=None, only_null_class=True, 
+def get_predict_data(cursor, UFED_DK=None, only_null_class=True,
                      start_date='', end_date=''):
     """Get the data that will be used for the predictions.
 
@@ -138,6 +140,8 @@ def get_predict_data(cursor, UFED_DK=None, only_null_class=True,
     if UFED_DK:
         query += " AND B.SNCA_UFED_DK = {}".format(UFED_DK)
 
+    # The date conditions will appear in two distinct places, which is why the
+    # query has both a format() and a concatenation of these conditions
     if start_date:
         start_date = " AND A.ATSD_DT_REGISTRO >= TO_DATE('{}', 'YYYY-MM-DD')"\
             .format(start_date)
