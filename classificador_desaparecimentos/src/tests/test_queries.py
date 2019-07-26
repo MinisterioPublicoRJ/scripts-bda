@@ -84,14 +84,31 @@ def test_get_train_data_with_start_date(_MockCursor):
 
 
 @mock.patch('jaydebeapi.Cursor')
+def test_get_train_data_with_end_date(_MockCursor):
+    _MockCursor.execute.return_value = None
+    _MockCursor.description = MOCK_DESCRIPTION
+    _MockCursor.fetchall.return_value = MOCK_VALUES
+
+    expected_query = TRAIN_QUERY + (" AND A.ATSD_DT_REGISTRO <= "
+                                    "TO_DATE('2018-01-01', 'YYYY-MM-DD')")
+
+    saida = get_train_data(_MockCursor, end_date='2018-01-01')
+    expected_output = pd.DataFrame(MOCK_VALUES,
+                                   columns=MOCK_COLUMNS)
+
+    assert_frame_equal(saida, expected_output)
+    _MockCursor.execute.assert_called_with(expected_query)
+
+
+@mock.patch('jaydebeapi.Cursor')
 def test_get_predict_data_without_UFED(_MockCursor):
     _MockCursor.execute.return_value = None
     _MockCursor.description = MOCK_DESCRIPTION
     _MockCursor.fetchall.return_value = MOCK_VALUES
 
-    expected_query = PREDICT_QUERY
+    expected_query = PREDICT_QUERY.format('', '')
 
-    saida = get_predict_data(_MockCursor, None)
+    saida = get_predict_data(_MockCursor, None, only_null_class=False)
     expected_output = pd.DataFrame(MOCK_VALUES,
                                    columns=MOCK_COLUMNS)
 
@@ -105,9 +122,9 @@ def test_get_predict_data_with_UFED(_MockCursor):
     _MockCursor.description = MOCK_DESCRIPTION
     _MockCursor.fetchall.return_value = MOCK_VALUES
 
-    expected_query = PREDICT_QUERY + " AND B.SNCA_UFED_DK = 33"
+    expected_query = PREDICT_QUERY.format('', '') + " AND B.SNCA_UFED_DK = 33"
 
-    saida = get_predict_data(_MockCursor, 33)
+    saida = get_predict_data(_MockCursor, 33, only_null_class=False)
     expected_output = pd.DataFrame(MOCK_VALUES,
                                    columns=MOCK_COLUMNS)
 
@@ -124,15 +141,52 @@ def test_get_predict_data_UFED_not_int(_MockCursor):
 
 
 @mock.patch('jaydebeapi.Cursor')
+def test_get_predict_data_with_only_null(_MockCursor):
+    _MockCursor.execute.return_value = None
+    _MockCursor.description = MOCK_DESCRIPTION
+    _MockCursor.fetchall.return_value = MOCK_VALUES
+
+    expected_query = PREDICT_QUERY.format('', '') + " AND D.DMDE_MDEC_DK = 13"
+
+    saida = get_predict_data(_MockCursor, None)
+    expected_output = pd.DataFrame(MOCK_VALUES,
+                                   columns=MOCK_COLUMNS)
+
+    assert_frame_equal(saida, expected_output)
+    _MockCursor.execute.assert_called_with(expected_query)
+
+
+@mock.patch('jaydebeapi.Cursor')
 def test_get_predict_data_with_start_date(_MockCursor):
     _MockCursor.execute.return_value = None
     _MockCursor.description = MOCK_DESCRIPTION
     _MockCursor.fetchall.return_value = MOCK_VALUES
 
-    expected_query = PREDICT_QUERY + (" AND A.ATSD_DT_REGISTRO >= "
-                                      "TO_DATE('2018-01-01', 'YYYY-MM-DD')")
+    sd_string = (" AND A.ATSD_DT_REGISTRO >= "
+                       "TO_DATE('2018-01-01', 'YYYY-MM-DD')")
+    expected_query = PREDICT_QUERY.format(sd_string, '') + sd_string
 
-    saida = get_predict_data(_MockCursor, start_date='2018-01-01')
+    saida = get_predict_data(_MockCursor, start_date='2018-01-01', 
+                             only_null_class=False)
+    expected_output = pd.DataFrame(MOCK_VALUES,
+                                   columns=MOCK_COLUMNS)
+
+    assert_frame_equal(saida, expected_output)
+    _MockCursor.execute.assert_called_with(expected_query)
+
+
+@mock.patch('jaydebeapi.Cursor')
+def test_get_predict_data_with_end_date(_MockCursor):
+    _MockCursor.execute.return_value = None
+    _MockCursor.description = MOCK_DESCRIPTION
+    _MockCursor.fetchall.return_value = MOCK_VALUES
+
+    ed_string = (" AND A.ATSD_DT_REGISTRO <= "
+                       "TO_DATE('2018-01-01', 'YYYY-MM-DD')")
+    expected_query = PREDICT_QUERY.format('', ed_string) + ed_string
+
+    saida = get_predict_data(_MockCursor, end_date='2018-01-01', 
+                             only_null_class=False)
     expected_output = pd.DataFrame(MOCK_VALUES,
                                    columns=MOCK_COLUMNS)
 

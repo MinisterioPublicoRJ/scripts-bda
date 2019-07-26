@@ -1,3 +1,4 @@
+import sys
 import pickle
 
 import jaydebeapi as jdbc
@@ -27,6 +28,7 @@ HDFS_URL = config('HDFS_URL')
 HDFS_USER = config('HDFS_USER')
 HDFS_MODEL_DIR = config('HDFS_MODEL_DIR')
 START_DATE = config('START_DATE', default=None)
+END_DATE = config('END_DATE', default=None)
 UFED_DK = config('UFED_DK', default=None)
 
 NEGATIVE_CLASS_VALUE = 13
@@ -47,7 +49,15 @@ conn = jdbc.connect("oracle.jdbc.driver.OracleDriver",
                     ORACLE_DRIVER_PATH)
 curs = conn.cursor()
 
-df = get_train_data(curs, UFED_DK=UFED_DK, start_date=START_DATE)
+df = get_train_data(curs, UFED_DK=UFED_DK, 
+                    start_date=START_DATE, end_date=END_DATE)
+
+nb_documents = len(df)
+if nb_documents == 0:
+    print('No data to train model!')
+    sys.exit()
+else:
+    print('{} documents available to train model.\n'.format(nb_documents))
 
 train_keys = get_keys(df, ID_COLUMN)
 
