@@ -4,3 +4,5 @@ JayDeBeApi==1.1.1
 JPype1==0.6.3
 hdfs==2.5.8
 mock==3.0.5
+pytest==4.6.4
+pytest-cov==2.7.1
