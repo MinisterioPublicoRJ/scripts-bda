@@ -73,6 +73,7 @@ def test_get_results_from_hdfs(_MockClient):
         mock.call('path/7/results/2')
     ]
     _MockClient.read.assert_has_calls(expected_calls_read, any_order=True)
+    assert _MockClient.read.call_count == 2
 
 
 @mock.patch('hdfs.InsecureClient')
@@ -99,6 +100,8 @@ def test_get_results_from_hdfs_no_model_date(_MockClient):
     ]
     _MockClient.list.assert_has_calls(expected_calls_list, any_order=True)
     _MockClient.read.assert_has_calls(expected_calls_read, any_order=True)
+    assert _MockClient.list.call_count == 2
+    assert _MockClient.read.call_count == 2
 
 
 def test_expand_results():
@@ -170,3 +173,5 @@ def test_save_metrics_to_hdfs(_MockClient):
         mock.call('path/2/evaluate/key2.txt', '23', overwrite=True)
     ]
     _MockClient.list.assert_called_with('path')
+    _MockClient.write.assert_has_calls(expected_calls_write, any_order=True)
+    assert _MockClient.write.call_count == 2

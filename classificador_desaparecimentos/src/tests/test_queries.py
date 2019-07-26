@@ -163,10 +163,10 @@ def test_get_predict_data_with_start_date(_MockCursor):
     _MockCursor.fetchall.return_value = MOCK_VALUES
 
     sd_string = (" AND A.ATSD_DT_REGISTRO >= "
-                       "TO_DATE('2018-01-01', 'YYYY-MM-DD')")
+                 "TO_DATE('2018-01-01', 'YYYY-MM-DD')")
     expected_query = PREDICT_QUERY.format(sd_string, '') + sd_string
 
-    saida = get_predict_data(_MockCursor, start_date='2018-01-01', 
+    saida = get_predict_data(_MockCursor, start_date='2018-01-01',
                              only_null_class=False)
     expected_output = pd.DataFrame(MOCK_VALUES,
                                    columns=MOCK_COLUMNS)
@@ -182,10 +182,10 @@ def test_get_predict_data_with_end_date(_MockCursor):
     _MockCursor.fetchall.return_value = MOCK_VALUES
 
     ed_string = (" AND A.ATSD_DT_REGISTRO <= "
-                       "TO_DATE('2018-01-01', 'YYYY-MM-DD')")
+                 "TO_DATE('2018-01-01', 'YYYY-MM-DD')")
     expected_query = PREDICT_QUERY.format('', ed_string) + ed_string
 
-    saida = get_predict_data(_MockCursor, end_date='2018-01-01', 
+    saida = get_predict_data(_MockCursor, end_date='2018-01-01',
                              only_null_class=False)
     expected_output = pd.DataFrame(MOCK_VALUES,
                                    columns=MOCK_COLUMNS)
