@@ -1,0 +1,12 @@
+<dataConfig>
+    <dataSource driver="org.apache.hive.jdbc.HiveDriver" url="jdbc:hive2://192.168.8.6:10000/dadossinapse"
+        user="mpmapas"
+        password="U2FsdGVkX19EG7Q8ccirWk/xtxvbOuTvWgjk2VMS8Cg=" 
+        encryptKeyFile="key.txt"/>
+    <document name="test_example">
+	 <entity name="teste_entity"
+        query="SELECT * from table">
+
+        </entity>
+    </document>
+</dataConfig>
