@@ -31,7 +31,7 @@ Na tag field crie seu campo de acordo com o tipo de dado da sua tabela:
 
 ## Para executar o projeto:
 
-###### ./create_solr_process.sh  <server> <base-path> <type-process> <name-entity>
+###### ./create_solr_process.sh   <server> <base-path> <type-process> <name-entity>
          
 base_path = /home/teste > onde se encontra a pasta conf 
          
