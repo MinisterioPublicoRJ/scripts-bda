@@ -22,7 +22,7 @@ Edite o arquivo schema.xml:
 
 Na tag field crie seu campo de acordo com o tipo de dado da sua tabela:
 
-**Obs: Voce pode criar quantos campos necessários, porém os campos _version_ e _root_ são obrigatorios
+**Obs: Voce pode criar quantos campos necessários, porém os campos _version_ e _root_ são obrigatorios**
 
          <fields>
                  <field name="_version_" type="long" indexed="true" stored="true" multiValued="false" />
