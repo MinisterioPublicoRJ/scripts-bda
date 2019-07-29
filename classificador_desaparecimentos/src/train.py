@@ -1,3 +1,4 @@
+import sys
 import pickle
 
 import jaydebeapi as jdbc
@@ -26,7 +27,8 @@ ORACLE_DRIVER_PATH = config('ORACLE_DRIVER_PATH')
 HDFS_URL = config('HDFS_URL')
 HDFS_USER = config('HDFS_USER')
 HDFS_MODEL_DIR = config('HDFS_MODEL_DIR')
-START_DATE = config('START_DATE', default=None)
+START_DATE = config('START_DATE', default='')
+END_DATE = config('END_DATE', default='')
 UFED_DK = config('UFED_DK', default=None)
 
 NEGATIVE_CLASS_VALUE = 13
@@ -34,26 +36,38 @@ ID_COLUMN = 'SNCA_DK'
 TEXT_COLUMN = 'SNCA_DS_FATO'
 LABEL_COLUMN = 'DMDE_MDEC_DK'
 
+# Vectorizer parameters
 NGRAM_RANGE = (1, 3)
 MAX_DF = 0.6
 MIN_DF = 1
 
+
 print('Running train script:')
 print('Querying database...')
 client = InsecureClient(HDFS_URL, user=HDFS_USER)
+
 conn = jdbc.connect("oracle.jdbc.driver.OracleDriver",
                     URL_ORACLE_SERVER,
                     [USER_ORACLE, PASSWD_ORACLE],
                     ORACLE_DRIVER_PATH)
 curs = conn.cursor()
 
-df = get_train_data(curs, UFED_DK=UFED_DK, start_date=START_DATE)
+df = get_train_data(curs, UFED_DK=UFED_DK,
+                    start_date=START_DATE, end_date=END_DATE)
+
+nb_documents = len(df)
+if nb_documents == 0:
+    print('No data to train model!')
+    sys.exit()
+else:
+    print('{} documents available to train model.\n'.format(nb_documents))
 
 train_keys = get_keys(df, ID_COLUMN)
 
 print('Preparing data...')
 df[TEXT_COLUMN] = df[TEXT_COLUMN].apply(clean_text)
 
+# Labels need to be grouped to be passed to the MultiLabelBinarizer
 df = df.groupby(TEXT_COLUMN)\
        .agg(lambda x: set(x))\
        .reset_index()
@@ -64,6 +78,8 @@ y = df[LABEL_COLUMN]
 y = mlb.fit_transform(y)
 
 NEGATIVE_COLUMN_INDEX = np.where(mlb.classes_ == NEGATIVE_CLASS_VALUE)[0][0]
+# If row has more than one class, and one of them is the null class,
+# remove null class
 y[:, NEGATIVE_COLUMN_INDEX] = y[:, NEGATIVE_COLUMN_INDEX]*~(
     (y.sum(axis=1) > 1) & (y[:, NEGATIVE_COLUMN_INDEX] == 1))
 

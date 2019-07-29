@@ -18,6 +18,7 @@ POSSIBLE_CLASSES_QUERY = """
     ORDER BY DMDE_MDEC_DK ASC
 """
 
+# A condition for dates might or might not be inserted in the {} slots
 PREDICT_QUERY = """
     SELECT DISTINCT B.SNCA_DK, B.SNCA_DS_FATO, D.DMDE_MDEC_DK
     FROM SILD.SILD_ATIVIDADE_SINDICANCIA A
@@ -25,12 +26,12 @@ PREDICT_QUERY = """
         ON A.ATSD_SNCA_DK = B.SNCA_DK
     INNER JOIN SILD.SILD_DESAPARE_MOT_DECLARADO D
         ON D.DMDE_SDES_DK = B.SNCA_DK
-    WHERE A.ATSD_TPSN_DK = 2 AND D.DMDE_MDEC_DK = 13
+    WHERE A.ATSD_TPSN_DK = 2
     AND NOT EXISTS (
         SELECT ATSD_SNCA_DK
         FROM SILD.SILD_ATIVIDADE_SINDICANCIA B
         WHERE B.ATSD_SNCA_DK = A.ATSD_SNCA_DK
-        AND (B.ATSD_TPSN_DK = 22 OR B.ATSD_TPSN_DK = 23))
+        AND (B.ATSD_TPSN_DK = 22 OR B.ATSD_TPSN_DK = 23){}{})
 """
 
 EVALUATE_QUERY = """
@@ -63,7 +64,7 @@ INSERT_MOT_DECLARADO_QUERY = """
 """
 
 
-def get_train_data(cursor, UFED_DK=None, start_date=None):
+def get_train_data(cursor, UFED_DK=None, start_date=None, end_date=None):
     """Get the data that will be used to train the model.
 
     Parameters:
@@ -82,11 +83,15 @@ def get_train_data(cursor, UFED_DK=None, start_date=None):
 
     query = TRAIN_QUERY
 
+    # Additional conditions to be added at the end of the query
     if UFED_DK:
         query += " AND B.SNCA_UFED_DK = {}".format(UFED_DK)
     if start_date:
         query += " AND A.ATSD_DT_REGISTRO >= TO_DATE('{}', 'YYYY-MM-DD')"\
             .format(start_date)
+    if end_date:
+        query += " AND A.ATSD_DT_REGISTRO <= TO_DATE('{}', 'YYYY-MM-DD')"\
+            .format(end_date)
 
     cursor.execute(query)
 
@@ -110,7 +115,8 @@ def get_list_of_classes(cursor):
     return [int(x[0]) for x in cursor.fetchall()]
 
 
-def get_predict_data(cursor, UFED_DK=None, start_date=None):
+def get_predict_data(cursor, UFED_DK=None, only_null_class=True,
+                     start_date='', end_date=''):
     """Get the data that will be used for the predictions.
 
     Parameters:
@@ -129,11 +135,20 @@ def get_predict_data(cursor, UFED_DK=None, start_date=None):
 
     query = PREDICT_QUERY
 
+    if only_null_class:
+        query += " AND D.DMDE_MDEC_DK = 13"
     if UFED_DK:
         query += " AND B.SNCA_UFED_DK = {}".format(UFED_DK)
+
+    # The date conditions will appear in two distinct places, which is why the
+    # query has both a format() and a concatenation of these conditions
     if start_date:
-        query += " AND A.ATSD_DT_REGISTRO >= TO_DATE('{}', 'YYYY-MM-DD')"\
+        start_date = " AND A.ATSD_DT_REGISTRO >= TO_DATE('{}', 'YYYY-MM-DD')"\
             .format(start_date)
+    if end_date:
+        end_date = " AND A.ATSD_DT_REGISTRO <= TO_DATE('{}', 'YYYY-MM-DD')"\
+            .format(end_date)
+    query = query.format(start_date, end_date) + start_date + end_date
 
     cursor.execute(query)
 

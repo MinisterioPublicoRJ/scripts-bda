@@ -15,7 +15,8 @@ from utils import (
     get_keys,
     get_percentage_of_change,
     get_number_of_modifications,
-    generate_report
+    generate_report,
+    save_metrics_to_hdfs
 )
 
 
@@ -63,7 +64,44 @@ def test_get_results_from_hdfs(_MockClient):
 
     expected_output = HDFS_RESULT_EXAMPLE
     output = get_results_from_hdfs(_MockClient, 'path', 7)
+
     assert_frame_equal(expected_output, output, check_like=True)
+
+    _MockClient.list.assert_called_with('path/7/results')
+    expected_calls_read = [
+        mock.call('path/7/results/1'),
+        mock.call('path/7/results/2')
+    ]
+    _MockClient.read.assert_has_calls(expected_calls_read, any_order=True)
+    assert _MockClient.read.call_count == 2
+
+
+@mock.patch('hdfs.InsecureClient')
+def test_get_results_from_hdfs_no_model_date(_MockClient):
+    _MockClient.list.side_effect = [
+        ['1', '2'],
+        ['3', '4']]
+    _MockClient.read.side_effect = [
+        io.BytesIO(b'SNCA_DK,MDEC_DK\n1,"(4.0,)"'),
+        io.BytesIO(b'SNCA_DK,MDEC_DK\n2,"(1.0, 2.0)"')]
+
+    expected_output = HDFS_RESULT_EXAMPLE
+    output = get_results_from_hdfs(_MockClient, 'path')
+
+    assert_frame_equal(expected_output, output, check_like=True)
+
+    expected_calls_list = [
+        mock.call('path'),
+        mock.call('path/2/results')
+    ]
+    expected_calls_read = [
+        mock.call('path/2/results/3'),
+        mock.call('path/2/results/4')
+    ]
+    _MockClient.list.assert_has_calls(expected_calls_list, any_order=True)
+    _MockClient.read.assert_has_calls(expected_calls_read, any_order=True)
+    assert _MockClient.list.call_count == 2
+    assert _MockClient.read.call_count == 2
 
 
 def test_expand_results():
@@ -103,6 +141,15 @@ def test_get_percentage_of_change():
     assert expected_output == output
 
 
+def test_get_percentage_of_change_no_docs():
+    expected_output = 0.0
+    output = get_percentage_of_change(
+        EXPANDED_RESULT_EXAMPLE,
+        pd.DataFrame([], columns=['SNCA_DK', 'MDEC_DK'])
+    )
+    assert expected_output == output
+
+
 def test_get_number_of_modifications():
     expected_output_rem = 1
     expected_output_add = 0
@@ -115,7 +162,16 @@ def test_get_number_of_modifications():
     assert expected_output_swap == output_swap
 
 
-# TODO: Think of a way to test metric saving function
 @mock.patch('hdfs.InsecureClient')
 def test_save_metrics_to_hdfs(_MockClient):
-    pass
+    _MockClient.list.return_value = ['1', '2']
+
+    save_metrics_to_hdfs(_MockClient, 'path', key1='value1', key2=23)
+
+    expected_calls_write = [
+        mock.call('path/2/evaluate/key1.txt', 'value1', overwrite=True),
+        mock.call('path/2/evaluate/key2.txt', '23', overwrite=True)
+    ]
+    _MockClient.list.assert_called_with('path')
+    _MockClient.write.assert_has_calls(expected_calls_write, any_order=True)
+    assert _MockClient.write.call_count == 2

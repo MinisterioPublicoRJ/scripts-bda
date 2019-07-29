@@ -1,5 +1,6 @@
 import ast
 import sys
+import pickle
 
 import jaydebeapi as jdbc
 from decouple import config
@@ -10,7 +11,6 @@ from queries import (
 )
 from utils import (
     get_results_from_hdfs,
-    get_binarizer,
     expand_results,
     get_keys,
     get_percentage_of_change,
@@ -44,22 +44,31 @@ curs = conn.cursor()
 
 print('Retrieving prediction results from HDFS...')
 data_hdfs = get_results_from_hdfs(client, FORMATTED_HDFS_PATH)
+# Results are stored as a tuple represented as a string
 data_hdfs['MDEC_DK'] = data_hdfs['MDEC_DK'].apply(
     lambda x: ast.literal_eval(x))
 
 keys = get_keys(data_hdfs, 'SNCA_DK')
 
 print('Retrieving data from Oracle...')
+# Only needs the keys that are in the predictions
 data_oracle = get_evaluate_data(curs, keys)
 if len(data_oracle) == 0:
     sys.exit('No validated documents available!')
 
 print('Generating classification report...')
-mlb = get_binarizer(client, FORMATTED_HDFS_PATH)
+most_recent_date = sorted(client.list(FORMATTED_HDFS_PATH))[-1]
+with client.read('{}/{}/model/mlb_binarizer.pkl'.format(
+        FORMATTED_HDFS_PATH, most_recent_date)) as mlb_reader:
+    mlb = pickle.loads(mlb_reader.read())
+
 report = generate_report(data_hdfs, data_oracle, mlb)
 
 print('Preparing HDFS data for next metrics...')
 data_hdfs = expand_results(data_hdfs)
+
+# To evaluate the predictions, only those keys that were effectively validated
+# should be taken into consideration
 data_hdfs = data_hdfs[data_hdfs['SNCA_DK'].isin(
     data_oracle['SNCA_DK'].unique().tolist())]
 
