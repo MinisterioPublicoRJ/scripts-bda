@@ -32,6 +32,7 @@ HDFS_URL = config('HDFS_URL')
 HDFS_USER = config('HDFS_USER')
 HDFS_MODEL_DIR = config('HDFS_MODEL_DIR')
 UPDATE_TABLES = config('UPDATE_TABLES', cast=bool)
+ONLY_NULL = config('ONLY_NULL', cast=bool)
 START_DATE = config('START_DATE', default='')
 END_DATE = config('END_DATE', default='')
 UFED_DK = config('UFED_DK', default=None)
@@ -82,7 +83,7 @@ conn = jdbc.connect("oracle.jdbc.driver.OracleDriver",
 curs = conn.cursor()
 
 print('Querying database...')
-df = get_predict_data(curs, UFED_DK=UFED_DK,
+df = get_predict_data(curs, UFED_DK=UFED_DK, only_null_class=ONLY_NULL,
                       start_date=START_DATE, end_date=END_DATE)
 
 print('Preparing data...')
