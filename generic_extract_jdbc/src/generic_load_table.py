@@ -3,6 +3,7 @@ from decouple import config
 from impala.dbapi import connect as impala_connect
 import ast
 import params_table
+import params_table_postgre
 
 url_oracle_server = config('ORACLE_SERVER')
 user_oracle = config("ORACLE_USER")
@@ -48,6 +49,7 @@ def load_all_data(table):
         query_table = table['table_oracle']
 
     print('Geting min and max from table %s oracle' % table['table_oracle'])
+    
     total_min_max_table = spark.read.format("jdbc") \
         .option("url", url_oracle_server) \
         .option("dbtable", query_primarykeys) \
@@ -66,7 +68,6 @@ def load_all_data(table):
         print('Getting all data from table %s oracle' % table['table_oracle'])
         oracle_table = spark.read.format("jdbc") \
             .option("url", url_oracle_server) \
-            .option("driver", config_params['driver']) \
             .option("lowerBound", minimum) \
             .option("upperBound", maximum) \
             .option("numPartitions", 50) \
@@ -74,6 +75,7 @@ def load_all_data(table):
             .option("dbtable", query_table) \
             .option("user", user_oracle) \
             .option("password", passwd_oracle) \
+            .option("driver", config_params['driver']) \
             .load()
 
         table_hive = "%s.%s" % (config_params['schema_hdfs'],
@@ -246,6 +248,7 @@ def _update_impala_table(table):
 
 load_all = ast.literal_eval(load_all)
 config_params = params_table.params
+#config_params = params_table_postgre.params
 
 for table in config_params['tables']:
     if load_all:
