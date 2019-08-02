@@ -3,7 +3,7 @@
         user="mpmapas"
         password="U2FsdGVkX19EG7Q8ccirWk/xtxvbOuTvWgjk2VMS8Cg=" 
         encryptKeyFile="key.txt"/>
-    <document name="test_example">
+    <document >
 	 <entity name="teste_entity"
         query="SELECT * from table">
 
