@@ -1452,6 +1452,42 @@ params = {
             "pk_table_oracle": "ZELE_DK",
             "update_date_table_oracle": "",
             "table_hive": "orgi_zona_eleitoral"
+        },
+        {
+            "table_oracle": "ORGI.ORGI_VW_ORGAO_LOCAL_ATUAL",
+            "pk_table_oracle": "orlw_dk",
+            "update_date_table_oracle": "",
+            "table_hive": "orgi_vw_orgao_local_atual"
+        },
+        {
+            "table_oracle": "MMPS.MMPS_VW_RH_FOTO_FUNC",
+            "pk_table_oracle": "VTFU_CDMATRICULA",
+            "update_date_table_oracle": "",
+            "table_hive": "mmps_vw_rh_foto_func"
+        },
+        {
+            "table_oracle": "MMPS.MMPS_ADM_RH_MOV_PROM",
+            "pk_table_oracle": "MMPM_MATRICULA",
+            "update_date_table_oracle": "",
+            "table_hive": "mmps_adm_rh_mov_prom"
+        },
+        {
+            "table_oracle": "MMPS.MMPS_ADM_RH_MOV_ELEIT",
+            "pk_table_oracle": "MMPE_ORDEM",
+            "update_date_table_oracle": "",
+            "table_hive": "mmps_adm_rh_mov_eleit"
+        },
+        {
+            "table_oracle": "MMPS.MMPS_ADM_RH_MOV_SERV",
+            "pk_table_oracle": "MMSV_MATRICULA",
+            "update_date_table_oracle": "",
+            "table_hive": "mmps_adm_rh_mov_serv"
+        },
+        {
+            "table_oracle": "MMPS.MMPS_ADM_RH_MOV_PROC",
+            "pk_table_oracle": "MMPC_MATRICULA",
+            "update_date_table_oracle": "",
+            "table_hive": "mmps_adm_rh_mov_proc"
         }
     ]
 }
