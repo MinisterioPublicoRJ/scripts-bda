@@ -1206,6 +1206,12 @@ params = {
             "update_date_table_oracle": "",
             "table_hive": "rh_hist_func"
         },
+        # {
+        #     "table_oracle": "RH.RH_VW_RELAT_CUSTOS_MP_MAPAS",
+        #     "pk_table_oracle": "CDMATRICULA",
+        #     "update_date_table_oracle": "",
+        #     "table_hive": "rh_vw_relat_custos_mp_mapas"
+        # },
         # Schema ORGI
         {
             "table_oracle": "ORGI.ORGI_AREA_ATUACAO",
@@ -1497,7 +1503,7 @@ params = {
     Theses tables will be load with all
     columns and doesn't need parameter fields
     SELECT 	'{
-        "table_oracle": ' AS label_table_oracle,
+        "table_oracle": ' AS label_table_oracle,RH
         '"' || cons.owner || '.' || cols.table_name || '",'
         as table_oracle,
         '"pk_table_oracle": ' AS label_pk_table_oracle,
