@@ -4,6 +4,9 @@ from impala.dbapi import connect as impala_connect
 import ast
 import params_table
 import params_table_postgre
+import pyspark.sql.functions as f
+from pyspark.sql.functions import base64
+import functools
 
 url_oracle_server = config('ORACLE_SERVER')
 user_oracle = config("ORACLE_USER")
@@ -82,7 +85,14 @@ def load_all_data(table):
                                 table['table_hive'])
 
         print('Inserting data into final table %s' % table_hive)
-        oracle_table.coalesce(20) \
+
+        final_df = functools.reduce(lambda df, (col_name, dtype): df
+            .withColumn(col_name, base64(f.col(col_name)))
+            .withColumnRenamed(col_name, 'BASE64_' + col_name)
+            if dtype == 'binary' else df.withColumn(col_name, f.col(col_name)),
+            oracle_table.dtypes, oracle_table)
+
+        final_df.coalesce(20) \
             .write \
             .mode('overwrite') \
             .saveAsTable(table_hive)
