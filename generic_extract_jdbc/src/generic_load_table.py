@@ -6,7 +6,6 @@ import params_table
 import params_table_postgre
 import pyspark.sql.functions as f
 from pyspark.sql.functions import base64
-import functools
 
 url_oracle_server = config('ORACLE_SERVER')
 user_oracle = config("ORACLE_USER")
@@ -20,16 +19,16 @@ def load_all_data(table):
 
     Parameters
     ----------
-       table: dict
-            "table_oracle" : oracle table name
-            "pk_table_oracle" : primary key oracle table
-            "update_date_table_oracle" : update date oracle table
-            "table_hive" : 	hive table name
-            "fields"
-            (
-                to use for table that
-                has blob or clob columns
-            ): table field names
+    table: dict
+        "table_oracle" : oracle table name
+        "pk_table_oracle" : primary key oracle table
+        "update_date_table_oracle" : update date oracle table
+        "table_hive" : 	hive table name
+        "fields"
+        (
+            to use for table that
+            has blob or clob columns
+        ): table field names
     """
 
     print("Start process load all")
@@ -86,11 +85,7 @@ def load_all_data(table):
 
         print('Inserting data into final table %s' % table_hive)
 
-        final_df = functools.reduce(lambda df, (col_name, dtype): df
-            .withColumn(col_name, base64(f.col(col_name)))
-            .withColumnRenamed(col_name, 'BASE64_' + col_name)
-            if dtype == 'binary' else df.withColumn(col_name, f.col(col_name)),
-            oracle_table.dtypes, oracle_table)
+        final_df = transform_col_binary(oracle_table)
 
         final_df.coalesce(20) \
             .write \
@@ -109,16 +104,16 @@ def load_part_data(table):
 
     Parameters
     ----------
-       table: dict
-            "table_oracle" : oracle table name
-            "pk_table_oracle" : primary key oracle table
-            "update_date_table_oracle" : update date oracle table
-            "table_hive" : hive table name
-            "fields"
-            (
-                to use for table that
-                has blob or clob columns
-            ): table field names
+    table: dict
+        "table_oracle" : oracle table name
+        "pk_table_oracle" : primary key oracle table
+        "update_date_table_oracle" : update date oracle table
+        "table_hive" : hive table name
+        "fields"
+        (
+            to use for table that
+            has blob or clob columns
+        ): table field names
 
     """
     print("Start process load part data")
@@ -225,7 +220,9 @@ def load_part_data(table):
                 print('Writing data in hdfs like table %s ' % table_hive)
                 #total_df.write.mode("overwrite").saveAsTable("temp_table")
                 #temp_table = spark.table("temp_table")
-                table_delta_df.coalesce(20) \
+
+                final_df = transform_col_binary(table_delta_df)
+                final_df.coalesce(20) \
                     .write.mode('append') \
                     .saveAsTable(table_hive)
 
@@ -243,8 +240,8 @@ def _update_impala_table(table):
 
     Parameters
     ----------
-       table: string
-            table name from hive
+    table: string
+        table name from hive
 
     """
     with impala_connect(
@@ -254,6 +251,27 @@ def _update_impala_table(table):
         impala_cursor = conn.cursor()
         impala_cursor.execute("""
             INVALIDATE METADATA {table} """.format(table=table))
+
+def transform_col_binary(data_frame):
+    """
+    Method for transform column binary to base64
+
+    Parameters
+    ----------
+    data_frame: DataFrame
+        dataframe to be transformed
+        
+    Returns
+    -------
+    dataframe
+        A transformed dataframe with new column base64
+
+    """
+    return reduce(lambda df, (col_name, dtype): df
+            .withColumn(col_name, base64(f.col(col_name)))
+            .withColumnRenamed(col_name, 'BASE64_' + col_name)
+            if dtype == 'binary' else df.withColumn(col_name, f.col(col_name)),
+            data_frame.dtypes, data_frame)
 
 
 load_all = ast.literal_eval(load_all)
