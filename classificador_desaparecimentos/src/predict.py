@@ -36,6 +36,8 @@ ONLY_NULL = config('ONLY_NULL', cast=bool)
 START_DATE = config('START_DATE', default='')
 END_DATE = config('END_DATE', default='')
 UFED_DK = config('UFED_DK', default=None)
+MAX_CLASSES = config('MAX_CLASSES', default=3, cast=int)
+THRESHOLD = config('THRESHOLD', default=0.5, cast=float)
 
 ID_COLUMN = 'SNCA_DK'
 TEXT_COLUMN = 'SNCA_DS_FATO'
@@ -121,7 +123,7 @@ y_regex = reg_clf.predict(X)
 y_regex = mlb.transform(y_regex)
 
 X = vectorizer.transform(X)
-y_logreg = clf.predict(X)
+y_logreg = clf.predict(X, threshold=THRESHOLD, max_classes=MAX_CLASSES)
 
 y = np.where(
     (y_regex.sum(axis=1) > 0).reshape(-1, 1),
