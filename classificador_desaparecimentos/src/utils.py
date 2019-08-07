@@ -61,7 +61,7 @@ class OneVsRestLogisticRegression:
                 X,
                 y)
 
-    def predict(self, X):
+    def predict(self, X, threshold=0.7, max_classes=3):
         """Predicts the labels for a given dataset.
 
         If negative_column_index_ is not None, then the corresponding column
@@ -74,7 +74,15 @@ class OneVsRestLogisticRegression:
         Returns:
             p: Numpy array with the predictions.
         """
-        p = self.model_.predict(X)
+        prob = self.model_.predict_proba(X)
+        consider = np.argsort(prob)[:,:-(max_classes+1):-1]
+        mult = np.zeros(prob.shape)
+        for a, b in zip(mult, consider):
+            a[b] = 1
+        prob = mult*prob
+        
+        p = (prob >= threshold).astype(int)
+
         if self.negative_column_index_:
             p = np.insert(
                 p,
@@ -265,7 +273,7 @@ def get_number_of_modifications(data_hdfs, data_oracle):
     return n_remove, n_add, n_swaps
 
 
-def save_metrics_to_hdfs(client, path, **kwargs):
+def save_metrics_to_hdfs(client, path, model_name=None, **kwargs):
     """Save a set of metrics to HDFS on a given path.
 
     Parameters:
@@ -274,12 +282,13 @@ def save_metrics_to_hdfs(client, path, **kwargs):
         kwargs: The keys and values corresponding to the metrics to save. The
             keys are the metric names and the values are their values.
     """
-    most_recent_model_date = sorted(client.list(path))[-1]
+    if not model_name:
+        model_name = sorted(client.list(path))[-1]
     for key, value in kwargs.items():
         client.write(
             '{}/{}/evaluate/{}.txt'.format(
                 path,
-                most_recent_model_date,
+                model_name,
                 key),
             str(value),
             overwrite=True)
