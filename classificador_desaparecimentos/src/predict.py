@@ -44,11 +44,14 @@ TEXT_COLUMN = 'SNCA_DS_FATO'
 LABEL_COLUMN = 'MDEC_DK'
 
 RULES = {
-    2:  ['USUARI[OA] DE (DROGA|ENTORPECENTE)S?',
+    2:  [('(?<!NAO E )(?<!NEM E )(?<!TAMPOUCO E )'
+          'USUARI[OA] DE (DROGA|ENTORPECENTE)S?'),
          'ALCOOLATRA',
          'COCAINA',
-         'VICIAD[OA]',
-         'DEPENDENTE QUIMICO',
+         ('(?<!NAO E )(?<!NEM E )(?<!TAMPOUCO E )'
+          'VICIAD[OA]'),
+         ('(?<!NAO E )(?<!NEM E )(?<!TAMPOUCO E )'
+          'DEPENDENTE QUIMICO'),
          'MACONHA',
          'ALCOOL',
          'CRACK'],
@@ -56,7 +59,9 @@ RULES = {
          'ESQUI[ZS]OFRENIA',
          'ESQUI[ZS]OFRENIC[OA]',
          'ALZHEIMER',
-         '(DOENCA|TRANSTORNO|PROBLEMA|DISTURBIO)S? MENTA(L|IS)'],
+         ('(?<!NAO POSSUI )(?<!NEM POSSUI )(?<!TAMPOUCO POSSUI )'
+         '(?<!NAO TEM )(?<!NEM TEM )(?<!TAMPOUCO TEM )'
+         '(DOENCA|TRANSTORNO|PROBLEMA|DISTURBIO)S? MENTA(L|IS)')],
     4:  [' TRAFICO',
          'TRAFICANTES'],
     20: ['ABORDAD[OA] (POR POLICIAIS|PELA POLICIA)'],
@@ -69,7 +74,10 @@ RULES = {
     6:  [' RAPTOU ',
          ' RAPTAD[OA] ',
          'SEQUESTROU?',
-         'SEQUESTRAD[OA]']
+         'SEQUESTRAD[OA]'],
+    13: ['^[\w]*\s?SAIU DE CASA E NAO RETORNOU\.?$',
+         '^#N/D$',
+         '^(INICIALMENTE )?SEM MOTIVO APARENTE\.?$']
 }
 
 
