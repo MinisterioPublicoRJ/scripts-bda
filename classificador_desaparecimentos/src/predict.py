@@ -59,6 +59,7 @@ RULES = {
          'ESQUI[ZS]OFRENIA',
          'ESQUI[ZS]OFRENIC[OA]',
          'ALZHEIMER',
+         'PROBLEMAS? DE ESQUECIMENTO',
          ('(?<!NAO POSSUI )(?<!NEM POSSUI )(?<!TAMPOUCO POSSUI )'
          '(?<!NAO TEM )(?<!NEM TEM )(?<!TAMPOUCO TEM )'
          '(DOENCA|TRANSTORNO|PROBLEMA|DISTURBIO)S? MENTA(L|IS)')],
