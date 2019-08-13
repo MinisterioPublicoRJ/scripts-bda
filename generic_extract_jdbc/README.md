@@ -1,5 +1,5 @@
 #  Generic extract tables from Any Database
-Script repository to extract Oracle database tables and import them as HIVE tables.
+Script repository to extract Any database tables and import them as HIVE tables.
 
 ## Install Requirements
 To install the requirements, run the following commands:
