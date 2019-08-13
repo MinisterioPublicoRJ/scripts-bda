@@ -10,6 +10,7 @@ from pyspark.sql.functions import base64
 url_jdbc_server = config('JDBC_SERVER')
 user_jdbc = config("JDBC_USER")
 passwd_jdbc = config("JDBC_PASSWORD")
+type_jdbc = config("TYPE_JDBC")
 load_all = config("LOAD_ALL")
 
 
@@ -127,8 +128,6 @@ def load_part_data(table):
 
         table_hive = "%s.%s" % (config_params['schema_hdfs'],
                                 table['table_hive'])
-        #spark.read.table(table_hive).createOrReplaceTempView("table_all")
-        #spark.catalog.cacheTable("table_all")
 
         # Get count and max from hive table.
         # Count for check if table has data and max
@@ -198,14 +197,6 @@ def load_part_data(table):
                 # Join the actual data hive table
                 # with the updated data to replace old data with new data
 
-                #update_df = spark.sql("""
-                #select table_all.*
-                #from table_all
-                #join table_delta
-                #on table_all.{key} = table_delta.{key} """.format(
-                #    key=table['pk_table_jdbc']))
-
-                #table_all_df = spark.sql("from table_all")
                 table_delta_df = spark.sql("from table_delta")
 
                 print("""
@@ -213,13 +204,7 @@ def load_part_data(table):
                 hive with new data from table jdbc
                 """)
 
-                #total_df = table_all_df \
-                #    .subtract(update_df) \
-                #    .union(table_delta_df)
-
                 print('Writing data in hdfs like table %s ' % table_hive)
-                #total_df.write.mode("overwrite").saveAsTable("temp_table")
-                #temp_table = spark.table("temp_table")
 
                 final_df = transform_col_binary(table_delta_df)
                 final_df.coalesce(20) \
@@ -228,8 +213,6 @@ def load_part_data(table):
 
                 print('Update impala table %s' % table_hive)
                 _update_impala_table(table_hive)
-
-                #spark.sql("drop table temp_table")
 
             spark.catalog.clearCache()
 
@@ -275,8 +258,13 @@ def transform_col_binary(data_frame):
 
 
 load_all = ast.literal_eval(load_all)
-config_params = params_table.params
-#config_params = params_table_postgre.params
+
+if type_jdbc.upper() == 'ORACLE':
+    print('Starting jdbc module ORACLE')
+    config_params = params_table.params
+else:
+    print('Starting jdbc module POSTGRE')
+    config_params = params_table_postgre.params
 
 for table in config_params['tables']:
     if load_all:
