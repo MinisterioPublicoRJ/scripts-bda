@@ -50,7 +50,8 @@ function move_files()
 
     data_atual=$(date +%Y%m%d%s)
     echo "Arquivando os arquivos originais"
-    hadoop archive -archiveName archive.har -p $temp_path $path_dir/archive-$data_atual
+    backup_dir = "/user/mpmapas/backup_staging/"
+    hadoop archive -archiveName archive.har -p $temp_path $backup_dir/archive-$folder_name-$data_atual
 }
 
 input_file=$1
@@ -82,6 +83,8 @@ do
     path_dir=${dir%/*}
     # Get only extension file
     file_extension=$(basename "$dir" )
+    # Get folder name to put in archive file
+    folder_name=$(basename "$path_dir" )
 
 
     hdfs dfs -test -d $path_dir
