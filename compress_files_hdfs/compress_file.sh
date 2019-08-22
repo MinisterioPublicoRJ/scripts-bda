@@ -20,6 +20,8 @@ function process()
         -Dmapreduce.output.fileoutputformat.compress.codec=org.apache.hadoop.io.compress.GzipCodec \
         -Dmapreduce.job.reduces=1 \
         -Dmapreduce.input.fileinputformat.split.minsize=2000000000 \
+        -D stream.map.output.field.separator=, \
+        -D mapreduce.output.textoutputformat.separator=, \
         -mapper "grep -v $header_line" \
         -reducer /bin/cat \
         -input $input_path \
@@ -50,7 +52,7 @@ function move_files()
 
     data_atual=$(date +%Y%m%d%s)
     echo "Arquivando os arquivos originais"
-    backup_dir = "/user/mpmapas/backup_staging/"
+    backup_dir="/user/mpmapas/backup_staging/"
     hadoop archive -archiveName archive.har -p $temp_path $backup_dir/archive-$folder_name-$data_atual
 }
 
