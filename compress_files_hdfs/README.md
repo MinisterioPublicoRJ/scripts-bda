@@ -13,3 +13,11 @@ The directories_hdfs file contains all the hdfs directories that want to be comp
     /user/staging/test1/{*.gz} or *.gz or *.csv
     /user/staging/test2/{*.gz}
     /user/staging/test3/{*.gz}
+
+## Archive
+The files also are archived in BACKUP_STAGING directory HDFS in case of error it can be recovered. For unarchived use this command:
+
+    hadoop distcp <src> <dst>
+    
+    Example:
+    hadoop distcp  har:///user/example/test.har/*.gz hdfs:///user/example/unarchive_test
