@@ -53,7 +53,7 @@ function move_files()
     data_atual=$(date +%Y%m%d%s)
     echo "Arquivando os arquivos originais"
     backup_dir="/user/mpmapas/backup_staging/"
-    hadoop archive -archiveName archive.har -p $temp_path $backup_dir/archive_$folder_name_$data_atual
+    hadoop archive -archiveName archive.har -p $temp_path $backup_dir/archive_"$folder_name"_"$data_atual"
 }
 
 input_file=$1
