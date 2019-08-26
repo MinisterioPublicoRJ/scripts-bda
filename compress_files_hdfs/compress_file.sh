@@ -48,12 +48,12 @@ function move_files()
 {
     echo "Movendo dados para a pasta temporaria"
     type_files=$1
-    hdfs dfs -mv $path_dir/$type_files $temp_path
+    hdfs dfs -mv $dir_path/$type_files $temp_path
 
     data_atual=$(date +%Y%m%d%s)
     echo "Arquivando os arquivos originais"
     backup_dir="/user/mpmapas/backup_staging/"
-    hadoop archive -archiveName archive.har -p $temp_path $backup_dir/archive-$folder_name-$data_atual
+    hadoop archive -archiveName archive.har -p $temp_path $backup_dir/archive_$folder_name_$data_atual
 }
 
 input_file=$1
@@ -77,55 +77,62 @@ fi
 readarray list_dir < $input_file
 
 
-for dir in "${list_dir[@]}"
+for files_path in "${list_dir[@]}"
 do	
-    dir=$(echo $dir | xargs)
+    files_path=$(echo $files_path | xargs)
 
     # Get only path without file name or extension
-    path_dir=${dir%/*}
+    dir_path=${files_path%/*}
     # Get only extension file
-    file_extension=$(basename "$dir" )
+    file_extension=$(basename "$files_path" )
     # Get folder name to put in archive file
-    folder_name=$(basename "$path_dir" )
+    folder_name=$(basename "$dir_path" )
 
+    #Test if hdfs directory exist
+    hdfs dfs -test -d $dir_path
+    if [[ $? == 0 ]]; then
 
-    hdfs dfs -test -d $path_dir
-    if [[ $? == 0  ]]; then
+        #Test if exist files in this directory
+        hdfs dfs -test -e $files_path
+        if [[ $? == 0 ]]; then
 
-        echo "Criando repositorio temporario"
-        temp_path="$path_dir"/temp
-        hdfs dfs -mkdir $temp_path
+            echo "Criando repositorio temporario"
+            temp_path="$dir_path"/temp
+            hdfs dfs -mkdir $temp_path
 
-        get_header "$path_dir"
+            get_header "$dir_path"
 
-        echo "Criando repositorio final"
-        compressed_path="$path_dir"/compressed
-        hdfs dfs -mkdir $compressed_path
+            echo "Criando repositorio final"
+            compressed_path="$dir_path"/compressed
+            hdfs dfs -mkdir $compressed_path
 
-        if [[ $file_extension == '{*.gz}' || $file_extension == '*.gz' ]]; then
+            if [[ $file_extension == '{*.gz}' || $file_extension == '*.gz' ]]; then
 
-            move_files "$file_extension"
+                move_files "$file_extension"
 
-            echo "Extraindo os arquivos gz e convertendo em um arquivo csv"
-            # Extract files and the result is output. Put the result in one file in hdfs
-            hdfs dfs -text $temp_path/*.gz | hdfs dfs -put - $temp_path/output_file.csv
-            
-            input_path=$temp_path/*.csv
-            output_path=$temp_path/output
+                echo "Extraindo os arquivos gz e convertendo em um arquivo csv"
+                # Extract files and the result is output. Put the result in one file in hdfs
+                hdfs dfs -text $temp_path/*.gz | hdfs dfs -put - $temp_path/output_file.csv
+                
+                input_path=$temp_path/*.csv
+                output_path=$temp_path/output
 
+            else
+                
+                move_files "$file_extension"
+                input_path=$temp_path
+                output_path=$temp_path/output
+
+            fi
+
+            process
+            echo "Removendo os arquivos temporarios"
+            hdfs dfs -rm -r -skipTrash $temp_path
         else
-            
-            move_files "$file_extension"
-            input_path=$temp_path
-            output_path=$temp_path/output
-
+            echo "There is no files in ""$dir_path"" ." >> error.log
         fi
-
-        process
-        echo "Removendo os arquivos temporarios"
-        hdfs dfs -rm -r -skipTrash $temp_path
     else
-		echo "The directory ""$path_dir"" not exist in HDFS." >> error.log
+		echo "The directory ""$dir_path"" not exist in HDFS." >> error.log
     fi
 
 done
