@@ -39,8 +39,9 @@ function process()
 function get_header()
 {
     echo "Recuperando o header dos arquivos"
-    file="$(hdfs dfs -ls $1 | head -2 | tr -s ' ' | cut -d' ' -f8)"
-    header_line="$(hdfs dfs -text $file | head -n 1)"
+    file="$(hdfs dfs -stat '%n' $1/*.* | head -1)"
+    #file="$(hdfs dfs -ls $1 | head -2 | tr -s ' ' | cut -d' ' -f8)"
+    header_line="$(hdfs dfs -text $1/$file | head -n 1)"
     header_line=${header_line%$'\r'}
 }
 
@@ -88,6 +89,7 @@ do
     # Get folder name to put in archive file
     folder_name=$(basename "$dir_path" )
 
+
     #Test if hdfs directory exist
     hdfs dfs -test -d $dir_path
     if [[ $? == 0 ]]; then
@@ -129,10 +131,10 @@ do
             echo "Removendo os arquivos temporarios"
             hdfs dfs -rm -r -skipTrash $temp_path
         else
-            echo "There is no files in ""$dir_path"" ." >> error.log
+            echo "There is no files in ""$dir_path"" ."
         fi
     else
-		echo "The directory ""$dir_path"" not exist in HDFS." >> error.log
+		echo "The directory ""$dir_path"" not exist in HDFS."
     fi
 
 done
