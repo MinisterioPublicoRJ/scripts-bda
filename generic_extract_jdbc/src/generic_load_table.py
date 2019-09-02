@@ -13,6 +13,10 @@ passwd_jdbc = config("JDBC_PASSWORD")
 type_jdbc = config("TYPE_JDBC")
 load_all = config("LOAD_ALL")
 
+dic_params = {
+                "ORACLE": params_table.params, 
+                "POSTGRE" : params_table_postgre.params
+            }
 
 def load_all_data(table):
     """
@@ -259,12 +263,7 @@ def transform_col_binary(data_frame):
 
 load_all = ast.literal_eval(load_all)
 
-if type_jdbc.upper() == 'ORACLE':
-    print('Starting jdbc module ORACLE')
-    config_params = params_table.params
-else:
-    print('Starting jdbc module POSTGRE')
-    config_params = params_table_postgre.params
+config_params = dic_params[type_jdbc.upper()]
 
 for table in config_params['tables']:
     if load_all:
