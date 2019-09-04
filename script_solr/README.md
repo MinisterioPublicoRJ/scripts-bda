@@ -37,3 +37,6 @@ Na tag field crie seu campo de acordo com o tipo de dado da sua tabela:
 base_path = /home/teste > onde se encontra a pasta conf 
          
 Ex: ./create_solr_process.sh datanode07.mp.gov.br base_path 1 pessoa_juridica
+
+
+**LINK para detalhes do DataImportHandler utilizado no data-config.xml  https://cwiki.apache.org/confluence/display/solr/DataImportHandler**
