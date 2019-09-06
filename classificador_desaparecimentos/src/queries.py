@@ -3,13 +3,26 @@ import pandas as pd
 
 
 TRAIN_QUERY = """
-    SELECT DISTINCT B.SNCA_DK, B.SNCA_DS_FATO, D.DMDE_MDEC_DK
+    SELECT DISTINCT B.SNCA_DK, B.SNCA_DS_FATO, D.DMDE_MDEC_DK, A.ATSD_DT_REGISTRO
     FROM SILD.SILD_ATIVIDADE_SINDICANCIA A
     INNER JOIN SILD.SILD_SINDICANCIA B
         ON A.ATSD_SNCA_DK = B.SNCA_DK
     INNER JOIN SILD.SILD_DESAPARE_MOT_DECLARADO D
         ON D.DMDE_SDES_DK = B.SNCA_DK
     WHERE A.ATSD_TPSN_DK = 22
+    AND B.SNCA_DS_FATO IS NOT NULL
+    AND B.SNCA_DK NOT IN (
+        SELECT DISTINCT B.SNCA_DK
+        FROM SILD.SILD_ATIVIDADE_SINDICANCIA A
+        INNER JOIN SILD.SILD_SINDICANCIA B ON A.ATSD_SNCA_DK = B.SNCA_DK 
+        INNER JOIN (
+            SELECT ATSD_SNCA_DK, MAX(ATSD_DT_REGISTRO) AS DT_ULTIMA_REALIZAR
+            FROM SILD.SILD_ATIVIDADE_SINDICANCIA
+            WHERE ATSD_TPSN_DK = 22
+            GROUP BY ATSD_SNCA_DK
+        ) C ON C.ATSD_SNCA_DK = A.ATSD_SNCA_DK AND A.ATSD_DT_REGISTRO > C.DT_ULTIMA_REALIZAR
+        WHERE A.ATSD_CPF_RESP_CTRL = '07037032778'
+        AND A.ATSD_TPSN_DK = 5)
 """
 
 POSSIBLE_CLASSES_QUERY = """
@@ -31,7 +44,34 @@ PREDICT_QUERY = """
         SELECT ATSD_SNCA_DK
         FROM SILD.SILD_ATIVIDADE_SINDICANCIA B
         WHERE B.ATSD_SNCA_DK = A.ATSD_SNCA_DK
-        AND (B.ATSD_TPSN_DK = 22 OR B.ATSD_TPSN_DK = 23){}{})
+        AND (B.ATSD_TPSN_DK = 22 OR B.ATSD_TPSN_DK = 23))
+"""
+
+PREDICT_QUERY_2 = """
+    SELECT DISTINCT B.SNCA_DK, B.SNCA_DS_FATO, D.DMDE_MDEC_DK
+    FROM SILD.SILD_ATIVIDADE_SINDICANCIA A
+    INNER JOIN SILD.SILD_SINDICANCIA B ON A.ATSD_SNCA_DK = B.SNCA_DK
+    INNER JOIN SILD.SILD_DESAPARE_MOT_DECLARADO D ON D.DMDE_SDES_DK = B.SNCA_DK
+    WHERE A.ATSD_CPF_RESP_CTRL = '07037032778'
+    AND A.ATSD_TPSN_DK = 5 
+    AND B.SNCA_DS_FATO IS NOT NULL
+    AND A.ATSD_SNCA_DK NOT IN (
+        SELECT ATSD_SNCA_DK
+        FROM SILD.SILD_ATIVIDADE_SINDICANCIA
+        WHERE ATSD_TPSN_DK = 23
+    )
+    AND A.ATSD_SNCA_DK NOT IN (
+        SELECT DISTINCT A.ATSD_SNCA_DK
+        FROM SILD.SILD_ATIVIDADE_SINDICANCIA A
+        INNER JOIN (
+            SELECT ATSD_SNCA_DK, MAX(ATSD_DT_REGISTRO) AS DT_ULTIMA_REALIZAR
+            FROM SILD.SILD_ATIVIDADE_SINDICANCIA
+            WHERE ATSD_TPSN_DK = 22
+            GROUP BY ATSD_SNCA_DK) C
+        ON C.ATSD_SNCA_DK = A.ATSD_SNCA_DK AND A.ATSD_DT_REGISTRO < C.DT_ULTIMA_REALIZAR
+        WHERE A.ATSD_CPF_RESP_CTRL = '07037032778'
+        AND A.ATSD_TPSN_DK = 5
+    )
 """
 
 EVALUATE_QUERY = """
@@ -134,21 +174,29 @@ def get_predict_data(cursor, UFED_DK=None, only_null_class=True,
             raise TypeError('UFED_DK must be None or integer!')
 
     query = PREDICT_QUERY
+    query_2 = PREDICT_QUERY_2
 
     if only_null_class:
         query += " AND D.DMDE_MDEC_DK = 13"
+        query_2 += " AND D.DMDE_MDEC_DK = 13"
     if UFED_DK:
         query += " AND B.SNCA_UFED_DK = {}".format(UFED_DK)
+        query_2 += " AND B.SNCA_UFED_DK = {}".format(UFED_DK)
 
     # The date conditions will appear in two distinct places, which is why the
     # query has both a format() and a concatenation of these conditions
     if start_date:
-        start_date = " AND A.ATSD_DT_REGISTRO >= TO_DATE('{}', 'YYYY-MM-DD')"\
+        query += " AND A.ATSD_DT_REGISTRO >= TO_DATE('{}', 'YYYY-MM-DD')"\
+            .format(start_date)
+        query_2 += " AND A.ATSD_DT_REGISTRO >= TO_DATE('{}', 'YYYY-MM-DD')"\
             .format(start_date)
     if end_date:
-        end_date = " AND A.ATSD_DT_REGISTRO <= TO_DATE('{}', 'YYYY-MM-DD')"\
+        query += " AND A.ATSD_DT_REGISTRO <= TO_DATE('{}', 'YYYY-MM-DD')"\
             .format(end_date)
-    query = query.format(start_date, end_date) + start_date + end_date
+        query_2 += " AND A.ATSD_DT_REGISTRO <= TO_DATE('{}', 'YYYY-MM-DD')"\
+            .format(end_date)
+
+    query = query + ' UNION ' + query_2
 
     cursor.execute(query)
 
