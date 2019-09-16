@@ -88,8 +88,11 @@ for model_date in model_dates:
     data_oracle = get_evaluate_data(curs, keys)
 
     data_hdfs = expand_results(data_hdfs)
-    data_hdfs['DT_MODELO'] = model_date
-    data_oracle['DT_MODELO'] = model_date
+
+    date = '{}/{}/{}'.format(model_date[:4], model_date[4:6], model_date[6:8])
+
+    data_hdfs['DT_MODELO'] = date
+    data_oracle['DT_MODELO'] = date
     data_oracle['IS_VALIDATION'] = True
     data_hdfs['IS_VALIDATION'] = False
 
