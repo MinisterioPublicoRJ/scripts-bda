@@ -89,7 +89,7 @@ for model_date in model_dates:
 
     data_hdfs = expand_results(data_hdfs)
 
-    date = '{}/{}/{}'.format(model_date[:6:8], model_date[4:6], model_date[:4])
+    date = '{}/{}/{}'.format(model_date[6:8], model_date[4:6], model_date[:4])
 
     data_hdfs['DT_MODELO'] = date
     data_oracle['DT_MODELO'] = date
