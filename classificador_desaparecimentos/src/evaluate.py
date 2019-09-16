@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import ast
 import sys
 import pickle
@@ -31,6 +33,30 @@ HDFS_URL = config('HDFS_URL')
 HDFS_USER = config('HDFS_USER')
 HDFS_MODEL_DIR = config('HDFS_MODEL_DIR')
 FORMATTED_HDFS_PATH = "/".join(HDFS_MODEL_DIR.split('/')[5:])
+
+MOTIVOS_DICT = {
+    1: 'CONFLITO INTRAFAMILIAR',
+    2: 'DROGADIÇÃO',
+    3: 'CATÁSTROFE',
+    4: 'ENVOLVIMENTO COM TRÁFICO DE ENTORPECENTES',
+    5: 'PROBLEMAS PSIQUIÁTRICOS',
+    6: 'POSSÍVEL VÍTIMA DE SEQUESTRO',
+    7: 'POSSÍVEL VÍTIMA DE HOMICÍDIO',
+    8: 'POSSÍVEL VÍTIMA DE AFOGAMENTO',
+    9: 'SUBTRAÇÃO PARA EXPLORAÇÃO ECONÔMICA',
+    10: 'SUBTRAÇÃO PARA EXPLORAÇÃO SEXUAL',
+    11: 'ABANDONO',
+    12: 'PERDA DE CONTATO VOLUNTÁRIO',
+    13: 'SEM MOTIVO APARENTE',
+    14: 'AUSÊNCIA DE NOTIFICAÇÃO DE ÓBITO',
+    15: 'AUSÊNCIA DE NOTIFICAÇÃO DE ENCARCERAMENTO',
+    16: 'AUSÊNCIA DE NOTIFICAÇÃO DE INSTITUCIONALIZAÇÃO',
+    17: 'VÍTIMA DE SEQUESTRO',
+    18: 'OCULTAÇÃO DE CADÁVER',
+    19: 'VÍTIMA DE AFOGAMENTO',
+    20: 'PRISÃO/APREENSÃO',
+    21: 'POSSÍVEL VÍTIMA DE FEMINICÍDIO'
+}
 
 
 print('Running Evaluate script:')
@@ -75,6 +101,7 @@ df1 = pd.concat(validated_datasets, ignore_index=True)
 df2 = pd.concat(classified_datasets, ignore_index=True)
 
 result_df = pd.concat([df1, df2], ignore_index=True)
+result_df['MDEC_MOTIVO'] = result_df['MDEC_DK'].apply(lambda x: MOTIVOS_DICT[x])
 
 result_df.to_csv('results_dunant.csv', index=False)
 
