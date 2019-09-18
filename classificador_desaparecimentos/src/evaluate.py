@@ -3,11 +3,17 @@
 import ast
 import sys
 import pickle
+import requests
+import httplib2
 
 import jaydebeapi as jdbc
+import numpy as np
 import pandas as pd
+import gspread
 from decouple import config
 from hdfs import InsecureClient
+from oauth2client.service_account import ServiceAccountCredentials
+from gspread_dataframe import set_with_dataframe
 
 from queries import (
     get_evaluate_data
@@ -32,6 +38,7 @@ ROBOT_NUMBER = config('ROBOT_NUMBER')
 HDFS_URL = config('HDFS_URL')
 HDFS_USER = config('HDFS_USER')
 HDFS_MODEL_DIR = config('HDFS_MODEL_DIR')
+EVALUATE_SAVE_GSPREAD = config('EVALUATE_SAVE_GSPREAD', cast=bool, default=False)
 FORMATTED_HDFS_PATH = "/".join(HDFS_MODEL_DIR.split('/')[5:])
 
 MOTIVOS_DICT = {
@@ -106,8 +113,20 @@ df2 = pd.concat(classified_datasets, ignore_index=True)
 result_df = pd.concat([df1, df2], ignore_index=True)
 result_df['MDEC_MOTIVO'] = result_df['MDEC_DK'].apply(lambda x: MOTIVOS_DICT[x])
 
-result_df.to_csv('results_dunant.csv', index=False)
+scope = ['https://spreadsheets.google.com/feeds',
+         'https://www.googleapis.com/auth/drive']
+credentials = ServiceAccountCredentials.from_json_keyfile_name('dunant_credentials-5ab80fd0863c.json', scopes=scope)
 
-#print(result_df.groupby(['SNCA_DK', 'IS_VALIDATION']).count())
+gc = gspread.client.Client(auth=credentials)
+http = httplib2.Http(disable_ssl_certificate_validation=True, ca_certs='')
+gc.auth.refresh(http)
+gc.login()
+
+worksheet = gc.open("results_dunant").sheet1
+
+if EVALUATE_SAVE_GSPREAD:
+    set_with_dataframe(worksheet, result_df)
+else:
+    result_df.to_csv('results_dunant.csv', index=False)
 
 
