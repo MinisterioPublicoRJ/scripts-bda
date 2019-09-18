@@ -126,6 +126,6 @@ gc.login()
 worksheet = gc.open("results_dunant").sheet1
 
 if EVALUATE_SAVE_GSPREAD:
-    set_with_dataframe(worksheet, result_df)
+    set_with_dataframe(worksheet, result_df, resize=True)
 else:
     result_df.to_csv('results_dunant.csv', index=False)
