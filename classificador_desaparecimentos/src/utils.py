@@ -75,12 +75,12 @@ class OneVsRestLogisticRegression:
             p: Numpy array with the predictions.
         """
         prob = self.model_.predict_proba(X)
-        consider = np.argsort(prob)[:,:-(max_classes+1):-1]
+        consider = np.argsort(prob)[:, :-(max_classes+1):-1]
         mult = np.zeros(prob.shape)
         for a, b in zip(mult, consider):
             a[b] = 1
         prob = mult*prob
-        
+
         p = (prob >= threshold).astype(int)
 
         if self.negative_column_index_:

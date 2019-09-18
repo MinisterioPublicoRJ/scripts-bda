@@ -1,13 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import ast
-import sys
-import pickle
-import requests
 import httplib2
 
 import jaydebeapi as jdbc
-import numpy as np
 import pandas as pd
 import gspread
 from decouple import config
@@ -21,11 +17,7 @@ from queries import (
 from utils import (
     get_results_from_hdfs,
     expand_results,
-    get_keys,
-    get_percentage_of_change,
-    get_number_of_modifications,
-    generate_report,
-    save_metrics_to_hdfs
+    get_keys
 )
 
 
@@ -38,7 +30,10 @@ ROBOT_NUMBER = config('ROBOT_NUMBER')
 HDFS_URL = config('HDFS_URL')
 HDFS_USER = config('HDFS_USER')
 HDFS_MODEL_DIR = config('HDFS_MODEL_DIR')
-EVALUATE_SAVE_GSPREAD = config('EVALUATE_SAVE_GSPREAD', cast=bool, default=False)
+EVALUATE_SAVE_GSPREAD = config(
+    'EVALUATE_SAVE_GSPREAD',
+    cast=bool,
+    default=False)
 FORMATTED_HDFS_PATH = "/".join(HDFS_MODEL_DIR.split('/')[5:])
 
 MOTIVOS_DICT = {
@@ -82,8 +77,11 @@ classified_datasets = []
 
 for model_date in model_dates:
     try:
-        data_hdfs = get_results_from_hdfs(client, FORMATTED_HDFS_PATH, model_date=model_date)
-    except:
+        data_hdfs = get_results_from_hdfs(
+            client,
+            FORMATTED_HDFS_PATH,
+            model_date=model_date)
+    except BaseException:
         continue
     # Results are stored as a tuple represented as a string
     data_hdfs['MDEC_DK'] = data_hdfs['MDEC_DK'].apply(
@@ -111,11 +109,14 @@ df1 = pd.concat(validated_datasets, ignore_index=True)
 df2 = pd.concat(classified_datasets, ignore_index=True)
 
 result_df = pd.concat([df1, df2], ignore_index=True)
-result_df['MDEC_MOTIVO'] = result_df['MDEC_DK'].apply(lambda x: MOTIVOS_DICT[x])
+result_df['MDEC_MOTIVO'] = result_df['MDEC_DK'].apply(
+    lambda x: MOTIVOS_DICT[x])
 
 scope = ['https://spreadsheets.google.com/feeds',
          'https://www.googleapis.com/auth/drive']
-credentials = ServiceAccountCredentials.from_json_keyfile_name('dunant_credentials-5ab80fd0863c.json', scopes=scope)
+credentials = ServiceAccountCredentials.from_json_keyfile_name(
+    'dunant_credentials-5ab80fd0863c.json',
+    scopes=scope)
 
 gc = gspread.client.Client(auth=credentials)
 http = httplib2.Http(disable_ssl_certificate_validation=True, ca_certs='')
@@ -128,5 +129,3 @@ if EVALUATE_SAVE_GSPREAD:
     set_with_dataframe(worksheet, result_df)
 else:
     result_df.to_csv('results_dunant.csv', index=False)
-
-
