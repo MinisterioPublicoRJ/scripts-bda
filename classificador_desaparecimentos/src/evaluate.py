@@ -1,10 +1,15 @@
+# -*- coding: utf-8 -*-
+
 import ast
-import sys
-import pickle
+import httplib2
 
 import jaydebeapi as jdbc
+import pandas as pd
+import gspread
 from decouple import config
 from hdfs import InsecureClient
+from oauth2client.service_account import ServiceAccountCredentials
+from gspread_dataframe import set_with_dataframe
 
 from queries import (
     get_evaluate_data
@@ -12,11 +17,7 @@ from queries import (
 from utils import (
     get_results_from_hdfs,
     expand_results,
-    get_keys,
-    get_percentage_of_change,
-    get_number_of_modifications,
-    generate_report,
-    save_metrics_to_hdfs
+    get_keys
 )
 
 
@@ -29,7 +30,35 @@ ROBOT_NUMBER = config('ROBOT_NUMBER')
 HDFS_URL = config('HDFS_URL')
 HDFS_USER = config('HDFS_USER')
 HDFS_MODEL_DIR = config('HDFS_MODEL_DIR')
+EVALUATE_SAVE_GSPREAD = config(
+    'EVALUATE_SAVE_GSPREAD',
+    cast=bool,
+    default=False)
 FORMATTED_HDFS_PATH = "/".join(HDFS_MODEL_DIR.split('/')[5:])
+
+MOTIVOS_DICT = {
+    1: 'CONFLITO INTRAFAMILIAR',
+    2: 'DROGADIÇÃO',
+    3: 'CATÁSTROFE',
+    4: 'ENVOLVIMENTO COM TRÁFICO DE ENTORPECENTES',
+    5: 'PROBLEMAS PSIQUIÁTRICOS',
+    6: 'POSSÍVEL VÍTIMA DE SEQUESTRO',
+    7: 'POSSÍVEL VÍTIMA DE HOMICÍDIO',
+    8: 'POSSÍVEL VÍTIMA DE AFOGAMENTO',
+    9: 'SUBTRAÇÃO PARA EXPLORAÇÃO ECONÔMICA',
+    10: 'SUBTRAÇÃO PARA EXPLORAÇÃO SEXUAL',
+    11: 'ABANDONO',
+    12: 'PERDA DE CONTATO VOLUNTÁRIO',
+    13: 'SEM MOTIVO APARENTE',
+    14: 'AUSÊNCIA DE NOTIFICAÇÃO DE ÓBITO',
+    15: 'AUSÊNCIA DE NOTIFICAÇÃO DE ENCARCERAMENTO',
+    16: 'AUSÊNCIA DE NOTIFICAÇÃO DE INSTITUCIONALIZAÇÃO',
+    17: 'VÍTIMA DE SEQUESTRO',
+    18: 'OCULTAÇÃO DE CADÁVER',
+    19: 'VÍTIMA DE AFOGAMENTO',
+    20: 'PRISÃO/APREENSÃO',
+    21: 'POSSÍVEL VÍTIMA DE FEMINICÍDIO'
+}
 
 
 print('Running Evaluate script:')
@@ -42,56 +71,61 @@ conn = jdbc.connect("oracle.jdbc.driver.OracleDriver",
                     ORACLE_DRIVER_PATH)
 curs = conn.cursor()
 
-print('Retrieving prediction results from HDFS...')
-data_hdfs = get_results_from_hdfs(client, FORMATTED_HDFS_PATH)
-# Results are stored as a tuple represented as a string
-data_hdfs['MDEC_DK'] = data_hdfs['MDEC_DK'].apply(
-    lambda x: ast.literal_eval(x))
+model_dates = sorted(client.list(FORMATTED_HDFS_PATH))
+validated_datasets = []
+classified_datasets = []
 
-keys = get_keys(data_hdfs, 'SNCA_DK')
+for model_date in model_dates:
+    try:
+        data_hdfs = get_results_from_hdfs(
+            client,
+            FORMATTED_HDFS_PATH,
+            model_date=model_date)
+    except BaseException:
+        continue
+    # Results are stored as a tuple represented as a string
+    data_hdfs['MDEC_DK'] = data_hdfs['MDEC_DK'].apply(
+        lambda x: ast.literal_eval(x))
 
-print('Retrieving data from Oracle...')
-# Only needs the keys that are in the predictions
-data_oracle = get_evaluate_data(curs, keys)
-if len(data_oracle) == 0:
-    sys.exit('No validated documents available!')
+    keys = get_keys(data_hdfs, 'SNCA_DK')
 
-print('Generating classification report...')
-most_recent_date = sorted(client.list(FORMATTED_HDFS_PATH))[-1]
-with client.read('{}/{}/model/mlb_binarizer.pkl'.format(
-        FORMATTED_HDFS_PATH, most_recent_date)) as mlb_reader:
-    mlb = pickle.loads(mlb_reader.read())
+    # Only needs the keys that are in the predictions
+    data_oracle = get_evaluate_data(curs, keys)
 
-report = generate_report(data_hdfs, data_oracle, mlb)
+    data_hdfs = expand_results(data_hdfs)
 
-print('Preparing HDFS data for next metrics...')
-data_hdfs = expand_results(data_hdfs)
+    date = '{}/{}/{}'.format(model_date[6:8], model_date[4:6], model_date[:4])
 
-# To evaluate the predictions, only those keys that were effectively validated
-# should be taken into consideration
-data_hdfs = data_hdfs[data_hdfs['SNCA_DK'].isin(
-    data_oracle['SNCA_DK'].unique().tolist())]
+    data_hdfs['DT_MODELO'] = date
+    data_oracle['DT_MODELO'] = date
+    data_oracle['IS_VALIDATION'] = True
+    data_hdfs['IS_VALIDATION'] = False
 
-print('Calculating evaluation metrics...')
-nb_documents_predicted = len(keys)
-nb_documents_validated = len(get_keys(data_oracle, 'SNCA_DK'))
+    validated_datasets.append(data_oracle)
+    classified_datasets.append(data_hdfs)
 
-pctg_change = get_percentage_of_change(data_hdfs, data_oracle)
 
-nb_remove, nb_add, nb_swaps = get_number_of_modifications(
-    data_hdfs, data_oracle)
-nb_modifications = nb_remove + nb_add + nb_swaps
-nb_final_classes = len(data_oracle)
+df1 = pd.concat(validated_datasets, ignore_index=True)
+df2 = pd.concat(classified_datasets, ignore_index=True)
 
-print('Saving metrics to HDFS...')
-save_metrics_to_hdfs(
-    client, FORMATTED_HDFS_PATH,
-    docs_predicted=nb_documents_predicted,
-    docs_validated=nb_documents_validated,
-    pctg_change=pctg_change,
-    removals=nb_remove,
-    additions=nb_add,
-    swaps=nb_swaps,
-    modifications=nb_modifications,
-    total_predictions=nb_final_classes,
-    classification_report=report)
+result_df = pd.concat([df1, df2], ignore_index=True)
+result_df['MDEC_MOTIVO'] = result_df['MDEC_DK'].apply(
+    lambda x: MOTIVOS_DICT[x])
+
+scope = ['https://spreadsheets.google.com/feeds',
+         'https://www.googleapis.com/auth/drive']
+credentials = ServiceAccountCredentials.from_json_keyfile_name(
+    'dunant_credentials-5ab80fd0863c.json',
+    scopes=scope)
+
+gc = gspread.client.Client(auth=credentials)
+http = httplib2.Http(disable_ssl_certificate_validation=True, ca_certs='')
+gc.auth.refresh(http)
+gc.login()
+
+worksheet = gc.open("results_dunant").sheet1
+
+if EVALUATE_SAVE_GSPREAD:
+    set_with_dataframe(worksheet, result_df)
+else:
+    result_df.to_csv('results_dunant.csv', index=False)
