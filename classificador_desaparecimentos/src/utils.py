@@ -161,7 +161,7 @@ def get_results_from_hdfs(client, path, model_date=None):
                 model_date,
                 r)) as results_reader:
             r_df = pd.read_table(results_reader, sep=',')
-            r_df['DT_CLASSIFICACAO'] = result_date
+            r_df['DT_ACAO'] = result_date
             results.append(r_df)
 
     return pd.concat(results, ignore_index=True)

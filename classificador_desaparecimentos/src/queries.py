@@ -247,7 +247,8 @@ def get_evaluate_data(cursor, keys):
 
     columns = [desc[0] for desc in cursor.description]
     result = pd.DataFrame(cursor.fetchall(), columns=columns)
-    result['DT_VALIDACAO'] = result['DT_VALIDACAO'].apply(lambda x: "{}/{}/{}".format(x[8:10], x[5:7], x[:4]))
+    result['DT_ACAO'] = result['DT_VALIDACAO'].apply(lambda x: "{}/{}/{}".format(x[8:10], x[5:7], x[:4]))
+    result = result.drop('DT_VALIDACAO', axis=1)
     result = result.astype({'SNCA_DK': int, 'MDEC_DK': int})
 
     return result[result['SNCA_DK'].isin(keys)]
