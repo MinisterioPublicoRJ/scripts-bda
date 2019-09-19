@@ -86,7 +86,7 @@ PREDICT_QUERY_2 = """
 # """
 
 EVALUATE_QUERY = """
-    SELECT DISTINCT B.SNCA_DK, D.DMDE_MDEC_DK AS MDEC_DK
+    SELECT B.SNCA_DK, D.DMDE_MDEC_DK AS MDEC_DK, MAX(A.ATSD_DT_REGISTRO) AS DT_VALIDACAO
     FROM SILD.SILD_ATIVIDADE_SINDICANCIA A
     INNER JOIN SILD.SILD_SINDICANCIA B
         ON A.ATSD_SNCA_DK = B.SNCA_DK
@@ -107,6 +107,7 @@ EVALUATE_QUERY = """
         AND A.ATSD_DT_REGISTRO > C.DT_ULTIMA_REALIZAR
         WHERE A.ATSD_CPF_RESP_CTRL = '07037032778'
         AND A.ATSD_TPSN_DK = 5)
+    GROUP BY B.SNCA_DK, D.DMDE_MDEC_DK
 """
 
 SET_MODULE_QUERY = ("CALL dbms_application_info.set_module("
@@ -246,6 +247,7 @@ def get_evaluate_data(cursor, keys):
 
     columns = [desc[0] for desc in cursor.description]
     result = pd.DataFrame(cursor.fetchall(), columns=columns)
+    result['DT_VALIDACAO'] = result['DT_VALIDACAO'].apply(lambda x: "{}/{}/{}".format(x[8:10], x[5:7], x[:4]))
     result = result.astype({'SNCA_DK': int, 'MDEC_DK': int})
 
     return result[result['SNCA_DK'].isin(keys)]

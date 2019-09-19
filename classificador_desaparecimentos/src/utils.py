@@ -155,11 +155,14 @@ def get_results_from_hdfs(client, path, model_date=None):
         path,
         model_date))
     for r in result_list:
+        result_date = '{}/{}/{}'.format(r[6:8], r[4:6], r[:4])
         with client.read('{}/{}/results/{}'.format(
                 path,
                 model_date,
                 r)) as results_reader:
-            results.append(pd.read_table(results_reader, sep=','))
+            r_df = pd.read_table(results_reader, sep=',')
+            r_df['DT_CLASSIFICACAO'] = result_date
+            results.append(r_df)
 
     return pd.concat(results, ignore_index=True)
 
