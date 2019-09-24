@@ -11,7 +11,9 @@ from hdfs import InsecureClient
 
 from utils import (
     clean_text,
-    get_keys,
+    get_keys
+)
+from models import (
     OneVsRestLogisticRegression
 )
 from queries import (

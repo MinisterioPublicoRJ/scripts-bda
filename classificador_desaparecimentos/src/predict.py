@@ -10,7 +10,9 @@ from decouple import config
 from hdfs import InsecureClient
 
 from utils import (
-    clean_text,
+    clean_text
+)
+from models import (
     RegexClassifier
 )
 from queries import (
