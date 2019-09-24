@@ -10,4 +10,4 @@ info-tecnica - Copia PDFs de Informação Técnica GATE para o HDFS
 generic-extract-jdbc - Modulo genérico para extrair dados de uma fonte jdbc (ex: tabelas oracle) para o HDFS como tabela hive (BDA).
 
 
-compress_files_hdfs - Comprimi arquivos no hdfs de mesmo formato e tipo.
+compress_files_hdfs - Comprime arquivos no hdfs de mesmo formato e tipo.
