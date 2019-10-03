@@ -12,7 +12,8 @@ from oauth2client.service_account import ServiceAccountCredentials
 from gspread_dataframe import set_with_dataframe
 
 from queries import (
-    get_evaluate_data
+    get_evaluate_data,
+    get_id_sinalid
 )
 from utils import (
     get_results_from_hdfs,
@@ -94,8 +95,11 @@ for model_date in model_dates:
 
     data_hdfs = expand_results(data_hdfs)
 
-    date = '{}/{}/{}'.format(model_date[6:8], model_date[4:6], model_date[:4])
+    # TODO: Optimization possible here, gets all keys in query each time before filtering by keys
+    sinalid_id_df = get_id_sinalid(curs, keys)
+    data_hdfs = pd.merge(data_hdfs, sinalid_id_df, how='left', on='SNCA_DK')
 
+    date = '{}/{}/{}'.format(model_date[6:8], model_date[4:6], model_date[:4])
     data_hdfs['DT_MODELO'] = date
     data_oracle['DT_MODELO'] = date
     data_oracle['IS_VALIDATION'] = True
