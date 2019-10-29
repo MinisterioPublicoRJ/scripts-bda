@@ -108,13 +108,34 @@ for model_date in model_dates:
     validated_datasets.append(data_oracle)
     classified_datasets.append(data_hdfs)
 
-
 df1 = pd.concat(validated_datasets, ignore_index=True)
 df2 = pd.concat(classified_datasets, ignore_index=True)
 
 result_df = pd.concat([df1, df2], ignore_index=True)
 result_df['MDEC_MOTIVO'] = result_df['MDEC_DK'].apply(
     lambda x: MOTIVOS_DICT[x])
+
+percents = []
+for x in list(result_df[['MDEC_DK', 'MDEC_MOTIVO']].drop_duplicates().values):
+    c = x[0]
+    ds = x[1]
+    class_preds = df2[df2['MDEC_DK'] == c]
+    class_trues = df1[['SNCA_DK', 'MDEC_DK']].groupby('SNCA_DK').agg(lambda x: c in set(x)).reset_index()
+    
+    df = class_preds[['SNCA_DK', 'MDEC_DK']].merge(
+        class_trues, 
+        how='inner', 
+        left_on='SNCA_DK', 
+        right_on='SNCA_DK')
+    if df.shape[0] != 0:
+        percents.append([str(c) + ',' + ds, df[df['MDEC_DK_y'] == True].shape[0]/df.shape[0]])
+    else:
+        percents.append([str(c) + ',' + ds, 'Sem classificações ou validações nesta classe'])
+
+percents = pd.DataFrame(percents)
+percents.rename({1: 'PRECISAO'}, axis=1, inplace=True)
+percents['MDEC_DK'], percents['MDEC_MOTIVO'] = percents[0].str.split(',').str
+percents.drop(0, axis=1, inplace=True)
 
 scope = ['https://spreadsheets.google.com/feeds',
          'https://www.googleapis.com/auth/drive']
@@ -127,9 +148,13 @@ http = httplib2.Http(disable_ssl_certificate_validation=True, ca_certs='')
 gc.auth.refresh(http)
 gc.login()
 
-worksheet = gc.open("results_dunant").sheet1
+sh = gc.open("results_dunant")
+worksheet = sh.get_worksheet(0)
+worksheet_percents = sh.get_worksheet(1)
 
 if EVALUATE_SAVE_GSPREAD:
     set_with_dataframe(worksheet, result_df, resize=True)
+    set_with_dataframe(worksheet_percents, percents, resize=True)
 else:
     result_df.to_csv('results_dunant.csv', index=False)
+    percents.to_csv('results_dunant_percentages.csv', index=False)
