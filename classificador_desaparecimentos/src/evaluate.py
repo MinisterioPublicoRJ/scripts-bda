@@ -128,7 +128,7 @@ for x in list(result_df[['MDEC_DK', 'MDEC_MOTIVO']].drop_duplicates().values):
         left_on='SNCA_DK', 
         right_on='SNCA_DK')
     if df.shape[0] != 0:
-        percents.append([str(c) + ',' + ds, df[df['MDEC_DK_y'] == True].shape[0]/df.shape[0]])
+        percents.append([str(c) + ',' + ds, df[df['MDEC_DK_y'] == True].shape[0]/float(df.shape[0])])
     else:
         percents.append([str(c) + ',' + ds, 'Sem classificações ou validações nesta classe'])
 
@@ -136,6 +136,7 @@ percents = pd.DataFrame(percents)
 percents.rename({1: 'PRECISAO'}, axis=1, inplace=True)
 percents['MDEC_DK'], percents['MDEC_MOTIVO'] = percents[0].str.split(',').str
 percents.drop(0, axis=1, inplace=True)
+percents['PRECISAO'] = percents['PRECISAO'].apply(lambda x: '{:.2f}'.format(x) if isinstance(x, float) else x)
 
 scope = ['https://spreadsheets.google.com/feeds',
          'https://www.googleapis.com/auth/drive']
