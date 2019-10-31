@@ -86,7 +86,8 @@ PREDICT_QUERY_2 = """
 # """
 
 EVALUATE_QUERY = """
-    SELECT B.SNCA_DK, B.SNCA_IDENTIFICADOR_SINALID, D.DMDE_MDEC_DK AS MDEC_DK, MAX(A.ATSD_DT_REGISTRO) AS DT_VALIDACAO
+    SELECT B.SNCA_DK, B.SNCA_IDENTIFICADOR_SINALID, D.DMDE_MDEC_DK AS MDEC_DK,
+    MAX(A.ATSD_DT_REGISTRO) AS DT_VALIDACAO
     FROM SILD.SILD_ATIVIDADE_SINDICANCIA A
     INNER JOIN SILD.SILD_SINDICANCIA B
         ON A.ATSD_SNCA_DK = B.SNCA_DK
@@ -251,7 +252,8 @@ def get_evaluate_data(cursor, keys):
 
     columns = [desc[0] for desc in cursor.description]
     result = pd.DataFrame(cursor.fetchall(), columns=columns)
-    result['DT_ACAO'] = result['DT_VALIDACAO'].apply(lambda x: "{}/{}/{}".format(x[8:10], x[5:7], x[:4]))
+    result['DT_ACAO'] = result['DT_VALIDACAO'].apply(
+        lambda x: "{}/{}/{}".format(x[8:10], x[5:7], x[:4]))
     result = result.drop('DT_VALIDACAO', axis=1)
     result = result.astype({'SNCA_DK': int, 'MDEC_DK': int})
 

@@ -95,7 +95,8 @@ for model_date in model_dates:
 
     data_hdfs = expand_results(data_hdfs)
 
-    # TODO: Optimization possible here, gets all keys in query each time before filtering by keys
+    # TODO: Optimization possible here,
+    # gets all keys in query each time before filtering by keys
     sinalid_id_df = get_id_sinalid(curs, keys)
     data_hdfs = pd.merge(data_hdfs, sinalid_id_df, how='left', on='SNCA_DK')
 
@@ -120,23 +121,29 @@ for x in list(result_df[['MDEC_DK', 'MDEC_MOTIVO']].drop_duplicates().values):
     c = x[0]
     ds = x[1]
     class_preds = df2[df2['MDEC_DK'] == c]
-    class_trues = df1[['SNCA_DK', 'MDEC_DK']].groupby('SNCA_DK').agg(lambda x: c in set(x)).reset_index()
-    
+    class_trues = df1[['SNCA_DK', 'MDEC_DK']].groupby('SNCA_DK').agg(
+        lambda x: c in set(x)).reset_index()
+
     df = class_preds[['SNCA_DK', 'MDEC_DK']].merge(
-        class_trues, 
-        how='inner', 
-        left_on='SNCA_DK', 
+        class_trues,
+        how='inner',
+        left_on='SNCA_DK',
         right_on='SNCA_DK')
     if df.shape[0] != 0:
-        percents.append([str(c) + ',' + ds, df[df['MDEC_DK_y'] == True].shape[0]/float(df.shape[0])])
+        percents.append(
+            [str(c) + ',' + ds,
+             df[df['MDEC_DK_y']].shape[0]/float(df.shape[0])])
     else:
-        percents.append([str(c) + ',' + ds, 'Sem classificações ou validações nesta classe'])
+        percents.append(
+            [str(c) + ',' + ds,
+             'Sem classificações ou validações nesta classe'])
 
 percents = pd.DataFrame(percents)
 percents.rename({1: 'PRECISAO'}, axis=1, inplace=True)
 percents['MDEC_DK'], percents['MDEC_MOTIVO'] = percents[0].str.split(',').str
 percents.drop(0, axis=1, inplace=True)
-percents['PRECISAO'] = percents['PRECISAO'].apply(lambda x: '{:.2f}'.format(x) if isinstance(x, float) else x)
+percents['PRECISAO'] = percents['PRECISAO'].apply(
+    lambda x: '{:.2f}'.format(x) if isinstance(x, float) else x)
 
 scope = ['https://spreadsheets.google.com/feeds',
          'https://www.googleapis.com/auth/drive']

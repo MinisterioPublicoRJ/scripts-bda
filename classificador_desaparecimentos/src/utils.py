@@ -2,10 +2,7 @@ import re
 
 import numpy as np
 import pandas as pd
-from copy import deepcopy
 from unidecode import unidecode
-from sklearn.linear_model import LogisticRegression
-from sklearn.multiclass import OneVsRestClassifier
 from sklearn.metrics import classification_report
 
 
