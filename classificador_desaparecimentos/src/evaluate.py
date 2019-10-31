@@ -149,9 +149,11 @@ http = httplib2.Http(disable_ssl_certificate_validation=True, ca_certs='')
 gc.auth.refresh(http)
 gc.login()
 
-sh = gc.open("results_dunant")
-worksheet = sh.get_worksheet(0)
-worksheet_percents = sh.get_worksheet(1)
+sh1 = gc.open("results_dunant")
+worksheet = sh1.get_worksheet(0)
+
+sh2 = gc.open("results_dunant_percentages")
+worksheet_percents = sh2.get_worksheet(0)
 
 if EVALUATE_SAVE_GSPREAD:
     set_with_dataframe(worksheet, result_df, resize=True)
