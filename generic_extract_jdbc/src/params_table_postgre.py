@@ -13,7 +13,7 @@ params = {
             "table_jdbc": 
             """
             (SELECT nome, cpf, localidade, cod_ibge::integer,
-            ano_eleicao, foto FROM lupa.governantes_rj) t """,
+            ano_eleicao, foto, url_tse FROM lupa.governantes_rj) t """,
             "pk_table_jdbc": "cod_ibge",
             "update_date_table_jdbc": "",
             "table_hive": "lupa_governantes_rj"
@@ -28,6 +28,13 @@ params = {
             "pk_table_jdbc": "cod_municipio",
             "update_date_table_jdbc": "",
             "table_hive": "lupa_prefeituras"
+        },
+        {
+            "table_jdbc": """(SELECT cod_municipio::integer,
+            municipio, criacao, aniversario FROM lupa.dados_gerais_municipio) t""",
+            "pk_table_jdbc": "cod_municipio",
+            "update_date_table_jdbc": "",
+            "table_hive": "dados_gerais_municipio"
         }
     ]
 }

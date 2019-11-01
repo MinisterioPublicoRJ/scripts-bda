@@ -1206,6 +1206,24 @@ params = {
             "update_date_table_jdbc": "",
             "table_hive": "rh_hist_func"
         },
+        {
+            "table_jdbc": "RH.CARGOS",
+            "pk_table_jdbc": "CDCARGO",
+            "update_date_table_jdbc": "",
+            "table_hive": "rh_cargos"
+        },
+        {
+            "table_jdbc": "RH.RH_FUNCAO",
+            "pk_table_jdbc": "CDFUNCAO",
+            "update_date_table_jdbc": "",
+            "table_hive": "rh_funcao"
+        },
+        {
+            "table_jdbc": "RH.FERIAS",
+            "pk_table_jdbc": "CDMATRICULA",
+            "update_date_table_jdbc": "",
+            "table_hive": "rh_ferias"
+        },
         # {
         #     "table_jdbc": "RH.RH_VW_RELAT_CUSTOS_MP_MAPAS",
         #     "pk_table_jdbc": "CDMATRICULA",
