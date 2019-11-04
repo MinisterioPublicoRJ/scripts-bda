@@ -1224,6 +1224,20 @@ params = {
             "update_date_table_jdbc": "",
             "table_hive": "rh_ferias"
         },
+        {
+            "table_jdbc": "RH.MOTIVO_FIM",
+            "pk_table_jdbc": "",
+            "update_date_table_jdbc": "",
+            "no_lower_upper": "true",
+            "table_hive": "rh_motivo_fim"
+        },
+        {
+            "table_jdbc": "RH.MOTIVO_INICIO",
+            "pk_table_jdbc": "",
+            "update_date_table_jdbc": "",
+            "no_lower_upper": "true",
+            "table_hive": "rh_motivo_inicio"
+        },
         # {
         #     "table_jdbc": "RH.RH_VW_RELAT_CUSTOS_MP_MAPAS",
         #     "pk_table_jdbc": "CDMATRICULA",
