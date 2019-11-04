@@ -39,14 +39,7 @@ def load_all_data(table):
     print("Start process load all")
     # Get minimum and maximum record
     # from table jdbc for just used to decide the partition stride
-    query_primarykeys = """
-            (select
-            count(1) as total,
-            min({key}),
-            max({key})
-            from {table_jdbc}) p """.format(
-                key=table['pk_table_jdbc'],
-                table_jdbc=table['table_jdbc'])
+    query_primarykeys = get_total_record(table)
 
     if table.get('fields'):
         query_table = """(SELECT {fields} FROM {table_jdbc}) q """.format(
@@ -69,21 +62,7 @@ def load_all_data(table):
 
     if total > 0:
 
-        minimum = int(total_min_max_table.first()[1])
-        maximum = int(total_min_max_table.first()[2])
-
-        print('Getting all data from table %s jdbc' % table['table_jdbc'])
-        jdbc_table = spark.read.format("jdbc") \
-            .option("url", url_jdbc_server) \
-            .option("lowerBound", minimum) \
-            .option("upperBound", maximum) \
-            .option("numPartitions", 50) \
-            .option("partitionColumn", table['pk_table_jdbc']) \
-            .option("dbtable", query_table) \
-            .option("user", user_jdbc) \
-            .option("password", passwd_jdbc) \
-            .option("driver", config_params['driver']) \
-            .load()
+        jdbc_table = load_table(table, total_min_max_table, query_table)
 
         table_hive = "%s.%s" % (config_params['schema_hdfs'],
                                 table['table_hive'])
@@ -101,6 +80,53 @@ def load_all_data(table):
         _update_impala_table(table_hive)
 
         spark.sql("ANALYZE TABLE {} COMPUTE STATISTICS".format(table_hive))
+
+
+def get_total_record(table):
+    if table.get('no_lower_upper'):
+        return """
+                (select
+                count(1) as total
+                from {table_jdbc}) p """.format(
+                    table_jdbc=table['table_jdbc'])
+    else:
+        return """
+                (select
+                count(1) as total,
+                min({key}),
+                max({key})
+                from {table_jdbc}) p """.format(
+                    key=table['pk_table_jdbc'],
+                    table_jdbc=table['table_jdbc'])
+
+
+def load_table(table, total_min_max_table, query_table):
+    if table.get('no_lower_upper'):
+        return spark.read.format("jdbc") \
+            .option("url", url_jdbc_server) \
+            .option("numPartitions", 50) \
+            .option("dbtable", query_table) \
+            .option("user", user_jdbc) \
+            .option("password", passwd_jdbc) \
+            .option("driver", config_params['driver']) \
+            .load()
+    else:
+
+        minimum = int(total_min_max_table.first()[1])
+        maximum = int(total_min_max_table.first()[2])
+
+        print('Getting all data from table %s jdbc' % table['table_jdbc'])
+        return spark.read.format("jdbc") \
+            .option("url", url_jdbc_server) \
+            .option("lowerBound", minimum) \
+            .option("upperBound", maximum) \
+            .option("numPartitions", 50) \
+            .option("partitionColumn", table['pk_table_jdbc']) \
+            .option("dbtable", query_table) \
+            .option("user", user_jdbc) \
+            .option("password", passwd_jdbc) \
+            .option("driver", config_params['driver']) \
+            .load()
 
 
 def load_part_data(table):
@@ -128,7 +154,7 @@ def load_part_data(table):
     result_table_check = spark \
         .sql("SHOW TABLES LIKE '%s'" % table['table_hive']).count()
 
-    if result_table_check > 0:
+    if result_table_check > 0 and not table.get('no_lower_upper'):
 
         table_hive = "%s.%s" % (config_params['schema_hdfs'],
                                 table['table_hive'])
