@@ -34,7 +34,13 @@ params = {
             municipio, criacao, aniversario FROM lupa.dados_gerais_municipio) t""",
             "pk_table_jdbc": "cod_municipio",
             "update_date_table_jdbc": "",
-            "table_hive": "dados_gerais_municipio"
+            "table_hive": "lupa_dados_gerais_municipio"
+        },
+        {
+            "table_jdbc": "lupa.orgaos_mprj",
+            "pk_table_jdbc": "id",
+            "update_date_table_jdbc": "",
+            "table_hive": "lupa_orgaos_mprj"
         }
     ]
 }
