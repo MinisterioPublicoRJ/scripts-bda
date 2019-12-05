@@ -1,80 +1,115 @@
 # -*- coding: utf-8 -*-
 import pandas as pd
 
+TRAIN_QUERIES = [
+    # RJ
+    """
+        SELECT DISTINCT B.SNCA_DK, B.SNCA_DS_FATO,
+        D.DMDE_MDEC_DK
+        FROM SILD.SILD_ATIVIDADE_SINDICANCIA A
+        INNER JOIN SILD.SILD_SINDICANCIA B
+            ON A.ATSD_SNCA_DK = B.SNCA_DK
+        INNER JOIN SILD.SILD_DESAPARE_MOT_DECLARADO D
+            ON D.DMDE_SDES_DK = B.SNCA_DK
+        WHERE (A.ATSD_TPSN_DK = 22 OR A.ATSD_TPSN_DK = 17)
+        AND B.SNCA_DS_FATO IS NOT NULL
+        AND B.SNCA_UFED_DK = 33
+        AND B.SNCA_DK NOT IN (
+            SELECT DISTINCT B.SNCA_DK
+            FROM SILD.SILD_ATIVIDADE_SINDICANCIA A
+            INNER JOIN SILD.SILD_SINDICANCIA B ON A.ATSD_SNCA_DK = B.SNCA_DK
+            INNER JOIN (
+                SELECT ATSD_SNCA_DK, MAX(ATSD_DT_REGISTRO) AS DT_ULTIMA_REALIZAR
+                FROM SILD.SILD_ATIVIDADE_SINDICANCIA
+                WHERE (ATSD_TPSN_DK = 22 OR ATSD_TPSN_DK = 17)
+                GROUP BY ATSD_SNCA_DK
+            ) C ON C.ATSD_SNCA_DK = A.ATSD_SNCA_DK
+            AND A.ATSD_DT_REGISTRO > C.DT_ULTIMA_REALIZAR
+            WHERE A.ATSD_CPF_RESP_CTRL = '07037032778'
+            AND A.ATSD_TPSN_DK = 5)
+    """,
+    # GO
+    """
+        SELECT DISTINCT B.SNCA_DK, B.SNCA_DS_FATO,
+        D.DMDE_MDEC_DK
+        FROM SILD.SILD_ATIVIDADE_SINDICANCIA A
+        INNER JOIN SILD.SILD_SINDICANCIA B
+            ON A.ATSD_SNCA_DK = B.SNCA_DK
+        INNER JOIN SILD.SILD_DESAPARE_MOT_DECLARADO D
+            ON D.DMDE_SDES_DK = B.SNCA_DK
+        WHERE A.ATSD_TPSN_DK = 2
+        AND B.SNCA_DS_FATO IS NOT NULL
+        AND B.SNCA_UFED_DK = 52
+    """
+]
 
-TRAIN_QUERY = """
-    SELECT DISTINCT B.SNCA_DK, B.SNCA_DS_FATO,
-    D.DMDE_MDEC_DK
-    FROM SILD.SILD_ATIVIDADE_SINDICANCIA A
-    INNER JOIN SILD.SILD_SINDICANCIA B
-        ON A.ATSD_SNCA_DK = B.SNCA_DK
-    INNER JOIN SILD.SILD_DESAPARE_MOT_DECLARADO D
-        ON D.DMDE_SDES_DK = B.SNCA_DK
-    WHERE (A.ATSD_TPSN_DK = 22 OR A.ATSD_TPSN_DK = 17)
-    AND B.SNCA_DS_FATO IS NOT NULL
-    AND B.SNCA_DK NOT IN (
-        SELECT DISTINCT B.SNCA_DK
+PREDICT_QUERIES = [
+    # RJ
+    """
+        SELECT DISTINCT B.SNCA_DK, B.SNCA_DS_FATO, D.DMDE_MDEC_DK
+        FROM SILD.SILD_ATIVIDADE_SINDICANCIA A
+        INNER JOIN SILD.SILD_SINDICANCIA B
+            ON A.ATSD_SNCA_DK = B.SNCA_DK
+        INNER JOIN SILD.SILD_DESAPARE_MOT_DECLARADO D
+            ON D.DMDE_SDES_DK = B.SNCA_DK
+        WHERE A.ATSD_TPSN_DK = 2 AND B.SNCA_DS_FATO IS NOT NULL
+        AND B.SNCA_UFED_DK = 33
+        AND NOT EXISTS (
+            SELECT ATSD_SNCA_DK
+            FROM SILD.SILD_ATIVIDADE_SINDICANCIA B
+            WHERE B.ATSD_SNCA_DK = A.ATSD_SNCA_DK
+            AND (B.ATSD_TPSN_DK = 22 OR B.ATSD_TPSN_DK = 23 OR B.ATSD_TPSN_DK = 17))
+    """,
+    """
+        SELECT DISTINCT B.SNCA_DK, B.SNCA_DS_FATO, D.DMDE_MDEC_DK
         FROM SILD.SILD_ATIVIDADE_SINDICANCIA A
         INNER JOIN SILD.SILD_SINDICANCIA B ON A.ATSD_SNCA_DK = B.SNCA_DK
-        INNER JOIN (
-            SELECT ATSD_SNCA_DK, MAX(ATSD_DT_REGISTRO) AS DT_ULTIMA_REALIZAR
-            FROM SILD.SILD_ATIVIDADE_SINDICANCIA
-            WHERE (ATSD_TPSN_DK = 22 OR ATSD_TPSN_DK = 17)
-            GROUP BY ATSD_SNCA_DK
-        ) C ON C.ATSD_SNCA_DK = A.ATSD_SNCA_DK
-        AND A.ATSD_DT_REGISTRO > C.DT_ULTIMA_REALIZAR
+        INNER JOIN SILD.SILD_DESAPARE_MOT_DECLARADO D ON D.DMDE_SDES_DK = B.SNCA_DK
         WHERE A.ATSD_CPF_RESP_CTRL = '07037032778'
-        AND A.ATSD_TPSN_DK = 5)
-"""
+        AND A.ATSD_TPSN_DK = 5
+        AND B.SNCA_DS_FATO IS NOT NULL
+        AND B.SNCA_UFED_DK = 33
+        AND A.ATSD_SNCA_DK NOT IN (
+            SELECT ATSD_SNCA_DK
+            FROM SILD.SILD_ATIVIDADE_SINDICANCIA
+            WHERE ATSD_TPSN_DK = 23
+        )
+        AND A.ATSD_SNCA_DK NOT IN (
+            SELECT DISTINCT A.ATSD_SNCA_DK
+            FROM SILD.SILD_ATIVIDADE_SINDICANCIA A
+            INNER JOIN (
+                SELECT ATSD_SNCA_DK, MAX(ATSD_DT_REGISTRO) AS DT_ULTIMA_REALIZAR
+                FROM SILD.SILD_ATIVIDADE_SINDICANCIA
+                WHERE (ATSD_TPSN_DK = 22 OR ATSD_TPSN_DK = 17)
+                GROUP BY ATSD_SNCA_DK) C
+            ON C.ATSD_SNCA_DK = A.ATSD_SNCA_DK
+            AND A.ATSD_DT_REGISTRO < C.DT_ULTIMA_REALIZAR
+            WHERE A.ATSD_CPF_RESP_CTRL = '07037032778'
+            AND A.ATSD_TPSN_DK = 5
+        )
+    """,
+    # GO
+    """
+        SELECT DISTINCT B.SNCA_DK, B.SNCA_DS_FATO, D.DMDE_MDEC_DK
+        FROM SILD.SILD_ATIVIDADE_SINDICANCIA A
+        INNER JOIN SILD.SILD_SINDICANCIA B
+            ON A.ATSD_SNCA_DK = B.SNCA_DK
+        INNER JOIN SILD.SILD_DESAPARE_MOT_DECLARADO D
+            ON D.DMDE_SDES_DK = B.SNCA_DK
+        WHERE A.ATSD_TPSN_DK = 1 AND B.SNCA_DS_FATO IS NOT NULL
+        AND B.SNCA_UFED_DK = 52
+        AND NOT EXISTS (
+            SELECT ATSD_SNCA_DK
+            FROM SILD.SILD_ATIVIDADE_SINDICANCIA B
+            WHERE B.ATSD_SNCA_DK = A.ATSD_SNCA_DK
+            AND (B.ATSD_TPSN_DK = 2 OR B.ATSD_TPSN_DK = 23))
+    """
+]
 
 POSSIBLE_CLASSES_QUERY = """
     SELECT DISTINCT DMDE_MDEC_DK
     FROM SILD.SILD_DESAPARE_MOT_DECLARADO
     ORDER BY DMDE_MDEC_DK ASC
-"""
-
-# A condition for dates might or might not be inserted in the {} slots
-PREDICT_QUERY = """
-    SELECT DISTINCT B.SNCA_DK, B.SNCA_DS_FATO, D.DMDE_MDEC_DK
-    FROM SILD.SILD_ATIVIDADE_SINDICANCIA A
-    INNER JOIN SILD.SILD_SINDICANCIA B
-        ON A.ATSD_SNCA_DK = B.SNCA_DK
-    INNER JOIN SILD.SILD_DESAPARE_MOT_DECLARADO D
-        ON D.DMDE_SDES_DK = B.SNCA_DK
-    WHERE A.ATSD_TPSN_DK = 2 AND B.SNCA_DS_FATO IS NOT NULL
-    AND NOT EXISTS (
-        SELECT ATSD_SNCA_DK
-        FROM SILD.SILD_ATIVIDADE_SINDICANCIA B
-        WHERE B.ATSD_SNCA_DK = A.ATSD_SNCA_DK
-        AND (B.ATSD_TPSN_DK = 22 OR B.ATSD_TPSN_DK = 23 OR B.ATSD_TPSN_DK = 17))
-"""
-
-PREDICT_QUERY_2 = """
-    SELECT DISTINCT B.SNCA_DK, B.SNCA_DS_FATO, D.DMDE_MDEC_DK
-    FROM SILD.SILD_ATIVIDADE_SINDICANCIA A
-    INNER JOIN SILD.SILD_SINDICANCIA B ON A.ATSD_SNCA_DK = B.SNCA_DK
-    INNER JOIN SILD.SILD_DESAPARE_MOT_DECLARADO D ON D.DMDE_SDES_DK = B.SNCA_DK
-    WHERE A.ATSD_CPF_RESP_CTRL = '07037032778'
-    AND A.ATSD_TPSN_DK = 5
-    AND B.SNCA_DS_FATO IS NOT NULL
-    AND A.ATSD_SNCA_DK NOT IN (
-        SELECT ATSD_SNCA_DK
-        FROM SILD.SILD_ATIVIDADE_SINDICANCIA
-        WHERE ATSD_TPSN_DK = 23
-    )
-    AND A.ATSD_SNCA_DK NOT IN (
-        SELECT DISTINCT A.ATSD_SNCA_DK
-        FROM SILD.SILD_ATIVIDADE_SINDICANCIA A
-        INNER JOIN (
-            SELECT ATSD_SNCA_DK, MAX(ATSD_DT_REGISTRO) AS DT_ULTIMA_REALIZAR
-            FROM SILD.SILD_ATIVIDADE_SINDICANCIA
-            WHERE (ATSD_TPSN_DK = 22 OR B.ATSD_TPSN_DK = 17)
-            GROUP BY ATSD_SNCA_DK) C
-        ON C.ATSD_SNCA_DK = A.ATSD_SNCA_DK
-        AND A.ATSD_DT_REGISTRO < C.DT_ULTIMA_REALIZAR
-        WHERE A.ATSD_CPF_RESP_CTRL = '07037032778'
-        AND A.ATSD_TPSN_DK = 5
-    )
 """
 
 # EVALUATE_QUERY = """
@@ -85,31 +120,49 @@ PREDICT_QUERY_2 = """
 #     WHERE D.ATSD_TPSN_DK = 22
 # """
 
-EVALUATE_QUERY = """
-    SELECT B.SNCA_DK, B.SNCA_IDENTIFICADOR_SINALID, D.DMDE_MDEC_DK AS MDEC_DK,
-    MAX(A.ATSD_DT_REGISTRO) AS DT_VALIDACAO
-    FROM SILD.SILD_ATIVIDADE_SINDICANCIA A
-    INNER JOIN SILD.SILD_SINDICANCIA B
-        ON A.ATSD_SNCA_DK = B.SNCA_DK
-    INNER JOIN SILD.SILD_DESAPARE_MOT_DECLARADO D
-        ON D.DMDE_SDES_DK = B.SNCA_DK
-    WHERE (A.ATSD_TPSN_DK = 22 OR B.ATSD_TPSN_DK = 17)
-    AND B.SNCA_DS_FATO IS NOT NULL
-    AND B.SNCA_DK NOT IN (
-        SELECT DISTINCT B.SNCA_DK
+EVALUATE_QUERIES = [
+    # RJ
+    """
+        SELECT B.SNCA_DK, B.SNCA_IDENTIFICADOR_SINALID, D.DMDE_MDEC_DK AS MDEC_DK,
+        MAX(A.ATSD_DT_REGISTRO) AS DT_VALIDACAO
         FROM SILD.SILD_ATIVIDADE_SINDICANCIA A
-        INNER JOIN SILD.SILD_SINDICANCIA B ON A.ATSD_SNCA_DK = B.SNCA_DK
-        INNER JOIN (
-            SELECT ATSD_SNCA_DK, MAX(ATSD_DT_REGISTRO) AS DT_ULTIMA_REALIZAR
-            FROM SILD.SILD_ATIVIDADE_SINDICANCIA
-            WHERE ATSD_TPSN_DK = 22 OR B.ATSD_TPSN_DK = 17
-            GROUP BY ATSD_SNCA_DK
-        ) C ON C.ATSD_SNCA_DK = A.ATSD_SNCA_DK
-        AND A.ATSD_DT_REGISTRO > C.DT_ULTIMA_REALIZAR
-        WHERE A.ATSD_CPF_RESP_CTRL = '07037032778'
-        AND A.ATSD_TPSN_DK = 5)
-    GROUP BY B.SNCA_DK, B.SNCA_IDENTIFICADOR_SINALID, D.DMDE_MDEC_DK
-"""
+        INNER JOIN SILD.SILD_SINDICANCIA B
+            ON A.ATSD_SNCA_DK = B.SNCA_DK
+        INNER JOIN SILD.SILD_DESAPARE_MOT_DECLARADO D
+            ON D.DMDE_SDES_DK = B.SNCA_DK
+        WHERE (A.ATSD_TPSN_DK = 22 OR A.ATSD_TPSN_DK = 17)
+        AND B.SNCA_DS_FATO IS NOT NULL
+        AND B.SNCA_UFED_DK = 33
+        AND B.SNCA_DK NOT IN (
+            SELECT DISTINCT B.SNCA_DK
+            FROM SILD.SILD_ATIVIDADE_SINDICANCIA A
+            INNER JOIN SILD.SILD_SINDICANCIA B ON A.ATSD_SNCA_DK = B.SNCA_DK
+            INNER JOIN (
+                SELECT ATSD_SNCA_DK, MAX(ATSD_DT_REGISTRO) AS DT_ULTIMA_REALIZAR
+                FROM SILD.SILD_ATIVIDADE_SINDICANCIA
+                WHERE ATSD_TPSN_DK = 22 OR ATSD_TPSN_DK = 17
+                GROUP BY ATSD_SNCA_DK
+            ) C ON C.ATSD_SNCA_DK = A.ATSD_SNCA_DK
+            AND A.ATSD_DT_REGISTRO > C.DT_ULTIMA_REALIZAR
+            WHERE A.ATSD_CPF_RESP_CTRL = '07037032778'
+            AND A.ATSD_TPSN_DK = 5)
+        GROUP BY B.SNCA_DK, B.SNCA_IDENTIFICADOR_SINALID, D.DMDE_MDEC_DK
+    """,
+    # GO
+    """
+        SELECT B.SNCA_DK, B.SNCA_IDENTIFICADOR_SINALID, D.DMDE_MDEC_DK AS MDEC_DK,
+        MAX(A.ATSD_DT_REGISTRO) AS DT_VALIDACAO
+        FROM SILD.SILD_ATIVIDADE_SINDICANCIA A
+        INNER JOIN SILD.SILD_SINDICANCIA B
+            ON A.ATSD_SNCA_DK = B.SNCA_DK
+        INNER JOIN SILD.SILD_DESAPARE_MOT_DECLARADO D
+            ON D.DMDE_SDES_DK = B.SNCA_DK
+        WHERE A.ATSD_TPSN_DK = 2
+        AND B.SNCA_DS_FATO IS NOT NULL
+        AND B.SNCA_UFED_DK = 52
+        GROUP BY B.SNCA_DK, B.SNCA_IDENTIFICADOR_SINALID, D.DMDE_MDEC_DK
+    """
+]
 
 GET_SINALID_QUERY = """
     SELECT SNCA_DK, SNCA_IDENTIFICADOR_SINALID FROM SILD.SILD_SINDICANCIA
@@ -137,7 +190,7 @@ INSERT_MOT_DECLARADO_QUERY = """
 """
 
 
-def get_train_data(cursor, UFED_DK=None, start_date=None, end_date=None):
+def get_train_data(cursor, start_date=None, end_date=None):
     """Get the data that will be used to train the model.
 
     Parameters:
@@ -148,23 +201,21 @@ def get_train_data(cursor, UFED_DK=None, start_date=None, end_date=None):
     Returns:
         A Pandas DataFrame containing the training data.
     """
-    if UFED_DK is not None:
-        try:
-            int(UFED_DK)
-        except ValueError:
-            raise TypeError('UFED_DK must be None or integer!')
 
-    query = TRAIN_QUERY
+    query = ""
 
-    # Additional conditions to be added at the end of the query
-    if UFED_DK:
-        query += " AND B.SNCA_UFED_DK = {}".format(UFED_DK)
-    if start_date:
-        query += " AND A.ATSD_DT_REGISTRO >= TO_DATE('{}', 'YYYY-MM-DD')"\
-            .format(start_date)
-    if end_date:
-        query += " AND A.ATSD_DT_REGISTRO <= TO_DATE('{}', 'YYYY-MM-DD')"\
-            .format(end_date)
+    for q in TRAIN_QUERIES:
+        # Additional conditions to be added at the end of the query
+        if start_date:
+            q += " AND A.ATSD_DT_REGISTRO >= TO_DATE('{}', 'YYYY-MM-DD')"\
+                .format(start_date)
+        if end_date:
+            q += " AND A.ATSD_DT_REGISTRO <= TO_DATE('{}', 'YYYY-MM-DD')"\
+                .format(end_date)
+        if query:
+            query += " UNION {}".format(q)
+        else:
+            query += q
 
     cursor.execute(query)
 
@@ -188,7 +239,7 @@ def get_list_of_classes(cursor):
     return [int(x[0]) for x in cursor.fetchall()]
 
 
-def get_predict_data(cursor, UFED_DK=None, only_null_class=True,
+def get_predict_data(cursor, only_null_class=True,
                      start_date='', end_date=''):
     """Get the data that will be used for the predictions.
 
@@ -200,36 +251,22 @@ def get_predict_data(cursor, UFED_DK=None, only_null_class=True,
     Returns:
         A Pandas DataFrame containing the data to predict labels for.
     """
-    if UFED_DK is not None:
-        try:
-            int(UFED_DK)
-        except ValueError:
-            raise TypeError('UFED_DK must be None or integer!')
 
-    query = PREDICT_QUERY
-    query_2 = PREDICT_QUERY_2
+    query = ""
 
-    if only_null_class:
-        query += " AND D.DMDE_MDEC_DK = 13"
-        query_2 += " AND D.DMDE_MDEC_DK = 13"
-    if UFED_DK:
-        query += " AND B.SNCA_UFED_DK = {}".format(UFED_DK)
-        query_2 += " AND B.SNCA_UFED_DK = {}".format(UFED_DK)
-
-    # The date conditions will appear in two distinct places, which is why the
-    # query has both a format() and a concatenation of these conditions
-    if start_date:
-        query += " AND A.ATSD_DT_REGISTRO >= TO_DATE('{}', 'YYYY-MM-DD')"\
-            .format(start_date)
-        query_2 += " AND A.ATSD_DT_REGISTRO >= TO_DATE('{}', 'YYYY-MM-DD')"\
-            .format(start_date)
-    if end_date:
-        query += " AND A.ATSD_DT_REGISTRO <= TO_DATE('{}', 'YYYY-MM-DD')"\
-            .format(end_date)
-        query_2 += " AND A.ATSD_DT_REGISTRO <= TO_DATE('{}', 'YYYY-MM-DD')"\
-            .format(end_date)
-
-    query = query + ' UNION ' + query_2
+    for q in PREDICT_QUERIES:
+        if only_null_class:
+            q += " AND D.DMDE_MDEC_DK = 13"
+        if start_date:
+            q += " AND A.ATSD_DT_REGISTRO >= TO_DATE('{}', 'YYYY-MM-DD')"\
+                .format(start_date)
+        if end_date:
+            q += " AND A.ATSD_DT_REGISTRO <= TO_DATE('{}', 'YYYY-MM-DD')"\
+                .format(end_date)
+        if query:
+            query += " UNION {}".format(q)
+        else:
+            query += q
 
     cursor.execute(query)
 
@@ -248,7 +285,8 @@ def get_evaluate_data(cursor, keys):
     Returns:
         A Pandas DataFrame containing the evaluation data.
     """
-    cursor.execute(EVALUATE_QUERY)
+    query = " UNION ".join(EVALUATE_QUERIES)
+    cursor.execute(query)
 
     columns = [desc[0] for desc in cursor.description]
     result = pd.DataFrame(cursor.fetchall(), columns=columns)
