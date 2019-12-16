@@ -27,3 +27,4 @@ TYPE_JDBC : String for choose which jdbc use. Ex: ORACLE, POSTGRE
 IMPALA_HOST : The URL for host impala
 
 IMPALA_PORT : Port for host impala
+
