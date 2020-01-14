@@ -99,7 +99,7 @@ do
         if [[ $? == 0 ]]; then
 
             echo "Criando repositorio temporario"
-            temp_path="$dir_path"/temp
+            temp_path="$dir_path"_temp
             hdfs dfs -mkdir $temp_path
 
             get_header "$dir_path"
