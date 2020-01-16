@@ -83,7 +83,7 @@ def load_all_data(table):
 
 
 def get_total_record(table):
-    if table.get('no_lower_upper'):
+    if table.get('no_partition_column'):
         return """
                 (select
                 count(1) as total
@@ -101,7 +101,7 @@ def get_total_record(table):
 
 
 def load_table(table, total_min_max_table, query_table):
-    if table.get('no_lower_upper'):
+    if table.get('no_partition_column'):
         return spark.read.format("jdbc") \
             .option("url", url_jdbc_server) \
             .option("numPartitions", 50) \
@@ -154,7 +154,7 @@ def load_part_data(table):
     result_table_check = spark \
         .sql("SHOW TABLES LIKE '%s'" % table['table_hive']).count()
 
-    if result_table_check > 0 and not table.get('no_lower_upper'):
+    if result_table_check > 0 and not table.get('no_partition_column'):
 
         table_hive = "%s.%s" % (config_params['schema_hdfs'],
                                 table['table_hive'])

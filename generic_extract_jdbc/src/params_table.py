@@ -1228,14 +1228,14 @@ params = {
             "table_jdbc": "RH.MOTIVO_FIM",
             "pk_table_jdbc": "",
             "update_date_table_jdbc": "",
-            "no_lower_upper": "true",
+            "no_partition_column": "true",
             "table_hive": "rh_motivo_fim"
         },
         {
             "table_jdbc": "RH.MOTIVO_INICIO",
             "pk_table_jdbc": "",
             "update_date_table_jdbc": "",
-            "no_lower_upper": "true",
+            "no_partition_column": "true",
             "table_hive": "rh_motivo_inicio"
         },
         # {
