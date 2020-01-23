@@ -275,7 +275,8 @@ def get_predict_data(cursor, only_null_class=True,
 
     columns = [desc[0] for desc in cursor.description]
     df = pd.DataFrame(cursor.fetchall(), columns=columns)
-    return df.astype({'SNCA_DK': int, 'DMDE_MDEC_DK': int})
+    df['DMDE_MDEC_DK'] = df['DMDE_MDEC_DK'].apply(lambda x: int(x) if not pd.isna(x) else x)
+    return df.astype({'SNCA_DK': int})
 
 
 def get_evaluate_data(cursor, keys):
