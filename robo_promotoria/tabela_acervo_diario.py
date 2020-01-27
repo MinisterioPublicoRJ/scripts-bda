@@ -1,5 +1,6 @@
 import pyspark
-from pyspark.sql.functions import unix_timestamp, from_unixtime, current_timestamp
+from pyspark.sql.functions import unix_timestamp, from_unixtime, current_timestamp, lit
+from utils import _update_impala_table
 
 
 spark = pyspark.sql.session.SparkSession \
@@ -20,7 +21,9 @@ table = spark.sql("""
         GROUP BY docu_orgi_orga_dk_responsavel, pacote_atribuicao
 """)
 
-table.withColumn("data", from_unixtime(unix_timestamp(current_timestamp(), 'yyyy-MM-dd'), 'yyyy-MM-dd').cast('timestamp')) \
+table.withColumn("tipo_acervo", lit(0)).withColumn("data", from_unixtime(unix_timestamp(current_timestamp(), 'yyyy-MM-dd'), 'yyyy-MM-dd').cast('timestamp')) \
     .write.mode("overwrite").format("parquet").saveAsTable("exadata_aux.tb_acervo_diario")
+
+_update_impala_table("exadata_aux.tb_acervo_diario")
 
 

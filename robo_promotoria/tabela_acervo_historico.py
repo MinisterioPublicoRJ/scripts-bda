@@ -1,5 +1,6 @@
 import pyspark
 from pyspark.sql.functions import unix_timestamp, from_unixtime, current_timestamp
+from utils import _update_impala_table
 
 
 spark = pyspark.sql.session.SparkSession \
@@ -15,4 +16,4 @@ table = spark.sql("""
 table.withColumn("data", from_unixtime(unix_timestamp(current_timestamp(), 'yyyy-MM-dd'), 'yyyy-MM-dd').cast('timestamp')) \
     .write.mode("append").format("parquet").saveAsTable("exadata_aux.tb_acervo_historico")
 
-
+_update_impala_table("exadata_aux.tb_acervo_historico")
