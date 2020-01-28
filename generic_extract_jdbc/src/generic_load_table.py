@@ -2,7 +2,9 @@ from base import spark
 from decouple import config
 from impala.dbapi import connect as impala_connect
 import ast
-import params_table
+import params_table_ora13
+import params_table_oraupsert
+import params_table_oracle
 import params_table_postgre
 import pyspark.sql.functions as f
 from pyspark.sql.functions import base64
@@ -14,7 +16,9 @@ type_jdbc = config("TYPE_JDBC")
 load_all = config("LOAD_ALL")
 
 dic_params = {
-                "ORACLE": params_table.params, 
+                "ORACLE_13" : params_table_ora13.params,
+                "ORACLE_UPSERT" : params_table_oraupsert.params,
+                "ORACLE": params_table_oracle.params, 
                 "POSTGRE" : params_table_postgre.params
             }
 
@@ -71,7 +75,7 @@ def load_all_data(table):
 
         final_df = transform_col_binary(jdbc_table)
 
-        final_df.coalesce(20) \
+        final_df \
             .write \
             .mode('overwrite') \
             .saveAsTable(table_hive)
@@ -104,7 +108,7 @@ def load_table(table, total_min_max_table, query_table):
     if table.get('no_partition_column'):
         return spark.read.format("jdbc") \
             .option("url", url_jdbc_server) \
-            .option("numPartitions", 50) \
+            .option("numPartitions", 70) \
             .option("dbtable", query_table) \
             .option("user", user_jdbc) \
             .option("password", passwd_jdbc) \
@@ -120,7 +124,7 @@ def load_table(table, total_min_max_table, query_table):
             .option("url", url_jdbc_server) \
             .option("lowerBound", minimum) \
             .option("upperBound", maximum) \
-            .option("numPartitions", 50) \
+            .option("numPartitions", 70) \
             .option("partitionColumn", table['pk_table_jdbc']) \
             .option("dbtable", query_table) \
             .option("user", user_jdbc) \
@@ -237,7 +241,7 @@ def load_part_data(table):
                 print('Writing data in hdfs like table %s ' % table_hive)
 
                 final_df = transform_col_binary(table_delta_df)
-                final_df.coalesce(20) \
+                final_df.coalesce(1) \
                     .write.mode('append') \
                     .saveAsTable(table_hive)
 
