@@ -15,4 +15,8 @@ table = spark.sql("""
 
 table.write.mode("append").format("parquet").saveAsTable("exadata_aux.tb_acervo_historico")
 
+spark.sql("""
+       TRUNCATE TABLE exadata_aux.tb_acervo_diario
+""")
+
 _update_impala_table("exadata_aux.tb_acervo_historico")
