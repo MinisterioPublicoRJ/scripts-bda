@@ -1,5 +1,5 @@
 import pyspark
-from pyspark.sql.functions import unix_timestamp, from_unixtime, current_timestamp, lit
+from pyspark.sql.functions import unix_timestamp, from_unixtime, current_timestamp, lit, date_format
 from utils import _update_impala_table
 
 
@@ -9,10 +9,11 @@ spark = pyspark.sql.session.SparkSession \
         .enableHiveSupport() \
         .getOrCreate()
 
-spark.sql("set hive.exec.dynamic.partition=true")
-spark.sql("set hive.exec.dynamic.partition.mode=nonstrict")
-spark.sql("set spark.hadoop.hive.exec.dynamic.partition=true")
-spark.sql("set spark.hadoop.hive.exec.dynamic.partition.mode=nonstrict")
+spark.conf.set("spark.sql.sources.partitionOverwriteMode","dynamic")
+
+
+spark.sql("use %s" % "exadata_aux")
+result_table_check = spark.sql("SHOW TABLES LIKE '%s'" % "tb_acervo_diario").count()
 
 table = spark.sql("""
         SELECT 
@@ -26,9 +27,17 @@ table = spark.sql("""
         GROUP BY docu_orgi_orga_dk_responsavel, pacote_atribuicao
 """)
 
+table = table.withColumn("tipo_acervo", lit(0)).withColumn(
+        "dt_inclusao",
+        from_unixtime(
+            unix_timestamp(current_timestamp(), 'yyyy-MM-dd'), 'yyyy-MM-dd') \
+        .cast('timestamp')) \
+        .withColumn("dt_partition", date_format(current_timestamp(), "ddMMyyyy"))
 
-table.withColumn("tipo_acervo", lit(0)).withColumn("data", from_unixtime(unix_timestamp(current_timestamp(), 'yyyy-MM-dd'), 'yyyy-MM-dd').cast('timestamp')) \
-    .write.mode("overwrite").insertInto("exadata_aux.tb_acervo_diario", overwrite=True)
+if result_table_check > 0:
+    table.write.mode("overwrite").insertInto("exadata_aux.tb_acervo_diario", overwrite=True)
+else:
+    table.write.partitionBy("dt_partition").saveAsTable("exadata_aux.tb_acervo_diario")
 
 _update_impala_table("exadata_aux.tb_acervo_diario")
 

@@ -10,13 +10,16 @@ spark = pyspark.sql.session.SparkSession \
         .getOrCreate()
 
 table = spark.sql("""
-        SELECT * from exadata_aux.tb_acervo_diario
+        SELECT  cod_orgao, 
+                pacote_atribuicao, 
+                acervo, 
+                tipo_acervo, 
+                dt_inclusao 
+        from exadata_aux.tb_acervo_diario
 """)
 
 table.write.mode("append").format("parquet").saveAsTable("exadata_aux.tb_acervo_historico")
 
-spark.sql("""
-       TRUNCATE TABLE exadata_aux.tb_acervo_diario
-""")
+spark.sql(" DROP TABLE exadata_aux.tb_acervo_diario ")
 
 _update_impala_table("exadata_aux.tb_acervo_historico")

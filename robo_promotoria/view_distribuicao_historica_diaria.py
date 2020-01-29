@@ -8,11 +8,21 @@ spark = pyspark.sql.session.SparkSession \
         .enableHiveSupport() \
         .getOrCreate()
 
-spark.sql("drop view if exists exadata_aux.vw_distribuicao_historica_diaria")
+spark.sql("drop table if exists exadata_aux.vw_distribuicao_historica_diaria")
 
 spark.sql("""
-        create view exadata_aux.vw_distribuicao_historica_diaria as
-        SELECT  *
+        create table exadata_aux.vw_distribuicao_historica_diaria as
+        SELECT  pacote_atribuicao,
+                minino,
+                maximo,
+                media,
+                primeiro_quartil,
+                mediana,
+                terceiro_quartil,
+                iqr,
+                lout,
+                hout,
+                dt_inclusao
         from exadata_aux.tb_distribuicao_diaria
         union all
         select *

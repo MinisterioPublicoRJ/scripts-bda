@@ -15,6 +15,10 @@ spark = pyspark.sql.session.SparkSession \
         .enableHiveSupport() \
         .getOrCreate()
 
+spark.conf.set("spark.sql.sources.partitionOverwriteMode","dynamic")
+
+spark.sql("use %s" % "exadata_aux")
+result_table_check = spark.sql("SHOW TABLES LIKE '%s'" % "tb_distribuicao_diaria").count()
 
 estatisticas = spark.sql(
     """
@@ -33,11 +37,15 @@ estatisticas = spark.sql(
     from exadata_aux.tb_acervo_diario group by pacote_atribuicao
     """
 ).withColumn(
-    "data",
+    "dt_inclusao",
     from_unixtime(
         unix_timestamp(current_timestamp(), 'yyyy-MM-dd'), 'yyyy-MM-dd')
     .cast('timestamp')
-).write.mode("overwrite").format("parquet")\
-    .saveAsTable("exadata_aux.tb_distribuicao_diaria")
+).withColumn("dt_partition", date_format(current_timestamp(), "ddMMyyyy"))
+
+if result_table_check > 0:
+    estatisticas.write.mode("overwrite").insertInto("exadata_aux.tb_distribuicao_diaria", overwrite=True)
+else:
+    estatisticas.partitionBy("dt_partition").saveAsTable("exadata_aux.tb_distribuicao_diaria")
 
 _update_impala_table("exadata_aux.tb_distribuicao_diaria")

@@ -9,11 +9,15 @@ spark = pyspark.sql.session.SparkSession \
         .enableHiveSupport() \
         .getOrCreate()
 
-spark.sql("drop view if exists exadata_aux.vw_acervo_historico_diario")
+spark.sql("drop table if exists exadata_aux.vw_acervo_historico_diario")
 
 spark.sql("""
-        create view exadata_aux.vw_acervo_historico_diario as 
-        SELECT  *
+        CREATE TABLE exadata_aux.vw_acervo_historico_diario as 
+        SELECT  cod_orgao, 
+                pacote_atribuicao, 
+                acervo, 
+                tipo_acervo, 
+                dt_inclusao
         from exadata_aux.tb_acervo_diario
         union all
         select * 

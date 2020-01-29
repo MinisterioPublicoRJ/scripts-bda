@@ -9,8 +9,22 @@ spark = pyspark.sql.session.SparkSession \
         .getOrCreate()
 
 spark.sql("""
-        SELECT * from exadata_aux.tb_distribuicao_diaria
+        SELECT  pacote_atribuicao,
+                minino,
+                maximo,
+                media,
+                primeiro_quartil,
+                mediana,
+                terceiro_quartil,
+                iqr,
+                lout,
+                hout,
+                dt_inclusao
+        from exadata_aux.tb_distribuicao_diaria
 """).write.mode("append").format("parquet").saveAsTable(
     "exadata_aux.tb_distribuicao_historica"
 )
+
+spark.sql(" DROP TABLE exadata_aux.tb_distribuicao_diaria ")
+
 _update_impala_table("exadata_aux.tb_distribuicao_historica")
