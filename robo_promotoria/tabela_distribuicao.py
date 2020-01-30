@@ -4,6 +4,7 @@ from pyspark.sql.functions import (
     unix_timestamp,
     from_unixtime,
     current_timestamp,
+    date_format
 )
 
 from utils import _update_impala_table
@@ -11,14 +12,14 @@ from utils import _update_impala_table
 
 spark = pyspark.sql.session.SparkSession \
         .builder \
-        .appName("criar_tabela_distribuicao_diaria") \
+        .appName("criar_tabela_distribuicao") \
         .enableHiveSupport() \
         .getOrCreate()
 
 spark.conf.set("spark.sql.sources.partitionOverwriteMode","dynamic")
 
 spark.sql("use %s" % "exadata_aux")
-result_table_check = spark.sql("SHOW TABLES LIKE '%s'" % "tb_distribuicao_diaria").count()
+result_table_check = spark.sql("SHOW TABLES LIKE '%s'" % "tb_distribuicao").count()
 
 estatisticas = spark.sql(
     """
@@ -34,7 +35,7 @@ estatisticas = spark.sql(
         - 1.5*(percentile(acervo, 0.75) - percentile(acervo, 0.25)) as Lout,
     percentile(acervo, 0.75)
         + 1.5*(percentile(acervo, 0.75) - percentile(acervo, 0.25)) as Hout
-    from exadata_aux.tb_acervo_diario group by pacote_atribuicao
+    from exadata_aux.tb_acervo group by pacote_atribuicao
     """
 ).withColumn(
     "dt_inclusao",
@@ -44,8 +45,8 @@ estatisticas = spark.sql(
 ).withColumn("dt_partition", date_format(current_timestamp(), "ddMMyyyy"))
 
 if result_table_check > 0:
-    estatisticas.write.mode("overwrite").insertInto("exadata_aux.tb_distribuicao_diaria", overwrite=True)
+    estatisticas.write.mode("overwrite").insertInto("exadata_aux.tb_distribuicao", overwrite=True)
 else:
-    estatisticas.partitionBy("dt_partition").saveAsTable("exadata_aux.tb_distribuicao_diaria")
+    estatisticas.write.partitionBy("dt_partition").saveAsTable("exadata_aux.tb_distribuicao")
 
-_update_impala_table("exadata_aux.tb_distribuicao_diaria")
+_update_impala_table("exadata_aux.tb_distribuicao")
