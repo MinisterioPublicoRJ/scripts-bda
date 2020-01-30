@@ -5,7 +5,7 @@ from utils import _update_impala_table
 
 spark = pyspark.sql.session.SparkSession \
         .builder \
-        .appName("criar_tabela_acervo_temporario") \
+        .appName("criar_tabela_acervo") \
         .enableHiveSupport() \
         .getOrCreate()
 
@@ -13,7 +13,7 @@ spark.conf.set("spark.sql.sources.partitionOverwriteMode","dynamic")
 
 
 spark.sql("use %s" % "exadata_aux")
-result_table_check = spark.sql("SHOW TABLES LIKE '%s'" % "tb_acervo_diario").count()
+result_table_check = spark.sql("SHOW TABLES LIKE '%s'" % "tb_acervo").count()
 
 table = spark.sql("""
         SELECT 
@@ -35,10 +35,10 @@ table = table.withColumn("tipo_acervo", lit(0)).withColumn(
         .withColumn("dt_partition", date_format(current_timestamp(), "ddMMyyyy"))
 
 if result_table_check > 0:
-    table.write.mode("overwrite").insertInto("exadata_aux.tb_acervo_diario", overwrite=True)
+    table.write.mode("overwrite").insertInto("exadata_aux.tb_acervo", overwrite=True)
 else:
-    table.write.partitionBy("dt_partition").saveAsTable("exadata_aux.tb_acervo_diario")
+    table.write.partitionBy("dt_partition").saveAsTable("exadata_aux.tb_acervo")
 
-_update_impala_table("exadata_aux.tb_acervo_diario")
+_update_impala_table("exadata_aux.tb_acervo")
 
 
