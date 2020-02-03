@@ -40,7 +40,7 @@ table = table.withColumn("tipo_acervo", lit(0)).withColumn(
 is_exists_table_acervo = check_table_exists("exadata_aux", "tb_acervo")
 
 if is_exists_table_acervo:
-    table.write.mode("overwrite").insertInto("exadata_aux.tb_acervo", overwrite=True)
+    table.coalesce(1).write.mode("overwrite").insertInto("exadata_aux.tb_acervo", overwrite=True)
 else:
     table.write.partitionBy("dt_partition").mode("overwrite").saveAsTable("exadata_aux.tb_acervo")
 

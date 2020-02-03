@@ -11,6 +11,12 @@ from pyspark.sql.functions import (
 from utils import _update_impala_table
 
 
+def check_table_exists(schema, table_name):
+    spark.sql("use %s" % schema)
+    result_table_check = spark.sql("SHOW TABLES LIKE '%s'" % table_name).count()
+    return True if result_table_check > 0 else False
+
+
 spark = pyspark.sql.session.SparkSession \
         .builder \
         .appName("criar_tabela_distribuicao") \
@@ -18,9 +24,6 @@ spark = pyspark.sql.session.SparkSession \
         .getOrCreate()
 
 spark.conf.set("spark.sql.sources.partitionOverwriteMode","dynamic")
-
-spark.sql("use %s" % "exadata_aux")
-result_table_check = spark.sql("SHOW TABLES LIKE '%s'" % "tb_distribuicao").count()
 
 date_now = datetime.now()
 data_atual = date_now.strftime("%Y-%m-%d")
@@ -52,8 +55,10 @@ estatisticas = spark.sql(
 ).withColumn("dt_partition", date_format(current_timestamp(), "ddMMyyyy"))
 
 
-if result_table_check > 0:
-    estatisticas.write.mode("overwrite").insertInto("exadata_aux.tb_distribuicao", overwrite=True)
+is_exists_table_distribuicao = check_table_exists("exadata_aux", "tb_distribuicao")
+
+if is_exists_table_distribuicao:
+    estatisticas.coalesce(1).write.mode("overwrite").insertInto("exadata_aux.tb_distribuicao", overwrite=True)
 else:
     estatisticas.write.partitionBy("dt_partition").saveAsTable("exadata_aux.tb_distribuicao")
 
