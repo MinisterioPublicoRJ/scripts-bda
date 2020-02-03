@@ -3,6 +3,11 @@ from pyspark.sql.functions import unix_timestamp, from_unixtime, current_timesta
 from utils import _update_impala_table
 
 
+def check_table_exists(schema, table_name):
+    spark.sql("use %s" % schema)
+    result_table_check = spark.sql("SHOW TABLES LIKE '%s'" % table_name).count()
+    return True if result_table_check > 0 else False
+
 spark = pyspark.sql.session.SparkSession \
         .builder \
         .appName("criar_tabela_acervo") \
@@ -12,15 +17,12 @@ spark = pyspark.sql.session.SparkSession \
 spark.conf.set("spark.sql.sources.partitionOverwriteMode","dynamic")
 
 
-spark.sql("use %s" % "exadata_aux")
-result_table_check = spark.sql("SHOW TABLES LIKE '%s'" % "tb_acervo").count()
-
 table = spark.sql("""
         SELECT 
             docu_orgi_orga_dk_responsavel AS cod_orgao, 
             pacote_atribuicao,
             count(docu_dk) as acervo
-        FROM exadata.mcpr_documento
+        FROM exadata_dev.mcpr_documento
             JOIN cluster.atualizacao_pj_pacote ON docu_orgi_orga_dk_responsavel = id_orgao
         WHERE 
             docu_fsdc_dk = 1
@@ -34,11 +36,12 @@ table = table.withColumn("tipo_acervo", lit(0)).withColumn(
         .cast('timestamp')) \
         .withColumn("dt_partition", date_format(current_timestamp(), "ddMMyyyy"))
 
-if result_table_check > 0:
+
+is_exists_table_acervo = check_table_exists("exadata_aux", "tb_acervo")
+
+if is_exists_table_acervo:
     table.write.mode("overwrite").insertInto("exadata_aux.tb_acervo", overwrite=True)
 else:
-    table.write.partitionBy("dt_partition").saveAsTable("exadata_aux.tb_acervo")
+    table.write.partitionBy("dt_partition").mode("overwrite").saveAsTable("exadata_aux.tb_acervo")
 
 _update_impala_table("exadata_aux.tb_acervo")
-
-
