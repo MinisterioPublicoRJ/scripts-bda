@@ -25,11 +25,11 @@ def format_date(dt):
 
 def connect_to_solr():
     zookeeper = pysolr.ZooKeeper(zookeeper_server)
-    return pysolr.SolrCloud(zookeeper, "files_detran", always_commit=True, timeout=300)
+    return pysolr.SolrCloud(zookeeper, "files_detran", timeout=300)
 
 def send_data_to_solr(row):
     solr = connect_to_solr()
-    solr.add([row], commit=True, overwrite=True)
+    solr.add([row], overwrite=True)
 
 def generate_uuid(row):
     return hashlib.sha1(reduce(lambda x, y: x+ y, row)).hexdigest()
