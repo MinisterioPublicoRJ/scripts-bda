@@ -1,5 +1,5 @@
 default:
-	./generic_load_table.sh
+	./execute_process_stream.sh
 
 install:
 	mkdir packages
