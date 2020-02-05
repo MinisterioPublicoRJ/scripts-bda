@@ -20,7 +20,7 @@ spark.conf.set("spark.sql.sources.partitionOverwriteMode","dynamic")
 table = spark.sql("""
         SELECT 
             docu_orgi_orga_dk_responsavel AS cod_orgao, 
-            pacote_atribuicao,
+            cod_pct as cod_atribuicao,
             count(docu_dk) as acervo,
             docu_cldc_dk as tipo_acervo
         FROM exadata_dev.mcpr_documento
@@ -28,7 +28,7 @@ table = spark.sql("""
             
         WHERE 
             docu_fsdc_dk = 1
-        GROUP BY docu_orgi_orga_dk_responsavel, pacote_atribuicao, docu_cldc_dk
+        GROUP BY docu_orgi_orga_dk_responsavel, cod_pct, docu_cldc_dk
 """)
 
 table = table.withColumn(

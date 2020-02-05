@@ -30,7 +30,7 @@ data_atual = date_now.strftime("%Y-%m-%d")
 
 estatisticas = spark.sql(
     """
-    select pacote_atribuicao,
+    select cod_atribuicao,
     tipo_acervo,
     min(acervo) as minimo,
     max(acervo) as maximo,
@@ -45,7 +45,7 @@ estatisticas = spark.sql(
         + 1.5*(percentile(acervo, 0.75) - percentile(acervo, 0.25)) as Hout
     from exadata_aux.tb_acervo 
     where dt_inclusao = '{}'
-    group by pacote_atribuicao, tipo_acervo
+    group by cod_atribuicao, tipo_acervo
     """.format(data_atual)
 ).withColumn(
     "dt_inclusao",
