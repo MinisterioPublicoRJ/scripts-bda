@@ -21,15 +21,17 @@ table = spark.sql("""
         SELECT 
             docu_orgi_orga_dk_responsavel AS cod_orgao, 
             pacote_atribuicao,
-            count(docu_dk) as acervo
+            count(docu_dk) as acervo,
+            docu_cldc_dk as tipo_acervo
         FROM exadata_dev.mcpr_documento
             JOIN cluster.atualizacao_pj_pacote ON docu_orgi_orga_dk_responsavel = id_orgao
+            
         WHERE 
             docu_fsdc_dk = 1
-        GROUP BY docu_orgi_orga_dk_responsavel, pacote_atribuicao
+        GROUP BY docu_orgi_orga_dk_responsavel, pacote_atribuicao, docu_cldc_dk
 """)
 
-table = table.withColumn("tipo_acervo", lit(0)).withColumn(
+table = table.withColumn(
         "dt_inclusao",
         from_unixtime(
             unix_timestamp(current_timestamp(), 'yyyy-MM-dd'), 'yyyy-MM-dd') \
