@@ -31,7 +31,6 @@ data_atual = date_now.strftime("%Y-%m-%d")
 estatisticas = spark.sql(
     """
     select cod_atribuicao,
-    tipo_acervo,
     min(acervo) as minimo,
     max(acervo) as maximo,
     avg(acervo) as media,
@@ -43,9 +42,15 @@ estatisticas = spark.sql(
         - 1.5*(percentile(acervo, 0.75) - percentile(acervo, 0.25)) as Lout,
     percentile(acervo, 0.75)
         + 1.5*(percentile(acervo, 0.75) - percentile(acervo, 0.25)) as Hout
-    from exadata_aux.tb_acervo 
-    where dt_inclusao = '{}'
-    group by cod_atribuicao, tipo_acervo
+    from (
+        select A.cod_orgao, A.cod_atribuicao as cod_atribuicao, SUM(A.acervo) as acervo
+        from exadata_aux.tb_acervo A
+        inner join exadata_aux.tb_regra_negocio_investigacao B
+        on A.cod_atribuicao = B.cod_atribuicao AND A.tipo_acervo = B.classe_documento
+        where A.dt_inclusao = '{}'
+        group by A.cod_orgao, A.cod_atribuicao
+    ) t 
+    group by cod_atribuicao
     """.format(data_atual)
 ).withColumn(
     "dt_inclusao",
