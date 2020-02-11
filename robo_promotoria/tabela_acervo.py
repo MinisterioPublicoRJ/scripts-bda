@@ -1,6 +1,7 @@
 import pyspark
 from pyspark.sql.functions import unix_timestamp, from_unixtime, current_timestamp, lit, date_format
 from utils import _update_impala_table
+from decouple import config
 
 
 def check_table_exists(schema, table_name):
@@ -11,11 +12,12 @@ def check_table_exists(schema, table_name):
 spark = pyspark.sql.session.SparkSession \
         .builder \
         .appName("criar_tabela_acervo") \
+        .config("spark.sql.sources.partitionOverwriteMode", "dynamic") \
         .enableHiveSupport() \
         .getOrCreate()
 
-spark.conf.set("spark.sql.sources.partitionOverwriteMode","dynamic")
-
+schema_exadata = config('SCHEMA_EXADATA')
+schema_exadata_aux = config('SCHEMA_EXADATA_AUX')
 
 table = spark.sql("""
         SELECT 
@@ -23,13 +25,13 @@ table = spark.sql("""
             cod_pct as cod_atribuicao,
             count(docu_dk) as acervo,
             docu_cldc_dk as tipo_acervo
-        FROM exadata_dev.mcpr_documento
-            JOIN cluster.atualizacao_pj_pacote ON docu_orgi_orga_dk_responsavel = id_orgao
+        FROM {}.mcpr_documento
+            JOIN {}.atualizacao_pj_pacote ON docu_orgi_orga_dk_responsavel = id_orgao
             
         WHERE 
             docu_fsdc_dk = 1
         GROUP BY docu_orgi_orga_dk_responsavel, cod_pct, docu_cldc_dk
-""")
+""".format(schema_exadata, schema_exadata_aux))
 
 table = table.withColumn(
         "dt_inclusao",
@@ -39,11 +41,13 @@ table = table.withColumn(
         .withColumn("dt_partition", date_format(current_timestamp(), "ddMMyyyy"))
 
 
-is_exists_table_acervo = check_table_exists("exadata_aux", "tb_acervo")
+is_exists_table_acervo = check_table_exists(schema_exadata_aux, "tb_acervo")
+
+table_name = "{}.tb_acervo".format(schema_exadata_aux)
 
 if is_exists_table_acervo:
-    table.coalesce(1).write.mode("overwrite").insertInto("exadata_aux.tb_acervo", overwrite=True)
+    table.coalesce(1).write.mode("overwrite").insertInto(table_name, overwrite=True)
 else:
-    table.write.partitionBy("dt_partition").mode("overwrite").saveAsTable("exadata_aux.tb_acervo")
+    table.write.partitionBy("dt_partition").mode("overwrite").saveAsTable(table_name)
 
-_update_impala_table("exadata_aux.tb_acervo")
+_update_impala_table(table_name)

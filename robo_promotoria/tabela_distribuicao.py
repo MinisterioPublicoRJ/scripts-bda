@@ -1,5 +1,6 @@
 import pyspark
 from datetime import datetime
+from decouple import config
 
 from pyspark.sql.functions import (
     unix_timestamp,
@@ -20,10 +21,11 @@ def check_table_exists(schema, table_name):
 spark = pyspark.sql.session.SparkSession \
         .builder \
         .appName("criar_tabela_distribuicao") \
+        .config("spark.sql.sources.partitionOverwriteMode", "dynamic") \
         .enableHiveSupport() \
         .getOrCreate()
 
-spark.conf.set("spark.sql.sources.partitionOverwriteMode","dynamic")
+schema_exadata_aux = config('SCHEMA_EXADATA_AUX')
 
 date_now = datetime.now()
 data_atual = date_now.strftime("%Y-%m-%d")
@@ -44,14 +46,14 @@ estatisticas = spark.sql(
         + 1.5*(percentile(acervo, 0.75) - percentile(acervo, 0.25)) as Hout
     from (
         select A.cod_orgao, A.cod_atribuicao as cod_atribuicao, SUM(A.acervo) as acervo
-        from exadata_aux.tb_acervo A
-        inner join exadata_aux.tb_regra_negocio_investigacao B
+        from {0}.tb_acervo A
+        inner join {0}.tb_regra_negocio_investigacao B
         on A.cod_atribuicao = B.cod_atribuicao AND A.tipo_acervo = B.classe_documento
-        where A.dt_inclusao = '{}'
+        where A.dt_inclusao = '{1}'
         group by A.cod_orgao, A.cod_atribuicao
     ) t 
     group by cod_atribuicao
-    """.format(data_atual)
+    """.format(schema_exadata_aux, data_atual)
 ).withColumn(
     "dt_inclusao",
     from_unixtime(
@@ -60,11 +62,13 @@ estatisticas = spark.sql(
 ).withColumn("dt_partition", date_format(current_timestamp(), "ddMMyyyy"))
 
 
-is_exists_table_distribuicao = check_table_exists("exadata_aux", "tb_distribuicao")
+is_exists_table_distribuicao = check_table_exists(schema_exadata_aux, "tb_distribuicao")
+
+table_name = "{}.tb_distribuicao".format(schema_exadata_aux)
 
 if is_exists_table_distribuicao:
-    estatisticas.coalesce(1).write.mode("overwrite").insertInto("exadata_aux.tb_distribuicao", overwrite=True)
+    estatisticas.coalesce(1).write.mode("overwrite").insertInto(table_name, overwrite=True)
 else:
-    estatisticas.write.partitionBy("dt_partition").saveAsTable("exadata_aux.tb_distribuicao")
+    estatisticas.write.partitionBy("dt_partition").saveAsTable(table_name)
 
-_update_impala_table("exadata_aux.tb_distribuicao")
+_update_impala_table(table_name)
