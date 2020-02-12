@@ -63,6 +63,7 @@ def functionToCreateContext(folder):
     sparkStreamingContext = StreamingContext(sc, 60)
     directoryStream = sparkStreamingContext.textFileStream("{}{}".format(folder_hdfs, folder))
     directoryStream.foreachRDD(lambda rdd: verify_rdd(rdd, folder))
+    sparkStreamingContext.checkpoint(checkpoint)
 
     return sparkStreamingContext
 
