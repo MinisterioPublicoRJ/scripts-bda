@@ -1,5 +1,5 @@
 import pyspark
-from datetime import datetime
+from datetime import datetime, timedelta
 from decouple import config
 
 from pyspark.sql.functions import (
@@ -14,7 +14,6 @@ from utils import _update_impala_table
 spark = pyspark.sql.session.SparkSession \
         .builder \
         .appName("criar_tabela_distribuicao_entradas") \
-        .config("spark.sql.sources.partitionOverwriteMode", "dynamic") \
         .enableHiveSupport() \
         .getOrCreate()
 
@@ -23,16 +22,20 @@ schema_exadata_aux = config('SCHEMA_EXADATA_AUX')
 
 nb_past_days = config('DIST_ENTRADAS_NB_PAST_DAYS', default=60)
 
+date_range = spark.createDataFrame(
+    [
+        {'dt': (datetime.now() - timedelta(i)).strftime('%Y-%m-%d')}
+        for i in range(nb_past_days)
+    ]
+)
+date_range.registerTempTable("date_range")
+
 comb_dates = spark.sql(
     """
-    SELECT date_sub(date_add(to_date(current_timestamp()), 1), nbr) as dt,
+    SELECT date_range.dt,
     vist_orgi_orga_dk as comb_orga_dk,
     cdmatricula as comb_cdmatricula
-    FROM (
-        SELECT row_number() over (order by vist_dt_abertura_vista) AS nbr
-        FROM {0}.mcpr_vista 
-        LIMIT {1}
-    ) t1 CROSS JOIN (
+    FROM date_range CROSS JOIN (
         SELECT DISTINCT vist_orgi_orga_dk, cdmatricula 
         FROM {0}.mcpr_vista v
         JOIN {0}.mcpr_pessoa p ON v.VIST_PESF_PESS_DK_RESP_ANDAM = p.PESS_DK
@@ -87,14 +90,10 @@ estatisticas = spark.sql(
         GROUP BY comb_orga_dk, comb_cdmatricula
     ) t1
     LEFT JOIN entradas_table t2 ON t2.comb_orga_dk = t1.comb_orga_dk
+    AND t2.comb_cdmatricula = t1.comb_cdmatricula
     AND t2.dt = to_date(current_timestamp())
     """
-).withColumn(
-    "dt_inclusao",
-    from_unixtime(
-        unix_timestamp(current_timestamp(), 'yyyy-MM-dd'), 'yyyy-MM-dd')
-    .cast('timestamp')
-).withColumn("dt_partition", date_format(current_timestamp(), "ddMMyyyy"))
+)
 
 
 table_name = "{}.tb_dist_entradas".format(schema_exadata_aux)
