@@ -194,6 +194,12 @@ params = {
             VIST_PCED_DK,VIST_PESF_PESS_DK_RESP_ANDAM,
             VIST_TMPL_DK_USADO
             """
+        },
+        {
+            "table_jdbc": "RH.FUNCIONARIO",
+            "pk_table_jdbc": "CDMATRICULA",
+            "update_date_table_jdbc": "",
+            "table_hive": "rh_funcionario"
         }
     ]
 }
