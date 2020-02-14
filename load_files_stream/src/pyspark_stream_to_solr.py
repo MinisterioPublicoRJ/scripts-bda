@@ -36,7 +36,7 @@ def generate_uuid(row):
 
 def check_row(row, header_list):
     data = dict(zip(tuple(header_list), row.split(',')))
-    data['data'] = format_date(data['data'])
+    data['datapassagem'] = format_date(data['datapassagem'])
     data['uuid'] = generate_uuid(row.split(','))
     send_data_to_solr(data)
     return data
@@ -48,7 +48,7 @@ def verify_rdd(rdd, folder):
         spark = getSparkSessionInstance(rdd.context.getConf())
 
         header = 'num_camera,placa,lat,long,data,velocidade,faixa'
-        header_list = header.split(',')
+        header_list = ['num_camera','placa','lat','lon','datapassagem','velocidade','faixa']
         rdd.filter(lambda r: r.lower() not in header).map(lambda w: check_row(w, header_list)).count()
 
 
