@@ -98,6 +98,10 @@ estatisticas = spark.sql(
 
 table_name = "{}.tb_dist_entradas".format(schema_exadata_aux)
 
-estatisticas.write.mode("overwrite").saveAsTable(table_name)
+estatisticas.write.mode("overwrite").saveAsTable("temp_table_dist_entrada")
+temp_table = spark.table("temp_table_dist_entrada")
+
+temp_table.write.mode("overwrite").saveAsTable(table_name)
+spark.sql("drop table temp_table_dist_entrada")
 
 _update_impala_table(table_name)

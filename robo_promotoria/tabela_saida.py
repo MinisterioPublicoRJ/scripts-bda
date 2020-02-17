@@ -38,6 +38,10 @@ table = spark.sql("""
 
 table_name = "{}.tb_saida".format(schema_exadata_aux)
 
-table.write.mode("overwrite").saveAsTable(table_name)
+table.write.mode("overwrite").saveAsTable("temp_table_saida")
+temp_table = spark.table("temp_table_saida")
+
+temp_table.write.mode("overwrite").saveAsTable(table_name)
+spark.sql("drop table temp_table_saida")
 
 _update_impala_table(table_name)
