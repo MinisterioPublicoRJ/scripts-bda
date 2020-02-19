@@ -34,14 +34,16 @@ comb_dates = spark.sql(
     """
     SELECT date_range.dt,
     vist_orgi_orga_dk as comb_orga_dk,
-    cdmatricula as comb_cdmatricula
+    pesf_cpf as comb_cpf
     FROM date_range CROSS JOIN (
-        SELECT DISTINCT vist_orgi_orga_dk, cdmatricula 
+        SELECT DISTINCT vist_orgi_orga_dk, pesf_cpf 
         FROM {0}.mcpr_vista v
-        JOIN {0}.mcpr_pessoa p ON v.VIST_PESF_PESS_DK_RESP_ANDAM = p.PESS_DK
-        JOIN {0}.rh_funcionario rf ON p.PESS_ID_CADASTRO_RECEITA = rf.CPF
+        JOIN {0}.mcpr_pessoa_fisica p ON v.VIST_PESF_PESS_DK_RESP_ANDAM = p.PESF_PESS_DK
+        JOIN {0}.rh_funcionario rf ON p.pesf_cpf = rf.CPF
         WHERE to_date(VIST_DT_ABERTURA_VISTA) >= date_sub(to_date(current_timestamp()), {1})
+        AND p.pesf_aplicacao_atualizou = 'RH' AND rf.cdtipfunc = '1'
     ) t2
+    WHERE dayofweek(date_range.dt) NOT IN (1, 7)
     """.format(schema_exadata, nb_past_days)
 )
 comb_dates.registerTempTable('date_combs')
@@ -50,18 +52,18 @@ entradas_table = spark.sql(
     """
     SELECT dt,
     comb_orga_dk,
-    comb_cdmatricula,
+    comb_cpf,
     nvl(COUNT(vist_dt_abertura_vista), 0) as nr_entradas
     FROM {0}.mcpr_vista v
     JOIN {0}.mcpr_documento ON docu_dk = vist_docu_dk
-    JOIN {0}.mcpr_pessoa p ON v.VIST_PESF_PESS_DK_RESP_ANDAM = p.PESS_DK
-    JOIN {0}.rh_funcionario rf ON p.PESS_ID_CADASTRO_RECEITA = rf.CPF
+    JOIN {0}.mcpr_pessoa_fisica p ON v.VIST_PESF_PESS_DK_RESP_ANDAM = p.PESF_PESS_DK
+    JOIN {0}.rh_funcionario rf ON p.pesf_cpf = rf.CPF
     RIGHT JOIN date_combs c 
         ON comb_orga_dk = vist_orgi_orga_dk
-        AND comb_cdmatricula = cdmatricula
+        AND comb_cpf = p.pesf_cpf
         AND dt = to_date(v.vist_dt_abertura_vista)
     WHERE (DOCU_TPST_DK != 11 OR DOCU_TPST_DK IS NULL)
-    GROUP BY dt, comb_orga_dk, comb_cdmatricula
+    GROUP BY dt, comb_orga_dk, comb_cpf
     """.format(schema_exadata)
 )
 entradas_table.registerTempTable('entradas_table')
@@ -74,7 +76,7 @@ estatisticas = spark.sql(
     FROM (
         SELECT
             comb_orga_dk,
-            comb_cdmatricula,
+            comb_cpf,
             min(nr_entradas) as minimo,
             max(nr_entradas) as maximo,
             avg(nr_entradas) as media,
@@ -87,10 +89,10 @@ estatisticas = spark.sql(
             percentile(nr_entradas, 0.75) + 1.5*(percentile(nr_entradas, 0.75)
                 - percentile(nr_entradas, 0.25)) as Hout
         FROM entradas_table t
-        GROUP BY comb_orga_dk, comb_cdmatricula
+        GROUP BY comb_orga_dk, comb_cpf
     ) t1
     LEFT JOIN entradas_table t2 ON t2.comb_orga_dk = t1.comb_orga_dk
-    AND t2.comb_cdmatricula = t1.comb_cdmatricula
+    AND t2.comb_cpf = t1.comb_cpf
     AND t2.dt = to_date(current_timestamp())
     """
 )
