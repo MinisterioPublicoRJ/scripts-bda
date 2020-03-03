@@ -7,7 +7,6 @@ Retirar as tabelas
 """
 params = {
     "driver": "oracle.jdbc.driver.OracleDriver",
-    "schema_hdfs": "exadata_dev",
     "tables": [
         # Schema MCPR
         {

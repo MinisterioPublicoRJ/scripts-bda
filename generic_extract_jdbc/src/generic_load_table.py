@@ -1,5 +1,5 @@
 from base import spark
-from decouple import config
+import argparse
 from impala.dbapi import connect as impala_connect
 import ast
 import params_table_ora13
@@ -9,11 +9,6 @@ import params_table_postgre
 import pyspark.sql.functions as f
 from pyspark.sql.functions import base64
 
-url_jdbc_server = config('JDBC_SERVER')
-user_jdbc = config("JDBC_USER")
-passwd_jdbc = config("JDBC_PASSWORD")
-type_jdbc = config("TYPE_JDBC")
-load_all = config("LOAD_ALL")
 
 dic_params = {
                 "ORACLE_13" : params_table_ora13.params,
@@ -21,70 +16,6 @@ dic_params = {
                 "ORACLE": params_table_oracle.params, 
                 "POSTGRE" : params_table_postgre.params
             }
-
-def load_all_data(table):
-    """
-    Method for load all data coming from jdbc table
-
-    Parameters
-    ----------
-    table: dict
-        "table_jdbc" : jdbc table name
-        "pk_table_jdbc" : primary key jdbc table
-        "update_date_table_jdbc" : update date jdbc table
-        "table_hive" : 	hive table name
-        "fields"
-        (
-            to use for table that
-            has blob or clob columns
-        ): table field names
-    """
-
-    print("Start process load all")
-    # Get minimum and maximum record
-    # from table jdbc for just used to decide the partition stride
-    query_primarykeys = get_total_record(table)
-
-    if table.get('fields'):
-        query_table = """(SELECT {fields} FROM {table_jdbc}) q """.format(
-            fields=table['fields'],
-            table_jdbc=table['table_jdbc'])
-    else:
-        query_table = table['table_jdbc']
-
-    print('Geting min and max from table %s jdbc' % table['table_jdbc'])
-    
-    total_min_max_table = spark.read.format("jdbc") \
-        .option("url", url_jdbc_server) \
-        .option("dbtable", query_primarykeys) \
-        .option("user", user_jdbc) \
-        .option("password", passwd_jdbc) \
-        .option("driver", config_params['driver']) \
-        .load()
-
-    total = total_min_max_table.first()[0]
-
-    if total > 0:
-
-        jdbc_table = load_table(table, total_min_max_table, query_table)
-
-        table_hive = "%s.%s" % (config_params['schema_hdfs'],
-                                table['table_hive'])
-
-        print('Inserting data into final table %s' % table_hive)
-
-        final_df = transform_col_binary(jdbc_table)
-
-        final_df \
-            .write \
-            .mode('overwrite') \
-            .saveAsTable(table_hive)
-
-        print('Update impala table %s' % table_hive)
-        _update_impala_table(table_hive)
-
-        spark.sql("ANALYZE TABLE {} COMPUTE STATISTICS".format(table_hive))
-
 
 def get_total_record(table):
     if table.get('no_partition_column'):
@@ -104,14 +35,14 @@ def get_total_record(table):
                     table_jdbc=table['table_jdbc'])
 
 
-def load_table(table, total_min_max_table, query_table):
+def load_table(table, total_min_max_table, query_table, options):
     if table.get('no_partition_column'):
         return spark.read.format("jdbc") \
-            .option("url", url_jdbc_server) \
+            .option("url", options['jdbc_server']) \
             .option("numPartitions", 70) \
             .option("dbtable", query_table) \
-            .option("user", user_jdbc) \
-            .option("password", passwd_jdbc) \
+            .option("user", options['jdbc_user']) \
+            .option("password", options['jdbc_password']) \
             .option("driver", config_params['driver']) \
             .load()
     else:
@@ -121,19 +52,85 @@ def load_table(table, total_min_max_table, query_table):
 
         print('Getting all data from table %s jdbc' % table['table_jdbc'])
         return spark.read.format("jdbc") \
-            .option("url", url_jdbc_server) \
+            .option("url", options['jdbc_server']) \
             .option("lowerBound", minimum) \
             .option("upperBound", maximum) \
             .option("numPartitions", 70) \
             .option("partitionColumn", table['pk_table_jdbc']) \
             .option("dbtable", query_table) \
-            .option("user", user_jdbc) \
-            .option("password", passwd_jdbc) \
+            .option("user", options['jdbc_user']) \
+            .option("password", options['jdbc_password']) \
             .option("driver", config_params['driver']) \
             .load()
 
 
-def load_part_data(table):
+def load_all_data(table, options):
+    """
+    Method for load all data coming from jdbc table
+
+    Parameters
+    ----------
+    table: dict
+        "table_jdbc" : jdbc table name
+        "pk_table_jdbc" : primary key jdbc table
+        "update_date_table_jdbc" : update date jdbc table
+        "table_hive" : 	hive table name
+        "fields"
+        (
+            to use for table that
+            has blob or clob columns
+        ): table field names
+    options: dict
+        All parameters from JDBC
+    """
+
+    print("Start process load all")
+    # Get minimum and maximum record
+    # from table jdbc for just used to decide the partition stride
+    query_primarykeys = get_total_record(table)
+
+    if table.get('fields'):
+        query_table = """(SELECT {fields} FROM {table_jdbc}) q """.format(
+            fields=table['fields'],
+            table_jdbc=table['table_jdbc'])
+    else:
+        query_table = table['table_jdbc']
+
+    print('Geting min and max from table %s jdbc' % table['table_jdbc'])
+    
+    total_min_max_table = spark.read.format("jdbc") \
+        .option("url", options['jdbc_server']) \
+        .option("dbtable", query_primarykeys) \
+        .option("user", options['jdbc_user']) \
+        .option("password", options['jdbc_password']) \
+        .option("driver", config_params['driver']) \
+        .load()
+
+    total = total_min_max_table.first()[0]
+
+    if total > 0:
+
+        jdbc_table = load_table(table, total_min_max_table, query_table, options)
+
+        table_hive = "%s.%s" % (options['schema_exadata'],
+                                table['table_hive'])
+
+        print('Inserting data into final table %s' % table_hive)
+
+        final_df = transform_col_binary(jdbc_table)
+
+        final_df \
+            .write \
+            .mode('overwrite') \
+            .saveAsTable(table_hive)
+
+        print('Update impala table %s' % table_hive)
+        _update_impala_table(table_hive, options)
+
+        spark.sql("ANALYZE TABLE {} COMPUTE STATISTICS".format(table_hive))
+
+
+def load_part_data(table, options):
     """
     Method for load just the new data or updated data coming from jdbc table
 
@@ -149,18 +146,19 @@ def load_part_data(table):
             to use for table that
             has blob or clob columns
         ): table field names
-
+    options: dict
+        All parameters from JDBC
     """
     print("Start process load part data")
 
     # Check if table exist in hive
-    spark.sql("use %s" % config_params['schema_hdfs'])
+    spark.sql("use %s" % options['schema_exadata'])
     result_table_check = spark \
         .sql("SHOW TABLES LIKE '%s'" % table['table_hive']).count()
 
     if result_table_check > 0 and not table.get('no_partition_column'):
 
-        table_hive = "%s.%s" % (config_params['schema_hdfs'],
+        table_hive = "%s.%s" % (options['schema_exadata'],
                                 table['table_hive'])
 
         # Get count and max from hive table.
@@ -218,10 +216,10 @@ def load_part_data(table):
                 from table %s jdbc """ % table['table_jdbc'])
 
             spark.read.format("jdbc") \
-                .option("url", url_jdbc_server) \
+                .option("url", options['jdbc_server']) \
                 .option("dbtable", query) \
-                .option("user", user_jdbc) \
-                .option("password", passwd_jdbc) \
+                .option("user", options['jdbc_user']) \
+                .option("password", options['jdbc_password']) \
                 .option("driver", config_params['driver']) \
                 .load().createOrReplaceTempView("table_delta")
 
@@ -246,12 +244,12 @@ def load_part_data(table):
                     .saveAsTable(table_hive)
 
                 print('Update impala table %s' % table_hive)
-                _update_impala_table(table_hive)
+                _update_impala_table(table_hive, options)
 
             spark.catalog.clearCache()
 
 
-def _update_impala_table(table):
+def _update_impala_table(table, options):
     """
     Method for update table in Impala
 
@@ -262,8 +260,8 @@ def _update_impala_table(table):
 
     """
     with impala_connect(
-            host=config('IMPALA_HOST'),
-            port=config('IMPALA_PORT', cast=int)
+            host=options['impala_host'],
+            port=int(options['impala_port'])
     ) as conn:
         impala_cursor = conn.cursor()
         impala_cursor.execute("""
@@ -290,13 +288,35 @@ def transform_col_binary(data_frame):
             if dtype == 'binary' else df.withColumn(col_name, f.col(col_name)),
             data_frame.dtypes, data_frame)
 
+if __name__ == "__main__":
 
-load_all = ast.literal_eval(load_all)
+    parser = argparse.ArgumentParser(description="Load all table from same JDBC connection")
+    parser.add_argument('-e','--schemaExadata', metavar='schemaExadata', type=str, help='')
+    parser.add_argument('-s','--jdbcServer', metavar='jdbcServer', type=str, help='')
+    parser.add_argument('-u','--jdbcUser', metavar='jdbcUser', type=str, help='')
+    parser.add_argument('-p','--jdbcPassword', metavar='jdbcPassword', type=str, help='')
+    parser.add_argument('-t','--typeJdbc', metavar='typeJdbc', type=str, help='')
+    parser.add_argument('-l','--loadAll', metavar='loadAll', type=str, help='')
+    parser.add_argument('-i','--impalaHost', metavar='impalaHost', type=str, help='')
+    parser.add_argument('-o','--impalaPort', metavar='impalaPort', type=str, help='')
+    args = parser.parse_args()
 
-config_params = dic_params[type_jdbc.upper()]
+    options = {
+                'schema_exadata': args.schemaExadata, 
+                'jdbc_server' : args.jdbcServer,
+                'jdbc_user' : args.jdbcUser,
+                'jdbc_password' : args.jdbcPassword,
+                'type_jdbc' : args.typeJdbc,
+                'load_all' : args.loadAll,
+                'impala_host' : args.impalaHost,
+                'impala_port' : args.impalaPort
+            }
 
-for table in config_params['tables']:
-    if load_all:
-        load_all_data(table)
-    else:
-        load_part_data(table)
+    load_all = ast.literal_eval(options['load_all'])
+    config_params = dic_params[args.typeJdbc.upper()]
+
+    for table in config_params['tables']:
+        if load_all:
+            load_all_data(table, options)
+        else:
+            load_part_data(table, options)
