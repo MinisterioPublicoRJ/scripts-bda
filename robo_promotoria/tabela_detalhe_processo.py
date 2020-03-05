@@ -19,7 +19,10 @@ table = spark.sql("""
         SUM(de_0_a_12) as nr_acoes_12_meses_atual,
         SUM(de_60_dias) as nr_acoes_ultimos_60_dias,
         SUM(de_30_dias) as nr_acoes_ultimos_30_dias,
-        (SUM(de_0_a_12) - SUM(de_12_a_24))/SUM(de_12_a_24) as variacao_12_meses
+        CASE
+         WHEN (SUM(de_0_a_12) - SUM(de_12_a_24)) = 0 THEN 0
+         ELSE (SUM(de_0_a_12) - SUM(de_12_a_24))/SUM(de_12_a_24)
+         END as variacao_12_meses
     FROM (
         SELECT 
             CASE WHEN to_date(pcao_dt_andamento) <= to_date(date_sub(current_timestamp(), 365)) THEN 1 ELSE 0 END as de_12_a_24,
