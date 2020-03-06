@@ -12,7 +12,7 @@ spark = pyspark.sql.session.SparkSession \
 schema_exadata = config('SCHEMA_EXADATA')
 schema_exadata_aux = config('SCHEMA_EXADATA_AUX')
 
-# !! Códigos para indeferimento e instauracao precisam ser conferidos, e para tac e acp precisam de confirmacao
+
 table = spark.sql("""
     SELECT
         orgao_id,
@@ -31,10 +31,10 @@ table = spark.sql("""
                 6553,7871,6343,6340,6342,6021,6334,6331,6022,6020,6593,6332,7872,6336,
                 6333,6335,7745,6346,6345,
                 6015, 6016, 6325, 6327, 6328, 6329, 6330, 6337, 6344, 6656, 6671, 7869, 7870, 6324) THEN 1 ELSE 0 END as is_arquivamento,
-            CASE WHEN stao_tppr_dk IN (6321, 6322, 6323, 1024, 1025) THEN 1 ELSE 0 END as is_indeferimento,
-            CASE WHEN stao_tppr_dk IN (6012, 1094, 6013, 6556, 6011, 1092, 1095) THEN 1 ELSE 0 END as is_instauracao,
+            CASE WHEN stao_tppr_dk = 6322 THEN 1 WHEN stao_tppr_dk = 6007 THEN -1 ELSE 0 END as is_indeferimento,
+            CASE WHEN stao_tppr_dk IN (6011, 6012, 6013, 1092, 1094, 1095) THEN 1 ELSE 0 END as is_instauracao,
             CASE WHEN stao_tppr_dk IN (6655, 6326, 6370) THEN 1 ELSE 0 END as is_tac,
-            CASE WHEN stao_tppr_dk = 6251 AND docu_cldc_dk IN (441, 177) THEN 1 ELSE 0 END as is_acp
+            CASE WHEN stao_tppr_dk = 6251 THEN 1 ELSE 0 END as is_acp
         FROM {0}.mcpr_documento A
         JOIN {0}.mcpr_vista B on B.vist_docu_dk = A.DOCU_DK
         JOIN (
