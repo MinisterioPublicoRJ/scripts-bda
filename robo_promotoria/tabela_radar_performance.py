@@ -20,7 +20,7 @@ table = spark.sql("""
         SUM(is_indeferimento) as nr_indeferimentos,
         SUM(is_instauracao) as nr_instauracao,
         SUM(is_tac) as nr_tac,
-        SUM(is_acp) as nr_acp,
+        SUM(is_acp) as nr_acoes,
         to_date(current_timestamp()) as dt_calculo
     FROM (
         SELECT
@@ -34,7 +34,7 @@ table = spark.sql("""
             CASE WHEN stao_tppr_dk = 6322 THEN 1 WHEN stao_tppr_dk = 6007 THEN -1 ELSE 0 END as is_indeferimento,
             CASE WHEN stao_tppr_dk IN (6011, 6012, 6013, 1092, 1094, 1095) THEN 1 ELSE 0 END as is_instauracao,
             CASE WHEN stao_tppr_dk IN (6655, 6326, 6370) THEN 1 ELSE 0 END as is_tac,
-            CASE WHEN stao_tppr_dk = 6251 THEN 1 ELSE 0 END as is_acp
+            CASE WHEN stao_tppr_dk = 6251 THEN 1 ELSE 0 END as is_acao
         FROM {0}.mcpr_documento A
         JOIN {0}.mcpr_vista B on B.vist_docu_dk = A.DOCU_DK
         JOIN (
@@ -42,7 +42,7 @@ table = spark.sql("""
             FROM {0}.mcpr_andamento
             WHERE to_date(pcao_dt_andamento) > to_date(date_sub(current_timestamp(), 365))
             AND to_date(pcao_dt_andamento) <= to_date(current_timestamp())) C
-        ON C.pcao_vist_dk = B.vist_dk 
+        ON C.pcao_vist_dk = B.vist_dk
         JOIN {0}.mcpr_sub_andamento D ON D.stao_pcao_dk = C.pcao_dk
         ) t
     GROUP BY orgao_id
