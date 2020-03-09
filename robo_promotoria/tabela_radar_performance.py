@@ -20,7 +20,7 @@ table = spark.sql("""
         SUM(is_indeferimento) as nr_indeferimentos,
         SUM(is_instauracao) as nr_instauracao,
         SUM(is_tac) as nr_tac,
-        SUM(is_acp) as nr_acoes,
+        SUM(is_acao) as nr_acoes,
         to_date(current_timestamp()) as dt_calculo
     FROM (
         SELECT
