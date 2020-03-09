@@ -12,6 +12,8 @@ spark = pyspark.sql.session.SparkSession \
 schema_exadata = config('SCHEMA_EXADATA')
 schema_exadata_aux = config('SCHEMA_EXADATA_AUX')
 
+DAYS_AGO = 180
+
 
 table = spark.sql("""
     SELECT
@@ -40,13 +42,13 @@ table = spark.sql("""
         JOIN (
             SELECT *
             FROM {0}.mcpr_andamento
-            WHERE to_date(pcao_dt_andamento) > to_date(date_sub(current_timestamp(), 365))
+            WHERE to_date(pcao_dt_andamento) > to_date(date_sub(current_timestamp(), {days_ago}))
             AND to_date(pcao_dt_andamento) <= to_date(current_timestamp())) C
         ON C.pcao_vist_dk = B.vist_dk
         JOIN {0}.mcpr_sub_andamento D ON D.stao_pcao_dk = C.pcao_dk
         ) t
     GROUP BY orgao_id
-""".format(schema_exadata, schema_exadata_aux))
+""".format(schema_exadata, schema_exadata_aux, days_ago=DAYS_AGO))
 
 table_name = "{}.tb_radar_performance".format(schema_exadata_aux)
 
