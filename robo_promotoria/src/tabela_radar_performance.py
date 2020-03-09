@@ -55,7 +55,7 @@ def execute_process(options):
     temp_table.write.mode("overwrite").saveAsTable(table_name)
     spark.sql("drop table temp_table_radar_performance")
 
-    _update_impala_table(table_name)
+    _update_impala_table(table_name, options['impala_host'], options['impala_port'])
 
 
 if __name__ == "__main__":
