@@ -37,18 +37,18 @@ table = spark.sql("""
             CASE WHEN stao_tppr_dk IN (6011, 6012, 6013, 1092, 1094, 1095) THEN 1 ELSE 0 END as is_instauracao,
             CASE WHEN stao_tppr_dk IN (6655, 6326, 6370) THEN 1 ELSE 0 END as is_tac,
             CASE WHEN stao_tppr_dk = 6251 THEN 1 ELSE 0 END as is_acao
-        FROM {0}.mcpr_documento A
-        JOIN {0}.mcpr_vista B on B.vist_docu_dk = A.DOCU_DK
+        FROM {schema}.mcpr_documento A
+        JOIN {schema}.mcpr_vista B on B.vist_docu_dk = A.DOCU_DK
         JOIN (
             SELECT *
-            FROM {0}.mcpr_andamento
+            FROM {schema}.mcpr_andamento
             WHERE to_date(pcao_dt_andamento) > to_date(date_sub(current_timestamp(), {days_ago}))
             AND to_date(pcao_dt_andamento) <= to_date(current_timestamp())) C
         ON C.pcao_vist_dk = B.vist_dk
-        JOIN {0}.mcpr_sub_andamento D ON D.stao_pcao_dk = C.pcao_dk
+        JOIN {schema}.mcpr_sub_andamento D ON D.stao_pcao_dk = C.pcao_dk
         ) t
     GROUP BY orgao_id
-""".format(schema_exadata, schema_exadata_aux, days_ago=DAYS_AGO))
+""".format(schema=schema_exadata, days_ago=DAYS_AGO))
 
 table_name = "{}.tb_radar_performance".format(schema_exadata_aux)
 
