@@ -1,8 +1,12 @@
 #!/bin/sh
+export PYTHONIOENCODING=utf8
 
-spark2-submit \
+spark2-submit --master yarn --deploy-mode cluster \
+    --queue root.mpmapas \
     --num-executors 10 \
+    --executor-cores 1 \
     --executor-memory 10g \
+    --conf spark.debug.maxToStringFields=2000 \
     --conf spark.executor.memoryOverhead=4096 \
     --conf spark.network.timeout=300 \
-    --py-files packages/*.whl,packages/*.egg tabela_dist_entradas.py 
+    --py-files src/utils.py,packages/*.whl,packages/*.egg src/tabela_dist_entradas.py -e $SCHEMA_EXADATA -a $SCHEMA_EXADATA_AUX -i $IMPALA_HOST -o $IMPALA_PORT

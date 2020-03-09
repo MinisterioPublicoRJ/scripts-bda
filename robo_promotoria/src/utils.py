@@ -1,7 +1,6 @@
-from decouple import config
 from impala.dbapi import connect as impala_connect
 
-def _update_impala_table(table):
+def _update_impala_table(table, impalaHost, impalaPort):
     """
     Method for update table in Impala
 
@@ -12,8 +11,8 @@ def _update_impala_table(table):
 
     """
     with impala_connect(
-            host=config('IMPALA_HOST'),
-            port=config('IMPALA_PORT', cast=int)
+            host=impalaHost,
+            port=impalaPort
     ) as conn:
         impala_cursor = conn.cursor()
         impala_cursor.execute("""
