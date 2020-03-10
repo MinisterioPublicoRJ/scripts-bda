@@ -6,7 +6,7 @@ import argparse
 def execute_process(options):
     spark = pyspark.sql.session.SparkSession \
             .builder \
-            .appName("criar_tabela_detalhe_processo") \
+            .appName("criar_tabela_radar_performance") \
             .enableHiveSupport() \
             .getOrCreate()
 
@@ -61,7 +61,7 @@ def execute_process(options):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
-        description="Create table detalhe processo"
+        description="Create table radar performance"
     )
     parser.add_argument(
         '-e',
