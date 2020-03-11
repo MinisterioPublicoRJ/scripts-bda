@@ -10,5 +10,5 @@ spark2-submit \
     --conf spark.debug.maxToStringFields=2000 \
     --conf spark.executor.memoryOverhead=4096 \
     --conf spark.network.timeout=300 \
-    --py-files /home/mpmapas/scripts-bda/generic_extract_jdbc/src/*.py,/home/mpmapas/scripts-bda/generic_extract_jdbc/packages/*.whl,/home/mpmapas/scripts-bda/generic_extract_jdbc/packages/*.egg,/home/mpmapas/scripts-bda/generic_extract_jdbc/packages/*.zip \
-    /home/mpmapas/scripts-bda/generic_extract_jdbc/src/generic_load_table.py -e $SCHEMA_EXADATA -s $JDBC_SERVER -u $JDBC_USER -p $JDBC_PASSWORD -t $TYPE_JDBC -l $LOAD_ALL -i $IMPALA_HOST -o $IMPALA_PORT
+    --py-files src/*.py,packages/*.whl,packages/*.egg,packages/*.zip \
+    src/generic_load_table.py -e $SCHEMA_EXADATA -s $JDBC_SERVER -u $JDBC_USER -p $JDBC_PASSWORD -t $TYPE_JDBC -l $LOAD_ALL -i $IMPALA_HOST -o $IMPALA_PORT
