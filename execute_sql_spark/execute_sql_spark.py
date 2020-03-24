@@ -15,7 +15,7 @@ def execute_process(options):
     with open(options['file_name'], 'r') as file:
         sql_query = file.read().replace('\n', '')
 
-    for sql in sql_query.split("---EOS---")
+    for sql in sql_query.split("---EOS---"): 
         table = spark.sql(sql.format(schema_exadata_aux=options['schema_exadata_aux'], schema_exadata=options['schema_exadata']))
 
 
