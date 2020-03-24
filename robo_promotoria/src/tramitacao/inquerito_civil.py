@@ -1,13 +1,4 @@
-import pyspark
-
-
-def execute_process(options):
-    spark = pyspark.sql.session.SparkSession \
-                    .builder \
-                    .appName("Processamento tempo tramitaca IC") \
-                    .enableHiveSupport() \
-                    .getOrCreate()
-
+def execute_process(spark, options):
     spark.sql("""
      SELECT d.docu_dk, ap.id_orgao,
             datediff(a.pcao_dt_andamento, d.docu_dt_cadastro) tempo_tramitacao,

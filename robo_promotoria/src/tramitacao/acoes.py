@@ -1,13 +1,4 @@
-import pyspark
-
-spark = pyspark.sql.session.SparkSession \
-                .builder \
-                .appName("Execute SQL") \
-                .enableHiveSupport() \
-                .getOrCreate()
-
-
-def execute_process(options):
+def execute_process(spark, options):
     spark.sql("""
          SELECT
         d.docu_dk,
@@ -182,7 +173,3 @@ def execute_process(options):
         and t1.id_orgao = t2.id_orgao
     """).createOrReplaceTempView("tramitacao_acoes_final")
 
-    spark.sql("""
-        select * from tramitacao_ic_final ic
-        join tramitacao_acoes_final acoes on ic.id_orgao = acoes.id_orgao
-    """)
