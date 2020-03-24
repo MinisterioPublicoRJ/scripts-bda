@@ -22,13 +22,16 @@ def execute_process(options):
         on v.vist_dk = a.pcao_vist_dk
         join {schema}.mcpr_sub_andamento sa
         on sa.stao_pcao_dk = a.pcao_dk
-        join {schema}.atualizacao_pj_pacote ap
+        join {schema_aux}.atualizacao_pj_pacote ap
         on ap.id_orgao = d.DOCU_ORGI_ORGA_DK_RESPONSAVEL
         where
         a.pcao_dt_andamento > add_months(current_timestamp(),-12)
         and d.docu_cldc_dk in (18, 126, 127, 159, 175, 176, 177, 441)
         and sa.stao_tppr_dk IN (6374,6375,6376,6377,6378)
-    """).fromat(schema=options["schema_exadata"])\
+    """.format(
+             schema=options["schema_exadata"],
+             schema_aux=options["schema_exadata_aux"])
+         )\
         .createOrReplaceTempView("tramitacao_acoes_tempo_1")
     spark.catalog.cacheTable("tramitacao_acoes_tempo_1")
 
@@ -94,7 +97,7 @@ def execute_process(options):
         on v.vist_dk = a.pcao_vist_dk
         join {schema}.mcpr_sub_andamento sa
         on sa.stao_pcao_dk = a.pcao_dk
-        join {schema}.atualizacao_pj_pacote ap
+        join {schema_aux}.atualizacao_pj_pacote ap
         on ap.id_orgao = d.DOCU_ORGI_ORGA_DK_RESPONSAVEL
         where
         a.pcao_dt_andamento > add_months(current_timestamp(),-12)
@@ -102,7 +105,10 @@ def execute_process(options):
         (sa.stao_tppr_dk IN (6393) or
         (sa.stao_tppr_dk in (6383,6377,6378,6384,6374,6375,6376,6380,6381,6382)
          and datediff(current_timestamp(), a.pcao_dt_andamento) > 60))
-    """).format(schema=options["schema_exadata"])\
+    """.format(
+             schema=options["schema_exadata"],
+             schema_aux=options["schema_exadata_aux"])
+        )\
         .createOrReplaceTempView("tramitacao_acoes_tempo_2")
     spark.catalog.cacheTable("tramitacao_acoes_tempo_2")
 
