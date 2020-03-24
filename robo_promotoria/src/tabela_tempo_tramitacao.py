@@ -61,3 +61,15 @@ if __name__ == "__main__":
         join tramitacao_acoes_final acoes on ic.id_orgao = acoes.id_orgao
         """
     )
+
+    table_name = "{}.tb_tempo_tramitacao".format(
+        options["schema_exadata_aux"]
+    )
+
+    tramitacao_final.write.mode("overwrite").saveAsTable("temp_table_tempo_tramitacao")
+    temp_table = spark.table("temp_table_tempo_tramitacao")
+
+    temp_table.write.mode("overwrite").saveAsTable(table_name)
+    spark.sql("drop table temp_table_tempo_tramitacao")
+
+    _update_impala_table(table_name, options['impala_host'], options['impala_port'])
