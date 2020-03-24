@@ -29,10 +29,11 @@ def test_tb_saida_data_calculo_mais_recente(spark, options):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Create table detalhe processo")
+    parser = argparse.ArgumentParser(description="Teste de tabelas do BDA")
     parser.add_argument('-a','--schemaExadataAux', metavar='schemaExadataAux', type=str, help='')
     args = parser.parse_args()
 
+    # Consertar para usar o parser depois
     options = {
                 'schema_exadata_aux': 'exadata_aux_dev'
               }
