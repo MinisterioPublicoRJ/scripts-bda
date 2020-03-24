@@ -9,4 +9,4 @@ spark2-submit --master yarn --deploy-mode cluster \
     --conf spark.debug.maxToStringFields=2000 \
     --conf spark.executor.memoryOverhead=4096 \
     --conf spark.network.timeout=300 \
-    --py-files packages/*.whl,packages/*.egg,packages/*.zip execute_sql_spark.py $@
+    --py-files packages/*.whl,packages/*.egg,packages/*.zip src/execute_sql_spark.py $@
