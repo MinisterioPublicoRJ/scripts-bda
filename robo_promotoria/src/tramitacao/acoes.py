@@ -94,7 +94,7 @@ def execute_process(spark, options):
         where
         a.pcao_dt_andamento > add_months(current_timestamp(),-12)
         and d.docu_cldc_dk in (18, 126, 127, 159, 175, 176, 177, 441) and
-        (sa.stao_tppr_dk IN (6393) or
+        (sa.stao_tppr_dk IN (6393, 7811) or
         (sa.stao_tppr_dk in (6383,6377,6378,6384,6374,6375,6376,6380,6381,6382)
          and datediff(current_timestamp(), a.pcao_dt_andamento) > 60))
     """.format(
