@@ -53,11 +53,19 @@ if __name__ == "__main__":
         'impala_host': args.impalaHost,
         'impala_port': args.impalaPort,
     }
+    options = {"schema_exadata": "exadata_dev", "schema_exadata_aux": "exadata_aux_dev", "impala_host": "bda1node05.pgj.rj.gov.br", "impala_port": 21050}
 
     inquerito_process(spark, options)
     acoes_process(spark, options)
     tramitacao_final = spark.sql("""
-        select * from tramitacao_ic_final ic
+        select
+          media_orgao, minimo_orgao,maximo_orgao,mediana_orgao, 
+          media_pacote, minimo_pacote, maximo_pacote, mediana_pacote,
+          media_pacote_t1, minimo_pacote_t1, maximo_pacote_t1, mediana_pacote_t1,
+          media_orgao_t1, minimo_orgao_t1, maximo_orgao_t1, mediana_orgao_t1,
+          media_pacote_t2, minimo_pacote_t2, maximo_pacote_t2, mediana_pacote_t2,
+          media_orgao_t2, minimo_orgao_t2, maximo_orgao_t2, mediana_orgao_t2
+       from tramitacao_ic_final ic
         join tramitacao_acoes_final acoes on ic.id_orgao = acoes.id_orgao
         """
     )
