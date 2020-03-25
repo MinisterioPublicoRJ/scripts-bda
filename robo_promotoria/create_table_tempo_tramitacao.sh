@@ -9,4 +9,4 @@ spark2-submit --master yarn --deploy-mode cluster \
     --conf spark.debug.maxToStringFields=2000 \
     --conf spark.executor.memoryOverhead=4096 \
     --conf spark.network.timeout=300 \
-    --py-files src/utils.py,src/tramitacao/*.py,packages/*.whl,packages/*.egg,packages/*.zip src/tabela_tempo_tramitacao.py $@
+    --py-files src/utils.py,src/files_tempo_tramitacao.zip,packages/*.whl,packages/*.egg,packages/*.zip src/tabela_tempo_tramitacao.py $@
