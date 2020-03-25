@@ -9,4 +9,4 @@ spark2-submit --master yarn --deploy-mode cluster \
     --conf spark.debug.maxToStringFields=2000 \
     --conf spark.executor.memoryOverhead=4096 \
     --conf spark.network.timeout=300 \
-    --py-files src/*.py,packages/*.whl,packages/*.egg,packages/*.zip src/load_data_tables.py -f exadata_aux_dev -t exadata_aux -i bda1node05.pgj.rj.gov.br -o 21050
+    --py-files src/*.py,packages/*.whl,packages/*.egg,packages/*.zip src/load_data_tables.py $@
