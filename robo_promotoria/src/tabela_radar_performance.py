@@ -236,7 +236,8 @@ def execute_process(options):
                        / med_pacote_instauracoes as var_med_instauracoes,
                    (tac - med_pacote_tac) / med_pacote_tac as var_med_tac,
                    (acao - med_pacote_acoes)
-                       / med_pacote_acoes as var_med_acoes
+                       / med_pacote_acoes as var_med_acoes,
+                   current_timestamp() as dt_calculo
             FROM final_com_pacote fp
             INNER JOIN stats_pacote sp
             ON fp.cod_pct = sp.cod_pct
