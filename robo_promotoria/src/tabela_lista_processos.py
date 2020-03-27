@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 import pyspark
 import argparse
 
@@ -16,6 +18,9 @@ def execute_process(options):
     schema_exadata_aux = options['schema_exadata_aux']
 
     personagens_cutoff = options['personagens_cutoff']
+
+    nb_past_days = options['nb_past_days']
+    dt_inicio = datetime.now() - timedelta(nb_past_days)
 
     docu_totais = spark.sql(
         """
@@ -39,7 +44,8 @@ def execute_process(options):
             ON cod_pct = cod_atribuicao
             AND classe_documento = docu_cldc_dk
 	    JOIN {0}.mcpr_classe_docto_mp ON cldc_dk = docu_cldc_dk
-        """.format(schema_exadata, schema_exadata_aux)
+        WHERE PCAO_DT_ANDAMENTO >= '{2}'
+        """.format(schema_exadata, schema_exadata_aux, dt_inicio)
     )
     docu_totais.registerTempTable('docu_totais')
 
@@ -133,6 +139,7 @@ if __name__ == "__main__":
     parser.add_argument('-i','--impalaHost', metavar='impalaHost', type=str, help='')
     parser.add_argument('-o','--impalaPort', metavar='impalaPort', type=str, help='')
     parser.add_argument('-c','--personagensCutoff', metavar='personagensCutoff', type=int, default=2, help='')
+    parser.add_argument('-p','--nbPastDays', metavar='nbPastDays', type=int, default=7, help='')
     
     args = parser.parse_args()
 
@@ -141,7 +148,8 @@ if __name__ == "__main__":
                     'schema_exadata_aux': args.schemaExadataAux,
                     'impala_host' : args.impalaHost,
                     'impala_port' : args.impalaPort,
-                    'personagens_cutoff' : args.personagensCutoff
+                    'personagens_cutoff' : args.personagensCutoff,
+                    'nb_past_days': args.nbPastDays
                 }
 
     execute_process(options)
