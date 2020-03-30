@@ -115,7 +115,7 @@ def execute_process(options):
             INNER JOIN {schema_aux}.atualizacao_pj_pacote ap
             ON ap.id_orgao = fa.orgao_id
     """.format(
-            schema_aux=options["exadata_aux_dev"]
+            schema_aux=options["schema_exadata_aux_dev"]
         )
     ).createOrReplaceTempView("final_com_pacote")
 
