@@ -91,6 +91,8 @@ params = {
             "table_jdbc": "MCPR.MCPR_ANDAMENTO",
             "pk_table_jdbc": "PCAO_DK",
             "update_date_table_jdbc": "",
+            "partition_column": "pcao_dt_andamento",
+            "date_partition_column": ['year', 'month'],
             "table_hive": "mcpr_andamento",
             "fields":
             """
@@ -175,6 +177,7 @@ params = {
             "table_jdbc": "MCPR.MCPR_SUB_ANDAMENTO",
             "pk_table_jdbc": "STAO_DK",
             "update_date_table_jdbc": "",
+            "partition_column": "stao_tppr_dk",
             "table_hive": "mcpr_sub_andamento"
         },
         {
