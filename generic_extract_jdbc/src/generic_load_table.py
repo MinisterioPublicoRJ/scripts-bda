@@ -6,8 +6,7 @@ import params_table_ora13
 import params_table_oraupsert
 import params_table_oracle
 import params_table_postgre
-import pyspark.sql.functions as f
-from pyspark.sql.functions import base64
+from pyspark.sql.functions import base64, col, year, month
 
 
 dic_params = {
@@ -18,7 +17,7 @@ dic_params = {
             }
 
 def get_total_record(table):
-    if table.get('no_partition_column'):
+    if table.get('no_lower_upper_bound'):
         return """
                 (select
                 count(1) as total
@@ -36,7 +35,7 @@ def get_total_record(table):
 
 
 def load_table(table, total_min_max_table, query_table, options):
-    if table.get('no_partition_column'):
+    if table.get('no_lower_upper_bound'):
         return spark.read.format("jdbc") \
             .option("url", options['jdbc_server']) \
             .option("numPartitions", 70) \
@@ -119,10 +118,23 @@ def load_all_data(table, options):
 
         final_df = transform_col_binary(jdbc_table)
 
-        final_df \
-            .write \
-            .mode('overwrite') \
-            .saveAsTable(table_hive)
+        if table.get('partition_column') and table.get('date_partition_column'):
+            final_df = final_df.withColumn("year", year(table['partition_column'])) \
+                            .withColumn("month", month(table['partition_column']))
+
+            final_df.write.partitionBy(table['date_partition_column']) \
+                .mode("overwrite") \
+                .saveAsTable(table_hive)
+
+        elif table.get('partition_column'):
+            final_df.write.partitionBy(table['partition_column']) \
+                .mode("overwrite") \
+                .saveAsTable(table_hive)
+        else:
+            final_df \
+                .write \
+                .mode('overwrite') \
+                .saveAsTable(table_hive)
 
         print('Update impala table %s' % table_hive)
         _update_impala_table(table_hive, options)
@@ -266,6 +278,8 @@ def _update_impala_table(table, options):
         impala_cursor = conn.cursor()
         impala_cursor.execute("""
             INVALIDATE METADATA {table} """.format(table=table))
+        impala_cursor.execute("""
+            COMPUTE STATS {table} """.format(table=table))
 
 def transform_col_binary(data_frame):
     """
@@ -283,9 +297,9 @@ def transform_col_binary(data_frame):
 
     """
     return reduce(lambda df, (col_name, dtype): df
-            .withColumn(col_name, base64(f.col(col_name)))
+            .withColumn(col_name, base64(col(col_name)))
             .withColumnRenamed(col_name, 'BASE64_' + col_name)
-            if dtype == 'binary' else df.withColumn(col_name, f.col(col_name)),
+            if dtype == 'binary' else df.withColumn(col_name, col(col_name)),
             data_frame.dtypes, data_frame)
 
 if __name__ == "__main__":
