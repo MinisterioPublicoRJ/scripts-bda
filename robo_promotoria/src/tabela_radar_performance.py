@@ -228,6 +228,11 @@ def execute_process(options):
                        as perc_instauracaoes,
                    tac / max_pacote_tac as perc_tac,
                    acao / max_pacote_acoes as perc_acoes,
+                   med_pacote_arquivamentos,
+                   med_pacote_indeferimentos,
+                   med_pacote_instauracoes,
+                   med_pacote_tac,
+                   med_pacote_acoes,
                    (arquivamento - med_pacote_arquivamentos)
                        / med_pacote_arquivamentos as var_med_arquivaentos,
                    (indeferimento - med_pacote_indeferimentos)
