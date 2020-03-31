@@ -110,7 +110,8 @@ def execute_process(options):
     final_df.createOrReplaceTempView("final_andamentos")
     spark.sql(
         """
-            SELECT fa.*, ap.cod_pct, ap.orgi_nm_orgao nm_orgao
+            SELECT fa.*, ap.cod_pct, ap.pacote_atribuicao,
+            ap.orgi_nm_orgao nm_orgao
             FROM final_andamentos fa
             INNER JOIN {schema_aux}.atualizacao_pj_pacote ap
             ON ap.id_orgao = fa.orgao_id
@@ -209,6 +210,7 @@ def execute_process(options):
         spark.sql(
             """
             SELECT fp.cod_pct,
+                   fp.pacote_atribuicao,
                    fp.orgao_id,
                    arquivamento as nr_arquivamentos,
                    indeferimento as nr_indeferimentos,
@@ -228,6 +230,11 @@ def execute_process(options):
                        as perc_instauracaoes,
                    tac / max_pacote_tac as perc_tac,
                    acao / max_pacote_acoes as perc_acoes,
+                   med_pacote_arquivamentos,
+                   med_pacote_indeferimentos,
+                   med_pacote_instauracoes,
+                   med_pacote_tac,
+                   med_pacote_acoes,
                    (arquivamento - med_pacote_arquivamentos)
                        / med_pacote_arquivamentos as var_med_arquivaentos,
                    (indeferimento - med_pacote_indeferimentos)
