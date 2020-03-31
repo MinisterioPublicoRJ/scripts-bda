@@ -1,9 +1,63 @@
 import re
+import argparse
 
 import numpy as np
 import pandas as pd
 from unidecode import unidecode
 from sklearn.metrics import classification_report
+
+
+def parse_arguments():
+    parser = argparse.ArgumentParser(description="Dunant Arguments")
+    parser.add_argument('-os','--oracleServer', metavar='oracleServer', type=str, help='')
+    parser.add_argument('-ou','--oracleUser', metavar='oracleUser', type=str, help='')
+    parser.add_argument('-op','--oraclePassword', metavar='oraclePassword', type=str, help='')
+    parser.add_argument('-od','--oracleDriverPath', metavar='oracleDriverPath', type=str, help='')
+
+    parser.add_argument('-rnm','--robotName', metavar='robotName', type=str, help='')
+    parser.add_argument('-rnb','--robotNumber', metavar='robotNumber', type=str, help='')
+
+    parser.add_argument('-hs','--hdfsUrl', metavar='hdfsUrl', type=str, help='')
+    parser.add_argument('-hu','--hdfsUser', metavar='hdfsUser', type=str, help='')
+    parser.add_argument('-hd','--hdfsModelDir', metavar='hdfsModelDir', type=str, help='')
+
+    parser.add_argument('-ut','--updateTables', dest='updateTables', action='store_true')
+    parser.set_defaults(updateTables=False)
+
+    parser.add_argument('-sdt','--startDate', metavar='startDate', type=str, default='', help='')
+    parser.add_argument('-edt','--endDate', metavar='endDate', type=str, default='', help='')
+
+    parser.add_argument('-no','--onlyNull', dest='onlyNull', action='store_true')
+    parser.set_defaults(onlyNull=False)
+
+    parser.add_argument('-th','--threshold', metavar='threshold', type=float, default=0.7, help='')
+    parser.add_argument('-mc','--maxClasses', metavar='maxClasses', type=int, default=3, help='')
+
+    parser.add_argument('-gs','--evaluateSaveGSpread', dest='evaluateSaveGSpread', action='store_true')
+    parser.set_defaults(evaluateSaveGSpread=False)
+    
+    args = parser.parse_args()
+
+    options = {
+                    'oracle_server': args.oracleServer, 
+                    'oracle_user': args.oracleUser,
+                    'oracle_password' : args.oraclePassword,
+                    'oracle_driver_path' : args.oracleDriverPath,
+                    'robot_name' : args.robotName,
+                    'robot_number': args.robotNumber,
+                    'hdfs_url': args.hdfsUrl,
+                    'hdfs_user': args.hdfsUser,
+                    'hdfs_model_dir': args.hdfsModelDir,
+                    'update_tables': args.updateTables,
+                    'start_date': args.startDate,
+                    'end_date': args.endDate,
+                    'only_null': args.onlyNull,
+                    'threshold': args.threshold,
+                    'max_classes': args.maxClasses,
+                    'evaluate_save_gspread': args.evaluateSaveGSpread
+                }
+
+    return options
 
 
 def clean_text(x):

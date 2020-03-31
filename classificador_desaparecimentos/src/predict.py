@@ -10,7 +10,8 @@ from decouple import config
 from hdfs import InsecureClient
 
 from utils import (
-    clean_text
+    clean_text,
+    parse_arguments,
 )
 from models import (
     RegexClassifier
@@ -24,21 +25,23 @@ from queries import (
 )
 
 
-URL_ORACLE_SERVER = config('URL_ORACLE_SERVER')
-USER_ORACLE = config('USER_ORACLE')
-PASSWD_ORACLE = config('PASSWD_ORACLE')
-ORACLE_DRIVER_PATH = config('ORACLE_DRIVER_PATH')
-ROBOT_NAME = config('ROBOT_NAME')
-ROBOT_NUMBER = config('ROBOT_NUMBER')
-HDFS_URL = config('HDFS_URL')
-HDFS_USER = config('HDFS_USER')
-HDFS_MODEL_DIR = config('HDFS_MODEL_DIR')
-UPDATE_TABLES = config('UPDATE_TABLES', cast=bool)
-ONLY_NULL = config('ONLY_NULL', cast=bool)
-START_DATE = config('START_DATE', default='')
-END_DATE = config('END_DATE', default='')
-MAX_CLASSES = config('MAX_CLASSES', default=3, cast=int)
-THRESHOLD = config('THRESHOLD', default=0.5, cast=float)
+options = parse_arguments()
+
+URL_ORACLE_SERVER =  options['oracle_server']
+USER_ORACLE =  options['oracle_user']
+PASSWD_ORACLE =  options['oracle_password']
+ORACLE_DRIVER_PATH =  options['oracle_driver_path']
+ROBOT_NAME =  options['robot_name']
+ROBOT_NUMBER =  options['robot_number']
+HDFS_URL =  options['hdfs_url']
+HDFS_USER =  options['hdfs_user']
+HDFS_MODEL_DIR =  options['hdfs_model_dir']
+UPDATE_TABLES =  options['update_tables']
+ONLY_NULL =  options['only_null']
+START_DATE =  options['start_date']
+END_DATE =  options['end_date']
+MAX_CLASSES =  options['max_classes']
+THRESHOLD =  options['threshold']
 
 ID_COLUMN = 'SNCA_DK'
 TEXT_COLUMN = 'SNCA_DS_FATO'
