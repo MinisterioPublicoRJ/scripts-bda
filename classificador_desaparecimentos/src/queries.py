@@ -375,3 +375,16 @@ def update_motivo_declarado(cursor, snca_dk, labels):
     for label in labels:
         cursor.execute(INSERT_MOT_DECLARADO_QUERY,
                        (int(snca_dk), int(label)))
+
+
+def get_motivos_declarados(cursor):
+    """Gets the list of motivos_declarados in the database.
+
+    Parameters:
+        cursor: The jdbc cursor to execute the queries.
+    
+    Returns:
+        A dict from the keys to the names.
+    """
+    cursor.execute("SELECT * FROM SILD.SILD_MOTIVO_DECLARADO")
+    return {int(el[0]):el[1] for el in cursor.fetchall()}

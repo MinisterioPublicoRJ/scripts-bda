@@ -13,7 +13,8 @@ from gspread_dataframe import set_with_dataframe
 
 from queries import (
     get_evaluate_data,
-    get_id_sinalid
+    get_id_sinalid,
+    get_motivos_declarados,
 )
 from utils import (
     get_results_from_hdfs,
@@ -35,30 +36,6 @@ HDFS_MODEL_DIR =  options['hdfs_model_dir']
 EVALUATE_SAVE_GSPREAD = options['evaluate_save_gspread']
 FORMATTED_HDFS_PATH = "/".join(HDFS_MODEL_DIR.split('/')[5:])
 
-MOTIVOS_DICT = {
-    1: 'CONFLITO INTRAFAMILIAR',
-    2: 'DROGADIÇÃO',
-    3: 'CATÁSTROFE',
-    4: 'ENVOLVIMENTO COM TRÁFICO DE ENTORPECENTES',
-    5: 'PROBLEMAS PSIQUIÁTRICOS',
-    6: 'POSSÍVEL VÍTIMA DE SEQUESTRO',
-    7: 'POSSÍVEL VÍTIMA DE HOMICÍDIO',
-    8: 'POSSÍVEL VÍTIMA DE AFOGAMENTO',
-    9: 'SUBTRAÇÃO PARA EXPLORAÇÃO ECONÔMICA',
-    10: 'SUBTRAÇÃO PARA EXPLORAÇÃO SEXUAL',
-    11: 'ABANDONO',
-    12: 'PERDA DE CONTATO VOLUNTÁRIO',
-    13: 'SEM MOTIVO APARENTE',
-    14: 'AUSÊNCIA DE NOTIFICAÇÃO DE ÓBITO',
-    15: 'AUSÊNCIA DE NOTIFICAÇÃO DE ENCARCERAMENTO',
-    16: 'AUSÊNCIA DE NOTIFICAÇÃO DE INSTITUCIONALIZAÇÃO',
-    17: 'VÍTIMA DE SEQUESTRO',
-    18: 'OCULTAÇÃO DE CADÁVER',
-    19: 'VÍTIMA DE AFOGAMENTO',
-    20: 'PRISÃO/APREENSÃO',
-    21: 'POSSÍVEL VÍTIMA DE FEMINICÍDIO'
-}
-
 
 print('Running Evaluate script:')
 print('Connecting to HDFS and Oracle database...')
@@ -69,6 +46,8 @@ conn = jdbc.connect("oracle.jdbc.driver.OracleDriver",
                     [USER_ORACLE, PASSWD_ORACLE],
                     ORACLE_DRIVER_PATH)
 curs = conn.cursor()
+
+MOTIVOS_DICT = get_motivos_declarados(curs)
 
 model_dates = sorted(client.list(FORMATTED_HDFS_PATH))
 validated_datasets = []
