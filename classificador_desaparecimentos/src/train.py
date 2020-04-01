@@ -11,7 +11,8 @@ from hdfs import InsecureClient
 
 from utils import (
     clean_text,
-    get_keys
+    get_keys,
+    parse_arguments,
 )
 from models import (
     OneVsRestLogisticRegression
@@ -21,16 +22,17 @@ from queries import (
     get_list_of_classes
 )
 
+options = parse_arguments()
 
-URL_ORACLE_SERVER = config('URL_ORACLE_SERVER')
-USER_ORACLE = config('USER_ORACLE')
-PASSWD_ORACLE = config('PASSWD_ORACLE')
-ORACLE_DRIVER_PATH = config('ORACLE_DRIVER_PATH')
-HDFS_URL = config('HDFS_URL')
-HDFS_USER = config('HDFS_USER')
-HDFS_MODEL_DIR = config('HDFS_MODEL_DIR')
-START_DATE = config('START_DATE', default='')
-END_DATE = config('END_DATE', default='')
+URL_ORACLE_SERVER =  options['oracle_server']
+USER_ORACLE =  options['oracle_user']
+PASSWD_ORACLE =  options['oracle_password']
+ORACLE_DRIVER_PATH =  options['oracle_driver_path']
+HDFS_URL =  options['hdfs_url']
+HDFS_USER =  options['hdfs_user']
+HDFS_MODEL_DIR =  options['hdfs_model_dir']
+START_DATE =  options['start_date']
+END_DATE =  options['end_date']
 
 NEGATIVE_CLASS_VALUE = 13
 ID_COLUMN = 'SNCA_DK'
