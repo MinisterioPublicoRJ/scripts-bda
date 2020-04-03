@@ -3,10 +3,10 @@ export PYTHONIOENCODING=utf8
 
 spark2-submit --master yarn --deploy-mode cluster \
     --queue root.mpmapas \
-    --num-executors 50 \
+    --num-executors 5 \
     --driver-memory 6g \
     --executor-cores 7 \
-    --executor-memory 30g \
+    --executor-memory 10g \
     --conf spark.debug.maxToStringFields=2000 \
     --conf spark.executor.memoryOverhead=4096 \
     --conf spark.network.timeout=300 \
