@@ -4,7 +4,8 @@ export PYTHONIOENCODING=utf8
 spark2-submit --master yarn --deploy-mode cluster \
     --queue root.mpmapas \
     --num-executors 3 \
-    --executor-cores 1 \
+    --driver-memory 2g \
+    --executor-cores 8 \
     --executor-memory 5g \
     --conf spark.debug.maxToStringFields=2000 \
     --conf spark.executor.memoryOverhead=4096 \
