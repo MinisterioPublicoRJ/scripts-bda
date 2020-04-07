@@ -18,23 +18,21 @@ from queries import (
 from utils import (
     get_results_from_hdfs,
     expand_results,
-    get_keys
+    get_keys,
+    parse_arguments,
 )
 
 
-URL_ORACLE_SERVER = config('URL_ORACLE_SERVER')
-USER_ORACLE = config('USER_ORACLE')
-PASSWD_ORACLE = config('PASSWD_ORACLE')
-ORACLE_DRIVER_PATH = config('ORACLE_DRIVER_PATH')
-ROBOT_NAME = config('ROBOT_NAME')
-ROBOT_NUMBER = config('ROBOT_NUMBER')
-HDFS_URL = config('HDFS_URL')
-HDFS_USER = config('HDFS_USER')
-HDFS_MODEL_DIR = config('HDFS_MODEL_DIR')
-EVALUATE_SAVE_GSPREAD = config(
-    'EVALUATE_SAVE_GSPREAD',
-    cast=bool,
-    default=False)
+options = parse_arguments()
+
+URL_ORACLE_SERVER =  options['oracle_server']
+USER_ORACLE =  options['oracle_user']
+PASSWD_ORACLE =  options['oracle_password']
+ORACLE_DRIVER_PATH =  options['oracle_driver_path']
+HDFS_URL =  options['hdfs_url']
+HDFS_USER =  options['hdfs_user']
+HDFS_MODEL_DIR =  options['hdfs_model_dir']
+EVALUATE_SAVE_GSPREAD = options['evaluate_save_gspread']
 FORMATTED_HDFS_PATH = "/".join(HDFS_MODEL_DIR.split('/')[5:])
 
 MOTIVOS_DICT = {
