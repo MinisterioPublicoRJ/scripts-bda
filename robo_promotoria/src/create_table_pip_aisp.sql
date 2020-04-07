@@ -62,37 +62,18 @@ INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29933502, 22, "22 BPM BONSU
 ---EOS---
 INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29933502, 17, "17 BPM ILHA DO GOVERNADOR")
 ---EOS---
-INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29933502, 16, "16 BPM PENHA")
----EOS---
-INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29933502, 41, "41 BPM IRAJA")
----EOS---
 INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29933521, 22, "22 BPM BONSUCESSO")
 ---EOS---
 INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29933521, 17, "17 BPM ILHA DO GOVERNADOR")
 ---EOS---
-INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29933521, 16, "16 BPM PENHA")
----EOS---
-INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29933521, 41, "41 BPM IRAJA")
----EOS---
-INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29933590, 22, "22 BPM BONSUCESSO")
----EOS---
-INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29933590, 17, "17 BPM ILHA DO GOVERNADOR")
----EOS---
+
 INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29933590, 16, "16 BPM PENHA")
 ---EOS---
 INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29933590, 41, "41 BPM IRAJA")
 ---EOS---
-INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29933830, 22, "22 BPM BONSUCESSO")
----EOS---
-INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29933830, 17, "17 BPM ILHA DO GOVERNADOR")
----EOS---
 INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29933830, 16, "16 BPM PENHA")
 ---EOS---
 INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29933830, 41, "41 BPM IRAJA")
----EOS---
-INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29933850, 22, "22 BPM BONSUCESSO")
----EOS---
-INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29933850, 17, "17 BPM ILHA DO GOVERNADOR")
 ---EOS---
 INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29933850, 16, "16 BPM PENHA")
 ---EOS---
