@@ -1,7 +1,7 @@
 #!/bin/sh
 export PYTHONIOENCODING=utf8
 
-spark2-submit --master yarn --deploy-mode cluster \
+spark2-submit \
     --queue root.mpmapas \
     --num-executors 3 \
     --executor-cores 1 \
