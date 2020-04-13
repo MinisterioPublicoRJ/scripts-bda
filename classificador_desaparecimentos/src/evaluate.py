@@ -10,6 +10,7 @@ from decouple import config
 from hdfs import InsecureClient
 from oauth2client.service_account import ServiceAccountCredentials
 from gspread_dataframe import set_with_dataframe
+from unidecode import unidecode
 
 from queries import (
     get_evaluate_data,
@@ -91,7 +92,7 @@ df2 = pd.concat(classified_datasets, ignore_index=True)
 
 result_df = pd.concat([df1, df2], ignore_index=True)
 result_df['MDEC_MOTIVO'] = result_df['MDEC_DK'].apply(
-    lambda x: MOTIVOS_DICT[x])
+    lambda x: unidecode(MOTIVOS_DICT[x]))
 
 percents = []
 for x in list(result_df[['MDEC_DK', 'MDEC_MOTIVO']].drop_duplicates().values):
@@ -114,8 +115,8 @@ for x in list(result_df[['MDEC_DK', 'MDEC_MOTIVO']].drop_duplicates().values):
     else:
         percents.append(
             [str(c) + ',' + ds,
-             'Sem classificações ou validações nesta classe',
-             'Não se aplica'])
+             'Sem classificacoes ou validacoes nesta classe',
+             'Nao se aplica'])
 
 percents = pd.DataFrame(percents)
 percents.rename({1: 'PRECISAO', 2: 'SUPORTE'}, axis=1, inplace=True)
