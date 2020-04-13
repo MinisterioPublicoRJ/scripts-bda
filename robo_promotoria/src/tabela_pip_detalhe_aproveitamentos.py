@@ -15,6 +15,14 @@ def execute_process(options):
     schema_exadata = options['schema_exadata']
     schema_exadata_aux = options['schema_exadata_aux']
 
+    """
+    Regras:
+    Denuncias e Cautelares - Soma simples de tudo que aparece em dado periodo.
+    Acordos e Arquivamentos - Apenas considera 1. Por exemplo, caso haja mais de um
+      acordo em um documento, contar apenas 1 vez. Ademais, se o ultimo movimento de
+      acordo e de rescisao (ou desarquivamento no caso de arquivamentos) a soma fica zerada.
+    """
+
     DOC_ACORDOS = spark.sql("""
         SELECT
             A.docu_dk,
