@@ -1,7 +1,7 @@
 #!/bin/sh
 export PYTHONIOENCODING=utf8
 
-spark2-submit --master yarn \
+spark2-submit --master yarn --deploy-mode cluster \
     --queue root.mpmapas \
     --num-executors 3 \
     --driver-memory 2g \
