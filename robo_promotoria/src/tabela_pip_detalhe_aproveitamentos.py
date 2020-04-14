@@ -33,9 +33,11 @@ def execute_process(options):
         JOIN {0}.mcpr_vista B on B.vist_docu_dk = A.DOCU_DK
         JOIN (
             SELECT *
-            FROM {0}.mcpr_andamento
-            WHERE to_date(pcao_dt_andamento) > to_date(date_sub(current_timestamp(), 60))
-            AND to_date(pcao_dt_andamento) <= to_date(current_timestamp())) C
+            FROM {0}.mcpr_andamento s
+            WHERE s.year = year(date_sub(current_timestamp(), 60))
+            AND s.month >= month(date_sub(current_timestamp(), 60))
+            AND pcao_dt_andamento > date_sub(current_timestamp(), 60)
+            AND pcao_dt_andamento <= current_timestamp()) C
         ON C.pcao_vist_dk = B.vist_dk 
         JOIN (
             SELECT *
@@ -63,10 +65,10 @@ def execute_process(options):
             MAX(de_0_a_30_dias) as acordos_de_0_a_30_dias 
         FROM (
             SELECT
-            CASE WHEN to_date(pcao_dt_andamento) <= to_date(date_sub(current_timestamp(), 30))
+            CASE WHEN pcao_dt_andamento <= cast(date_sub(current_timestamp(), 30) as timestamp)
                       AND stao_tppr_dk IN (7827,7914,7883,7868,6361,6362,6391,7922,7928,7915,7917)
                 THEN 1 ELSE 0 END as de_30_a_60_dias,
-            CASE WHEN to_date(pcao_dt_andamento) > to_date(date_sub(current_timestamp(), 30))
+            CASE WHEN pcao_dt_andamento > cast(date_sub(current_timestamp(), 30) as timestamp)
                       AND stao_tppr_dk IN (7827,7914,7883,7868,6361,6362,6391,7922,7928,7915,7917)
                 THEN 1 ELSE 0 END as de_0_a_30_dias,
             A.docu_dk, A.docu_orgi_orga_dk_responsavel, A.pcao_dt_andamento, A.stao_tppr_dk
@@ -95,9 +97,11 @@ def execute_process(options):
         JOIN {0}.mcpr_vista B on B.vist_docu_dk = A.DOCU_DK
         JOIN (
             SELECT *
-            FROM {0}.mcpr_andamento
-            WHERE to_date(pcao_dt_andamento) > to_date(date_sub(current_timestamp(), 60))
-            AND to_date(pcao_dt_andamento) <= to_date(current_timestamp())) C
+            FROM {0}.mcpr_andamento s
+            WHERE s.year = year(date_sub(current_timestamp(), 60))
+            AND s.month >= month(date_sub(current_timestamp(), 60))
+            AND pcao_dt_andamento > date_sub(current_timestamp(), 60)
+            AND pcao_dt_andamento <= current_timestamp()) C
         ON C.pcao_vist_dk = B.vist_dk 
         JOIN (
             SELECT *
@@ -127,10 +131,10 @@ def execute_process(options):
             MAX(de_0_a_30_dias) as de_0_a_30_dias 
         FROM (
             SELECT
-            CASE WHEN to_date(pcao_dt_andamento) <= to_date(date_sub(current_timestamp(), 30))
+            CASE WHEN pcao_dt_andamento <= cast(date_sub(current_timestamp(), 30) as timestamp)
                       AND stao_tppr_dk IN (6549,6593,6591,6343,6338,6339,6340,6341,6342,7871,7897,7912,6346,6350,6359,6392,6017,6018,6020,7745)
                 THEN 1 ELSE 0 END as de_30_a_60_dias,
-            CASE WHEN to_date(pcao_dt_andamento) > to_date(date_sub(current_timestamp(), 30))
+            CASE WHEN pcao_dt_andamento > cast(date_sub(current_timestamp(), 30) as timestamp)
                       AND stao_tppr_dk IN (6549,6593,6591,6343,6338,6339,6340,6341,6342,7871,7897,7912,6346,6350,6359,6392,6017,6018,6020,7745)
                 THEN 1 ELSE 0 END as de_0_a_30_dias,
             A.docu_dk, A.docu_orgi_orga_dk_responsavel, A.pcao_dt_andamento, A.stao_tppr_dk
@@ -156,16 +160,18 @@ def execute_process(options):
             SUM(de_0_a_30_dias) as nr_cautelares_ultimos_30_dias
         FROM (
             SELECT 
-                CASE WHEN to_date(pcao_dt_andamento) <= to_date(date_sub(current_timestamp(), 30)) THEN 1 ELSE 0 END as de_30_a_60_dias,
-                CASE WHEN to_date(pcao_dt_andamento) > to_date(date_sub(current_timestamp(), 30)) THEN 1 ELSE 0 END as de_0_a_30_dias,
+                CASE WHEN pcao_dt_andamento <= cast(date_sub(current_timestamp(), 30) as timestamp) THEN 1 ELSE 0 END as de_30_a_60_dias,
+                CASE WHEN pcao_dt_andamento > cast(date_sub(current_timestamp(), 30) as timestamp) THEN 1 ELSE 0 END as de_0_a_30_dias,
                 docu_orgi_orga_dk_responsavel as orgao_id
             FROM {0}.mcpr_documento A
             JOIN {0}.mcpr_vista B on B.vist_docu_dk = A.DOCU_DK
             JOIN (
                 SELECT *
-                FROM {0}.mcpr_andamento
-                WHERE to_date(pcao_dt_andamento) > to_date(date_sub(current_timestamp(), 60))
-                AND to_date(pcao_dt_andamento) <= to_date(current_timestamp())) C 
+                FROM {0}.mcpr_andamento s
+                WHERE s.year = year(date_sub(current_timestamp(), 60))
+                AND s.month >= month(date_sub(current_timestamp(), 60))
+                AND pcao_dt_andamento > date_sub(current_timestamp(), 60)
+                AND pcao_dt_andamento <= current_timestamp()) C 
             ON C.pcao_vist_dk = B.vist_dk 
             JOIN (
                 SELECT *
@@ -186,16 +192,18 @@ def execute_process(options):
             SUM(de_0_a_30_dias) as nr_denuncias_ultimos_30_dias
         FROM (
             SELECT 
-                CASE WHEN to_date(pcao_dt_andamento) <= to_date(date_sub(current_timestamp(), 30)) THEN 1 ELSE 0 END as de_30_a_60_dias,
-                CASE WHEN to_date(pcao_dt_andamento) > to_date(date_sub(current_timestamp(), 30)) THEN 1 ELSE 0 END as de_0_a_30_dias,
+                CASE WHEN pcao_dt_andamento <= cast(date_sub(current_timestamp(), 30) as timestamp) THEN 1 ELSE 0 END as de_30_a_60_dias,
+                CASE WHEN pcao_dt_andamento > cast(date_sub(current_timestamp(), 30) as timestamp) THEN 1 ELSE 0 END as de_0_a_30_dias,
                 docu_orgi_orga_dk_responsavel as orgao_id
             FROM {0}.mcpr_documento A
             JOIN {0}.mcpr_vista B on B.vist_docu_dk = A.DOCU_DK
             JOIN (
                 SELECT *
-                FROM {0}.mcpr_andamento
-                WHERE to_date(pcao_dt_andamento) > to_date(date_sub(current_timestamp(), 60))
-                AND to_date(pcao_dt_andamento) <= to_date(current_timestamp())) C 
+                FROM {0}.mcpr_andamento s
+                WHERE s.year = year(date_sub(current_timestamp(), 60))
+                AND s.month >= month(date_sub(current_timestamp(), 60))
+                AND pcao_dt_andamento > date_sub(current_timestamp(), 60)
+                AND pcao_dt_andamento <= current_timestamp()) C 
             ON C.pcao_vist_dk = B.vist_dk 
             JOIN (
                 SELECT *
