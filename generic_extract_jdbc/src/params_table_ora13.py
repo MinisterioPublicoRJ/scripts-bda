@@ -92,7 +92,7 @@ params = {
             "pk_table_jdbc": "PCAO_DK",
             "update_date_table_jdbc": "",
             "partition_column": "pcao_dt_andamento",
-            "date_partition_column": ['year', 'month'],
+            "date_partition_format": 'YYYYMM',
             "table_hive": "mcpr_andamento",
             "fields":
             """
