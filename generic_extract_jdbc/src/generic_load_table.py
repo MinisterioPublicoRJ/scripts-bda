@@ -120,7 +120,7 @@ def load_all_data(table, options):
 
         if table.get('partition_column') and table.get('date_partition_format'):
             final_df = final_df.withColumn("year_month",
-                date_format(table['partition_column'], table['date_partition_format']))
+                date_format(table['partition_column'], table['date_partition_format']).cast("int"))
 
             final_df.write.partitionBy('year_month') \
                 .mode("overwrite") \
