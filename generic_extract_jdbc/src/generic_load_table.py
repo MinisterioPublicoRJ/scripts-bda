@@ -6,7 +6,7 @@ import params_table_ora13
 import params_table_oraupsert
 import params_table_oracle
 import params_table_postgre
-from pyspark.sql.functions import base64, col, year, month
+from pyspark.sql.functions import base64, col, date_format
 
 
 dic_params = {
@@ -118,11 +118,11 @@ def load_all_data(table, options):
 
         final_df = transform_col_binary(jdbc_table)
 
-        if table.get('partition_column') and table.get('date_partition_column'):
-            final_df = final_df.withColumn("year", year(table['partition_column'])) \
-                            .withColumn("month", month(table['partition_column']))
+        if table.get('partition_column') and table.get('date_partition_format'):
+            final_df = final_df.withColumn("year_month",
+                date_format(table['partition_column'], table['date_partition_format']).cast("int"))
 
-            final_df.write.partitionBy(table['date_partition_column']) \
+            final_df.write.partitionBy('year_month') \
                 .mode("overwrite") \
                 .saveAsTable(table_hive)
 
