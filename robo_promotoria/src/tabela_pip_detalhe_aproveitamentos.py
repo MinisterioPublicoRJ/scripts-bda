@@ -303,7 +303,7 @@ def execute_process(options):
             CASE
                 WHEN (nr_aproveitamentos_periodo_atual - nr_aproveitamentos_periodo_anterior) = 0 THEN 0
                 ELSE (nr_aproveitamentos_periodo_atual - nr_aproveitamentos_periodo_anterior)/nr_aproveitamentos_periodo_anterior
-            END as variacao_1_mes,
+            END as variacao_periodo,
             nr_denuncias_periodo_anterior,
             nr_cautelares_periodo_anterior,
             nr_acordos_periodo_anterior,
