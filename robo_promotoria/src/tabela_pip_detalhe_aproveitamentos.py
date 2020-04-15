@@ -22,6 +22,14 @@ def execute_process(options):
       acordo em um documento, contar apenas 1 vez. Ademais, se o ultimo movimento de
       acordo for de rescisao (ou desarquivamento no caso de arquivamentos) a soma fica zerada.
     """
+    ANDAMENTOS_FILTERED = spark.sql("""
+        SELECT *
+        FROM {0}.mcpr_andamento s
+        WHERE s.year_month >= cast(date_format(date_sub(current_timestamp(), 60), 'yyyyMM') as INT)
+        and pcao_dt_andamento > cast(date_sub(current_timestamp(), 60) as timestamp)
+        and pcao_dt_andamento <= current_timestamp()
+    """.format(schema_exadata))
+    ANDAMENTOS_FILTERED.registerTempTable('ANDAMENTOS_FILTERED')
 
     DOC_ACORDOS = spark.sql("""
         SELECT
@@ -31,13 +39,7 @@ def execute_process(options):
             D.stao_tppr_dk
         FROM {0}.mcpr_documento A
         JOIN {0}.mcpr_vista B on B.vist_docu_dk = A.DOCU_DK
-        JOIN (
-            SELECT *
-            FROM {0}.mcpr_andamento s
-            WHERE s.year = year(date_sub(current_timestamp(), 60))
-            AND s.month >= month(date_sub(current_timestamp(), 60))
-            AND pcao_dt_andamento > date_sub(current_timestamp(), 60)
-            AND pcao_dt_andamento <= current_timestamp()) C
+        JOIN ANDAMENTOS_FILTERED C
         ON C.pcao_vist_dk = B.vist_dk 
         JOIN (
             SELECT *
@@ -95,13 +97,7 @@ def execute_process(options):
             D.stao_tppr_dk
         FROM {0}.mcpr_documento A
         JOIN {0}.mcpr_vista B on B.vist_docu_dk = A.DOCU_DK
-        JOIN (
-            SELECT *
-            FROM {0}.mcpr_andamento s
-            WHERE s.year = year(date_sub(current_timestamp(), 60))
-            AND s.month >= month(date_sub(current_timestamp(), 60))
-            AND pcao_dt_andamento > date_sub(current_timestamp(), 60)
-            AND pcao_dt_andamento <= current_timestamp()) C
+        JOIN ANDAMENTOS_FILTERED C
         ON C.pcao_vist_dk = B.vist_dk 
         JOIN (
             SELECT *
@@ -165,13 +161,7 @@ def execute_process(options):
                 docu_orgi_orga_dk_responsavel as orgao_id
             FROM {0}.mcpr_documento A
             JOIN {0}.mcpr_vista B on B.vist_docu_dk = A.DOCU_DK
-            JOIN (
-                SELECT *
-                FROM {0}.mcpr_andamento s
-                WHERE s.year = year(date_sub(current_timestamp(), 60))
-                AND s.month >= month(date_sub(current_timestamp(), 60))
-                AND pcao_dt_andamento > date_sub(current_timestamp(), 60)
-                AND pcao_dt_andamento <= current_timestamp()) C 
+            JOIN ANDAMENTOS_FILTERED C 
             ON C.pcao_vist_dk = B.vist_dk 
             JOIN (
                 SELECT *
@@ -197,13 +187,7 @@ def execute_process(options):
                 docu_orgi_orga_dk_responsavel as orgao_id
             FROM {0}.mcpr_documento A
             JOIN {0}.mcpr_vista B on B.vist_docu_dk = A.DOCU_DK
-            JOIN (
-                SELECT *
-                FROM {0}.mcpr_andamento s
-                WHERE s.year = year(date_sub(current_timestamp(), 60))
-                AND s.month >= month(date_sub(current_timestamp(), 60))
-                AND pcao_dt_andamento > date_sub(current_timestamp(), 60)
-                AND pcao_dt_andamento <= current_timestamp()) C 
+            JOIN ANDAMENTOS_FILTERED C 
             ON C.pcao_vist_dk = B.vist_dk 
             JOIN (
                 SELECT *
@@ -253,7 +237,13 @@ def execute_process(options):
             LEFT JOIN NR_CAUTELARES B ON p.pip_codigo= B.orgao_id
             LEFT JOIN NR_ACORDOS C ON p.pip_codigo = C.orgao_id
             LEFT JOIN NR_ARQUIVAMENTOS D ON p.pip_codigo = D.orgao_id) t
-    """.format(schema_exadata, schema_exadata_aux))
+    """.format(schema_exadata, schema_exadata_aux)
+    ).withColumn(
+        "dt_inclusao",
+        from_unixtime(
+            unix_timestamp(current_timestamp(), 'yyyy-MM-dd HH:mm:ss'), 'yyyy-MM-dd HH:mm:ss')
+        .cast('timestamp')
+    )
 
     table_name = "{}.tb_pip_detalhe_aproveitamentos".format(schema_exadata_aux)
 
