@@ -31,7 +31,7 @@ def execute_process(options):
                 CASE WHEN to_date(pcao_dt_andamento) > to_date(date_sub(current_timestamp(), 365)) THEN 1 ELSE 0 END as de_0_a_12,
                 CASE WHEN to_date(pcao_dt_andamento) > to_date(date_sub(current_timestamp(), 60)) THEN 1 ELSE 0 END as de_60_dias,
                 CASE WHEN to_date(pcao_dt_andamento) > to_date(date_sub(current_timestamp(), 30)) THEN 1 ELSE 0 END as de_30_dias,
-                docu_orgi_orga_dk_responsavel as orgao_id
+                vist_orgi_orga_dk as orgao_id
             FROM {0}.mcpr_documento A
             JOIN {0}.mcpr_vista B on B.vist_docu_dk = A.DOCU_DK
             JOIN (
@@ -44,7 +44,8 @@ def execute_process(options):
                 SELECT *
                 FROM {0}.mcpr_sub_andamento
                 WHERE stao_tppr_dk = 6251) D
-            ON D.stao_pcao_dk = C.pcao_dk) t
+            ON D.stao_pcao_dk = C.pcao_dk
+            WHERE docu_tpst_dk != 11) t
         INNER JOIN {1}.atualizacao_pj_pacote p ON p.id_orgao = t.orgao_id
         GROUP BY orgao_id, orgi_nm_orgao, cod_pct
     """.format(schema_exadata, schema_exadata_aux))
