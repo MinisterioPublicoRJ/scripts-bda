@@ -27,7 +27,6 @@ def execute_process(options):
         WHERE to_date(pcao_dt_andamento)
             > to_date(date_sub(current_timestamp(), {days_ago}))
         AND to_date(pcao_dt_andamento) <= to_date(current_timestamp())
-        AND docu_tpst_dk != 11
         GROUP BY docu_dk, v.vist_orgi_orga_dk,
             a.pcao_dt_andamento, s.stao_tppr_dk
     """.format(schema=options["schema_exadata"], days_ago=options["days_ago"])
