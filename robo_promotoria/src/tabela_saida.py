@@ -29,6 +29,7 @@ def execute_process(options):
             JOIN {0}.mcpr_sub_andamento D on D.stao_pcao_dk = C.pcao_dk
             JOIN {1}.atualizacao_pj_pacote F ON B.vist_orgi_orga_dk = cast(F.id_orgao as int)
             JOIN {1}.tb_regra_negocio_saida on cod_atribuicao = F.cod_pct and D.stao_tppr_dk = tp_andamento
+            WHERE C.pcao_dt_cancelamento IS NULL
             ) t1
         RIGHT JOIN (
                 select * 

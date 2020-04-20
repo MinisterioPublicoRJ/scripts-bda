@@ -28,6 +28,7 @@ def execute_process(options):
         WHERE s.year_month >= cast(date_format(date_sub(current_timestamp(), 60), 'yyyyMM') as INT)
         and pcao_dt_andamento > cast(date_sub(current_timestamp(), 60) as timestamp)
         and pcao_dt_andamento <= current_timestamp()
+        and pcao_dt_cancelamento IS NULL
     """.format(schema_exadata))
     ANDAMENTOS_FILTERED.registerTempTable('ANDAMENTOS_FILTERED')
 

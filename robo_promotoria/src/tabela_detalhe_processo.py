@@ -38,7 +38,9 @@ def execute_process(options):
                 SELECT *
                 FROM {0}.mcpr_andamento
                 WHERE to_date(pcao_dt_andamento) > to_date(date_sub(current_timestamp(), 730))
-                AND to_date(pcao_dt_andamento) <= to_date(current_timestamp())) C 
+                AND to_date(pcao_dt_andamento) <= to_date(current_timestamp())
+                AND pcao_dt_cancelamento IS NULL
+                ) C 
             ON C.pcao_vist_dk = B.vist_dk 
             JOIN (
                 SELECT *

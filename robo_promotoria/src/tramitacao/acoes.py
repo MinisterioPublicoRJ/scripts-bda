@@ -20,6 +20,7 @@ def execute_process(spark, options):
         and d.docu_cldc_dk in (18, 126, 127, 159, 175, 176, 177, 441)
         and sa.stao_tppr_dk IN (6374,6375,6376,6377,6378)
         AND docu_tpst_dk != 11
+        AND pcao_dt_cancelamento IS NULL
         GROUP BY d.docu_dk, ap.id_orgao, tempo_tramitacao, dt_finalizacao, ap.cod_pct
     """.format(
              schema=options["schema_exadata"],
@@ -100,6 +101,7 @@ def execute_process(spark, options):
         (sa.stao_tppr_dk in (6383,6377,6378,6384,6374,6375,6376,6380,6381,6382)
          and datediff(current_timestamp(), a.pcao_dt_andamento) > 60))
         AND docu_tpst_dk != 11
+        AND pcao_dt_cancelamento IS NULL
          GROUP BY d.docu_dk, ap.id_orgao, tempo_tramitacao, dt_finalizacao, ap.cod_pct
     """.format(
              schema=options["schema_exadata"],
