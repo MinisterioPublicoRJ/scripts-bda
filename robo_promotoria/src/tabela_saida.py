@@ -30,6 +30,7 @@ def execute_process(options):
             JOIN {1}.atualizacao_pj_pacote F ON B.vist_orgi_orga_dk = cast(F.id_orgao as int)
             JOIN {1}.tb_regra_negocio_saida on cod_atribuicao = F.cod_pct and D.stao_tppr_dk = tp_andamento
             WHERE C.pcao_dt_cancelamento IS NULL
+            AND A.docu_tpst_dk != 11
             ) t1
         RIGHT JOIN (
                 select * 

@@ -46,7 +46,8 @@ def execute_process(options):
                 SELECT *
                 FROM {0}.mcpr_sub_andamento
                 WHERE stao_tppr_dk = 6251) D
-            ON D.stao_pcao_dk = C.pcao_dk) t
+            ON D.stao_pcao_dk = C.pcao_dk
+            WHERE A.docu_tpst_dk != 11) t
         INNER JOIN {1}.atualizacao_pj_pacote p ON p.id_orgao = t.orgao_id
         GROUP BY orgao_id, orgi_nm_orgao, cod_pct
     """.format(schema_exadata, schema_exadata_aux))
