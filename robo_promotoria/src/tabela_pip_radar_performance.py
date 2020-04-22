@@ -14,6 +14,7 @@ def execute_process(options):
         .enableHiveSupport()
         .getOrCreate()
     )
+    spark.conf.set("spark.sql.autoBroadcastJoinThreshold", -1)
 
     schema_exadata = options["schema_exadata"]
     schema_exadata_aux = options["schema_exadata_aux"]
@@ -85,12 +86,12 @@ def execute_process(options):
         SELECT
             docu_dk,
             vist_orgi_orga_dk,
-            MAX(periodo_atual) as acordos_periodo_atual
+            MAX(acordo) as acordos
         FROM (
             SELECT
             CASE WHEN pcao_dt_andamento >= cast(date_sub(current_timestamp(), {0}) as timestamp)
                       AND stao_tppr_dk IN (7827,7914,7883,7868,6361,6362,6391,7922,7928,7915,7917)
-                THEN 1 ELSE 0 END as periodo_atual,
+                THEN 1 ELSE 0 END as acordo,
             A.docu_dk, A.vist_orgi_orga_dk, A.pcao_dt_andamento, A.stao_tppr_dk
             FROM DOC_ACORDOS A
             JOIN MAX_DT_ACORD MDT ON MDT.docu_dk = A.docu_dk AND MDT.max_dt_acordo = A.pcao_dt_andamento) t
@@ -104,7 +105,7 @@ def execute_process(options):
         """
         SELECT
             vist_orgi_orga_dk as orgao_id,
-            SUM(acordos_periodo_atual) as nr_acordos_periodo_atual
+            SUM(acordos) as nr_acordos
         FROM ACORDOS_POR_DOC
         GROUP BY vist_orgi_orga_dk
     """.format(
@@ -155,12 +156,12 @@ def execute_process(options):
         SELECT
             docu_dk,
             vist_orgi_orga_dk,
-            MAX(periodo_atual) as acordos_periodo_atual
+            MAX(acordo_n_persecucao) as acordos_n_persecucao
         FROM (
             SELECT
             CASE WHEN pcao_dt_andamento > cast(date_sub(current_timestamp(), {0}) as timestamp)
                       AND stao_tppr_dk IN (7914,7917,7928,7883,7915,7922,7827)
-                THEN 1 ELSE 0 END as periodo_atual,
+                THEN 1 ELSE 0 END as acordo_n_persecucao,
             A.docu_dk, A.vist_orgi_orga_dk, A.pcao_dt_andamento, A.stao_tppr_dk
             FROM DOC_ACORDOS_N_PERSECUCAO A
             JOIN MAX_DT_ACORD_N_PERSECUCAO MDT ON MDT.docu_dk = A.docu_dk AND MDT.max_dt_acordo = A.pcao_dt_andamento) t
@@ -176,7 +177,7 @@ def execute_process(options):
         """
         SELECT
             vist_orgi_orga_dk as orgao_id,
-            SUM(acordos_periodo_atual) as nr_acordos_n_persecucao_periodo_atual
+            SUM(acordos_n_persecucao) as nr_acordos_n_persecucao
         FROM ACORDOS_POR_DOC_N_PERSECUCAO
         GROUP BY vist_orgi_orga_dk
     """.format(
@@ -196,7 +197,7 @@ def execute_process(options):
         FROM {0}.mcpr_documento A
         JOIN {0}.mcpr_vista B on B.vist_docu_dk = A.DOCU_DK
         JOIN ANDAMENTOS_FILTERED C
-        ON C.pcao_vist_dk = B.vist_dk 
+        ON C.pcao_vist_dk = B.vist_dk
         JOIN (
             SELECT *
             FROM {0}.mcpr_sub_andamento
@@ -205,7 +206,7 @@ def execute_process(options):
                 6075,1028,6798,7245,6307,1027,7803,6003,7802,7801) --desarquivamentos
             ) D
             ON D.stao_pcao_dk = C.pcao_dk
-        INNER JOIN (SELECT DISTINCT pip_codigo FROM {1}.tb_pip_aisp) p 
+        INNER JOIN (SELECT DISTINCT pip_codigo FROM {1}.tb_pip_aisp) p
             ON p.pip_codigo = B.vist_orgi_orga_dk
         WHERE docu_cldc_dk IN (3, 494, 590)
         AND docu_tpst_dk != 11
@@ -229,12 +230,12 @@ def execute_process(options):
         SELECT
             docu_dk,
             vist_orgi_orga_dk,
-            MAX(periodo_atual) as periodo_atual
+            MAX(arquivamento) as arquivamentos
         FROM (
             SELECT
             CASE WHEN pcao_dt_andamento > cast(date_sub(current_timestamp(), {0}) as timestamp)
                       AND stao_tppr_dk IN (6549,6593,6591,6343,6338,6339,6340,6341,6342,7871,7897,7912,6346,6350,6359,6392,6017,6018,6020,7745)
-                THEN 1 ELSE 0 END as periodo_atual,
+                THEN 1 ELSE 0 END as arquivamento,
             A.docu_dk, A.vist_orgi_orga_dk, A.pcao_dt_andamento, A.stao_tppr_dk
             FROM DOC_ARQUIVAMENTOS A
             JOIN MAX_DT_ARQUIV MDT ON MDT.docu_dk = A.docu_dk AND MDT.max_dt_arquivamento = A.pcao_dt_andamento) t
@@ -248,7 +249,7 @@ def execute_process(options):
         """
         SELECT
             vist_orgi_orga_dk as orgao_id,
-            SUM(periodo_atual) as nr_arquivamentos_periodo_atual
+            SUM(arquivamentos) as nr_arquivamentos
         FROM ARQUIVAMENTOS_POR_DOC
         GROUP BY vist_orgi_orga_dk
     """.format(
@@ -260,17 +261,17 @@ def execute_process(options):
     # Numero de medidas cautelares
     NR_CAUTELARES = spark.sql(
         """
-        SELECT 
+        SELECT
             orgao_id,
-            SUM(periodo_atual) as nr_cautelares_periodo_atual
+            SUM(cautelar) as nr_cautelares
         FROM (
-            SELECT 
-                CASE WHEN pcao_dt_andamento > cast(date_sub(current_timestamp(), {2}) as timestamp) THEN 1 ELSE 0 END as periodo_atual,
+            SELECT
+                CASE WHEN pcao_dt_andamento > cast(date_sub(current_timestamp(), {2}) as timestamp) THEN 1 ELSE 0 END as cautelar,
                 vist_orgi_orga_dk as orgao_id
             FROM {0}.mcpr_documento A
             JOIN {0}.mcpr_vista B on B.vist_docu_dk = A.DOCU_DK
-            JOIN ANDAMENTOS_FILTERED C 
-            ON C.pcao_vist_dk = B.vist_dk 
+            JOIN ANDAMENTOS_FILTERED C
+            ON C.pcao_vist_dk = B.vist_dk
             JOIN (
                 SELECT *
                 FROM {0}.mcpr_sub_andamento
@@ -294,10 +295,10 @@ def execute_process(options):
         """
         SELECT 
             orgao_id,
-            SUM(periodo_atual) as nr_denuncias_periodo_atual
+            SUM(denuncia) as nr_denuncias
         FROM (
             SELECT 
-                CASE WHEN pcao_dt_andamento > cast(date_sub(current_timestamp(), {2}) as timestamp) THEN 1 ELSE 0 END as periodo_atual,
+                CASE WHEN pcao_dt_andamento > cast(date_sub(current_timestamp(), {2}) as timestamp) THEN 1 ELSE 0 END as denuncia,
                 vist_orgi_orga_dk as orgao_id
             FROM {0}.mcpr_documento A
             JOIN {0}.mcpr_vista B on B.vist_docu_dk = A.DOCU_DK
@@ -343,6 +344,7 @@ def execute_process(options):
         """
         SELECT orgao_id, nm_orgao,
             aisp_codigo,
+            aisp_nome,
             nr_denuncias,
             nr_cautelares,
             nr_acordos_n_persecucao,
@@ -352,10 +354,11 @@ def execute_process(options):
             SELECT
                 p.pip_codigo as orgao_id, O.orgi_nm_orgao as nm_orgao,
                 p.aisp_codigo as aisp_codigo,
-                nvl(nr_denuncias_periodo_atual, 0) as nr_denuncias,
-                nvl(nr_cautelares_periodo_atual, 0) as nr_cautelares,
-                nvl(nr_acordos_n_persecucao_periodo_atual, 0) as nr_acordos_n_persecucao,
-                nvl(nr_arquivamentos_periodo_atual, 0) as nr_arquivamentos,
+                p.aisp_nome as aisp_nome,
+                nvl(nr_denuncias, 0) as nr_denuncias,
+                nvl(nr_cautelares, 0) as nr_cautelares,
+                nvl(nr_acordos_n_persecucao, 0) as nr_acordos_n_persecucao,
+                nvl(nr_arquivamentos, 0) as nr_arquivamentos,
                 nvl(nr_aberturas_vista, 0) as nr_aberturas_vista
             FROM (SELECT DISTINCT pip_codigo, aisp_codigo FROM {1}.tb_pip_aisp) p
             JOIN {0}.orgi_orgao O ON orgi_dk = p.pip_codigo
@@ -454,6 +457,7 @@ def execute_process(options):
         spark.sql(
             """
             SELECT mt.aisp_codigo,
+                   mt.aisp_nome,
                    mt.orgao_id,
                    nr_denuncias,
                    nr_cautelares,
