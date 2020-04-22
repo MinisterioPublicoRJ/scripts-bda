@@ -448,7 +448,7 @@ def execute_process(options):
                    percentile(nr_cautelares, 0.5) as med_aisp_cautelares,
                    percentile(nr_acordos_n_persecucao, 0.5) as med_aisp_acordos,
                    percentile(nr_arquivamentos,  0.5) as med_aisp_arquivamentos,
-                   percentile(nr_aberturas_vista, 0.5) as med_aisp_aberturas
+                   percentile(nr_aberturas_vista, 0.5) as med_aisp_aberturas_vista
                    FROM metricas
                    GROUP BY aisp_codigo
     """
@@ -463,7 +463,7 @@ def execute_process(options):
                    nr_cautelares,
                    nr_acordos_n_persecucao,
                    nr_arquivamentos,
-                   nr_aberturas_vista
+                   nr_aberturas_vista,
                    max_aisp_denuncias,
                    max_aisp_cautelares,
                    max_aisp_acordos,
@@ -476,12 +476,12 @@ def execute_process(options):
                    nr_acordos_n_persecucao / max_aisp_acordos
                        as perc_acordos,
                    nr_arquivamentos / max_aisp_arquivamentos as perc_arquivamentos,
-                   nr_aberturas_vista / max_aisp_aberturas_vista as perc_aberturas,
+                   nr_aberturas_vista / max_aisp_aberturas_vista as perc_aberturas_vista,
                    med_aisp_denuncias,
                    med_aisp_cautelares,
                    med_aisp_acordos,
                    med_aisp_arquivamentos,
-                   med_aisp_aberturas,
+                   med_aisp_aberturas_vista,
                    (nr_denuncias - med_aisp_denuncias)
                        / med_aisp_denuncias as var_med_denuncias,
                    (nr_cautelares - med_aisp_cautelares)
@@ -490,8 +490,8 @@ def execute_process(options):
                        / med_aisp_acordos as var_med_acordos,
                    (nr_arquivamentos - med_aisp_arquivamentos)
                       / med_aisp_arquivamentos as var_med_arquivamentos,
-                   (nr_aberturas_vista - med_aisp_aberturas)
-                       / med_aisp_aberturas as var_med_aberturas,
+                   (nr_aberturas_vista - med_aisp_aberturas_vista)
+                       / med_aisp_aberturas_vista as var_med_aberturas_vista,
                    current_timestamp() as dt_calculo
             FROM metricas mt
             INNER JOIN stats_aisp sa
