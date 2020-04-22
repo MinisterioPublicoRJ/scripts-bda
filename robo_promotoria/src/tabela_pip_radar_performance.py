@@ -360,7 +360,7 @@ def execute_process(options):
                 nvl(nr_acordos_n_persecucao, 0) as nr_acordos_n_persecucao,
                 nvl(nr_arquivamentos, 0) as nr_arquivamentos,
                 nvl(nr_aberturas_vista, 0) as nr_aberturas_vista
-            FROM (SELECT DISTINCT pip_codigo, aisp_codigo FROM {1}.tb_pip_aisp) p
+            FROM (SELECT DISTINCT pip_codigo, aisp_codigo, aisp_nome FROM {1}.tb_pip_aisp) p
             JOIN {0}.orgi_orgao O ON orgi_dk = p.pip_codigo
             LEFT JOIN NR_DENUNCIAS A ON p.pip_codigo = A.orgao_id
             LEFT JOIN NR_CAUTELARES B ON p.pip_codigo= B.orgao_id
@@ -511,7 +511,7 @@ def execute_process(options):
     )
 
     table_name = "{0}.{1}".format(schema_exadata_aux, output_table_name)
-    table.write.mode("overwrite").saveAsTable(
+    stats.write.mode("overwrite").saveAsTable(
         "temp_table_{0}".format(output_table_name)
     )
     temp_table = spark.table("temp_table_{0}".format(output_table_name))
