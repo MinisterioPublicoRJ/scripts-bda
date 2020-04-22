@@ -558,7 +558,7 @@ if __name__ == "__main__":
         "--tableName",
         metavar="tableName",
         type=str,
-        default="tb_pip_detalhe_aproveitamentos",
+        default="tb_pip_radar_performance",
         help="",
     )
     args = parser.parse_args()
@@ -568,7 +568,7 @@ if __name__ == "__main__":
         "schema_exadata_aux": args.schemaExadataAux,
         "impala_host": args.impalaHost,
         "impala_port": args.impalaPort,
-        "days_ago": args.nbPastDays,
+        "days_ago": args.daysAgo,
     }
 
     execute_process(options)
