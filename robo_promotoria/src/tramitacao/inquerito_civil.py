@@ -19,6 +19,8 @@ def execute_process(spark, options):
                                     6593,6332,7872,6336,6333,6335,7745,6346,
                                     6345,6015,6016,6325,6327,6328,6329,6330,
                                     6337,6344,6656,6671,7869,7870,6324,6251)
+            AND docu_tpst_dk != 11
+            AND pcao_dt_cancelamento IS NULL
     GROUP BY d.docu_dk, ap.id_orgao, tempo_tramitacao, dt_finalizacao, ap.cod_pct
     """.format(
         schema=options["schema_exadata"],
