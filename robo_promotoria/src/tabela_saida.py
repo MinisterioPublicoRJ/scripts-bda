@@ -25,12 +25,14 @@ def execute_process(options):
             SELECT F.id_orgao, C.pcao_dt_andamento
             FROM {0}.mcpr_documento A
             JOIN {0}.mcpr_vista B on B.vist_docu_dk = A.DOCU_DK
-            JOIN {0}.mcpr_andamento C on C.pcao_vist_dk = B.vist_dk AND C.pcao_dt_andamento >= to_date(date_sub(current_timestamp(), 60))
+            JOIN {0}.mcpr_andamento C on C.pcao_vist_dk = B.vist_dk
             JOIN {0}.mcpr_sub_andamento D on D.stao_pcao_dk = C.pcao_dk
             JOIN {1}.atualizacao_pj_pacote F ON B.vist_orgi_orga_dk = cast(F.id_orgao as int)
             JOIN {1}.tb_regra_negocio_saida on cod_atribuicao = F.cod_pct and D.stao_tppr_dk = tp_andamento
             WHERE C.pcao_dt_cancelamento IS NULL
             AND A.docu_tpst_dk != 11
+	    AND C.year_month >= cast(date_format(date_sub(current_timestamp(), 60), 'yyyyMM') as INT)
+            AND C.pcao_dt_andamento >= date_sub(current_timestamp(), 60)
             ) t1
         RIGHT JOIN (
                 select * 
