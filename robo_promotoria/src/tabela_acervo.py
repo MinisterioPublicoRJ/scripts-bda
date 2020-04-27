@@ -33,6 +33,7 @@ def execute_process(options):
                 
             WHERE 
                 docu_fsdc_dk = 1
+            AND docu_tpst_dk != 11
             GROUP BY docu_orgi_orga_dk_responsavel, cod_pct, docu_cldc_dk
     """.format(schema_exadata, schema_exadata_aux))
 
