@@ -5,7 +5,7 @@ spark2-submit --master yarn --deploy-mode cluster \
     --queue root.mpmapas \
     --num-executors 5 \
     --driver-memory 6g \
-    --executor-cores 8 \
+    --executor-cores 5 \
     --executor-memory 8g \
     --conf spark.debug.maxToStringFields=2000 \
     --conf spark.executor.memoryOverhead=4096 \
