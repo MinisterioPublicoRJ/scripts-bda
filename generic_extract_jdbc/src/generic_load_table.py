@@ -2,7 +2,7 @@ from base import spark
 import argparse
 from impala.dbapi import connect as impala_connect
 import ast
-import params_table_ora13
+import params_table_promotron
 import params_table_oraupsert
 import params_table_oracle
 import params_table_postgre
@@ -10,7 +10,7 @@ from pyspark.sql.functions import base64, col, date_format
 
 
 dic_params = {
-                "ORACLE_13" : params_table_ora13.params,
+                "ORACLE_PROMOTRON" : params_table_promotron.params,
                 "ORACLE_UPSERT" : params_table_oraupsert.params,
                 "ORACLE": params_table_oracle.params, 
                 "POSTGRE" : params_table_postgre.params
