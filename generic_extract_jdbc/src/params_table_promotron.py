@@ -219,6 +219,48 @@ params = {
             "pk_table_jdbc": "ORGI_DK",
             "update_date_table_jdbc": "",
             "table_hive": "orgi_orgao"
+        },
+        {
+            "table_jdbc": "GATE.GATE_INFO_TECNICA",
+            "pk_table_jdbc": "ITCN_DK",
+            "update_date_table_jdbc": "",
+            "table_hive": "gate_info_tecnica",
+            "fields":
+            """
+            ITCN_DK
+            ITCN_NR_INFOTECNICA
+            ITCN_DT_CADASTRO
+            ITCN_CDMATRICULA_CADASTRO
+            ITCN_ORGI_DK_SOLICITANTE
+            ITCN_DOCU_DK
+            ITCN_NUGA_DK
+            ITCN_CSPR_DK
+            ITCN_CSSE_DK
+            ITCN_LOCAL
+            ITCN_LOGRADOURO
+            ITCN_NR_LOCAL
+            ITCN_COMPLEMENTO
+            ITCN_BAIRRO
+            ITCN_BAIR_DK
+            ITCN_CIDA_DK
+            ITCN_CEP
+            ITCN_LATITUDE
+            ITCN_LONGITUTE
+            ITCN_COMPL_OPIN_TEC
+            ITCN_IN_DANO_ERARIO
+            ITCN_IN_NIVEL_PROCEDIMENTO
+            ITCN_VAL_DANO_ERARIO
+            ITCN_NUM_CONTRATOS
+            ITCN_IN_TIPO_CONTRATO
+            ITCN_IN_COMP_ANALISE
+            ITCN_IN_ATUALIZACAO_VAL
+            ITCN_NR_INFOTECNICA_VINC
+            ITCN_ATUAL_VAL_DANO_ERARIO
+            ITCN_VAL_INDICIO_DANO
+            ITCN_VAL_COMP_DANO
+            ITCN_DANOS_OUTROS
+            ITCN_NR_SEI_PROTOCOLO
+            """
         }
     ]
 }
