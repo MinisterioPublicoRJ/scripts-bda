@@ -503,6 +503,7 @@ def execute_process(options):
     _update_impala_table(
         table_name, options["impala_host"], options["impala_port"]
     )
+    spark.catalog.clearCache()
 
 
 if __name__ == "__main__":
