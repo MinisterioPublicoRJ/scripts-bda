@@ -37,12 +37,25 @@ def execute_process(options):
     _update_impala_table(table_name, options['impala_host'], options['impala_port'])
 
     table = spark.sql("""
-        SELECT pess_nm_pessoa, t.*
+        SELECT pess_nm_pessoa, t.*, MULTI.flag_multipromotoria, TOPN.flag_top50
         FROM (
             SELECT representante_dk, pip_codigo, COUNT(*) as nr_investigacoes
             FROM {1}.tb_pip_investigados_procedimentos
             GROUP BY representante_dk, pip_codigo) t
-        JOIN {0}.mcpr_pessoa ON pess_dk = representante_dk
+        LEFT JOIN (
+            SELECT representante_dk, True as flag_multipromotoria
+            FROM exadata_aux_dev.tb_pip_investigados_procedimentos
+            GROUP BY representante_dk
+            HAVING COUNT(DISTINCT pip_codigo) > 1
+        ) MULTI ON MULTI.representante_dk = t.representante_dk
+        LEFT JOIN (
+            SELECT representante_dk, True as flag_top50
+            FROM exadata_aux_dev.tb_pip_investigados_procedimentos
+            GROUP BY representante_dk
+            ORDER BY COUNT(*) DESC
+            LIMIT 50
+        ) TOPN ON TOPN.representante_dk = t.representante_dk
+        JOIN {0}.mcpr_pessoa ON pess_dk = t.representante_dk
     """.format(schema_exadata, schema_exadata_aux))
 
     table_name = "{}.tb_pip_investigados".format(schema_exadata_aux)
