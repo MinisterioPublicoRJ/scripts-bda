@@ -52,7 +52,7 @@ def execute_process(options):
             SELECT representante_dk, True as flag_top50
             FROM exadata_aux_dev.tb_pip_investigados_procedimentos
             GROUP BY representante_dk
-            ORDER BY COUNT(*) DESC
+            ORDER BY COUNT(*) DESC, MAX(docu_dt_cadastro) DESC
             LIMIT 50
         ) TOPN ON TOPN.representante_dk = t.representante_dk
         JOIN {0}.mcpr_pessoa ON pess_dk = t.representante_dk
