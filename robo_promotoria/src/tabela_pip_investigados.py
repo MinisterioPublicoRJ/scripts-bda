@@ -15,18 +15,45 @@ def execute_process(options):
     schema_exadata = options['schema_exadata']
     schema_exadata_aux = options['schema_exadata_aux']
 
+    lista_pips = spark.sql("""
+        SELECT DISTINCT pip_codigo FROM {0}.tb_pip_aisp
+    """.format(schema_exadata_aux))
+    lista_pips.createOrReplaceTempView('lista_pips')
+    spark.catalog.cacheTable("lista_pips")
+
+    assuntos = spark.sql("""
+        SELECT asdo_docu_dk, concat_ws(' --- ', collect_list(assu_descricao)) as assuntos
+        FROM exadata_dev.mcpr_assunto_documento
+        JOIN exadata_dev.mcpr_assunto ON assu_dk = asdo_assu_dk
+        JOIN exadata_dev.mcpr_documento ON asdo_docu_dk = docu_dk
+        JOIN lista_pips P ON pip_codigo = docu_orgi_orga_dk_responsavel
+        WHERE asdo_dt_fim IS NULL
+        GROUP BY asdo_docu_dk
+        UNION ALL
+        SELECT asdo_docu_dk, concat_ws(' --- ', collect_list(assu_descricao)) as assuntos
+        FROM exadata_dev.mcpr_assunto_documento
+        JOIN exadata_dev.mcpr_assunto ON assu_dk = asdo_assu_dk
+        JOIN exadata_dev.mcpr_documento ON asdo_docu_dk = docu_dk
+        JOIN lista_pips P ON pip_codigo = docu_orgi_orga_dk_responsavel
+        WHERE asdo_dt_fim > current_timestamp()
+        GROUP BY asdo_docu_dk
+    """)
+    assuntos.createOrReplaceTempView('assuntos')
+    spark.catalog.cacheTable('assuntos')
+
     documentos_investigados_ativos = spark.sql("""
-        SELECT representante_dk, pip_codigo, docu_nr_mp, docu_dt_cadastro, cldc_ds_classe, orgi_nm_orgao
+        SELECT representante_dk, pip_codigo, docu_nr_mp, docu_dt_cadastro, cldc_ds_classe, orgi_nm_orgao, docu_tx_etiqueta, assuntos
         FROM {0}.mcpr_personagem
+        JOIN {1}.tb_pip_investigados_representantes ON pers_pess_dk = pess_dk
         JOIN {0}.mcpr_documento ON docu_dk = pers_docu_dk
-        JOIN {0}.mcpr_tp_personagem ON pers_tppe_dk = tppe_dk
+        JOIN lista_pips P ON pip_codigo = docu_orgi_orga_dk_responsavel
         JOIN {0}.orgi_orgao ON orgi_dk = docu_orgi_orga_dk_responsavel
         JOIN {0}.mcpr_classe_docto_mp ON cldc_dk = docu_cldc_dk
-        JOIN (SELECT DISTINCT pip_codigo FROM {1}.tb_pip_aisp) P ON pip_codigo = docu_orgi_orga_dk_responsavel
-        JOIN {1}.tb_pip_investigados_representantes ON pers_pess_dk = pess_dk
+        LEFT JOIN assuntos TASSU ON asdo_docu_dk = docu_dk 
         WHERE pers_tppe_dk IN (290, 7, 21, 317, 20, 14, 32, 345, 40, 5)
         AND docu_tpst_dk != 11
         AND docu_fsdc_dk = 1
+        AND pers_dt_fim IS NULL OR pers_dt_fim > current_timestamp()
     """.format(schema_exadata, schema_exadata_aux))
 
     table_name = "{}.tb_pip_investigados_procedimentos".format(schema_exadata_aux)
@@ -36,10 +63,12 @@ def execute_process(options):
     spark.sql("drop table temp_table_pip_investigados_procedimentos")
     _update_impala_table(table_name, options['impala_host'], options['impala_port'])
 
+    spark.catalog.clearCache()
+
     table = spark.sql("""
         SELECT pess_nm_pessoa, t.*, MULTI.flag_multipromotoria, TOPN.flag_top50
         FROM (
-            SELECT representante_dk, pip_codigo, COUNT(*) as nr_investigacoes
+            SELECT representante_dk, pip_codigo, COUNT(1) as nr_investigacoes
             FROM {1}.tb_pip_investigados_procedimentos
             GROUP BY representante_dk, pip_codigo) t
         LEFT JOIN (
@@ -52,7 +81,7 @@ def execute_process(options):
             SELECT representante_dk, True as flag_top50
             FROM exadata_aux_dev.tb_pip_investigados_procedimentos
             GROUP BY representante_dk
-            ORDER BY COUNT(*) DESC, MAX(docu_dt_cadastro) DESC
+            ORDER BY COUNT(1) DESC, MAX(docu_dt_cadastro) DESC
             LIMIT 50
         ) TOPN ON TOPN.representante_dk = t.representante_dk
         JOIN {0}.mcpr_pessoa ON pess_dk = t.representante_dk
