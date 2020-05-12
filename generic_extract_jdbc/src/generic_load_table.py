@@ -38,7 +38,7 @@ def load_table(table, total_min_max_table, query_table, options):
     if table.get('no_lower_upper_bound'):
         return spark.read.format("jdbc") \
             .option("url", options['jdbc_server']) \
-            .option("numPartitions", 70) \
+            .option("numPartitions", 150) \
             .option("dbtable", query_table) \
             .option("user", options['jdbc_user']) \
             .option("password", options['jdbc_password']) \
@@ -54,7 +54,7 @@ def load_table(table, total_min_max_table, query_table, options):
             .option("url", options['jdbc_server']) \
             .option("lowerBound", minimum) \
             .option("upperBound", maximum) \
-            .option("numPartitions", 70) \
+            .option("numPartitions", 150) \
             .option("partitionColumn", table['pk_table_jdbc']) \
             .option("dbtable", query_table) \
             .option("user", options['jdbc_user']) \
@@ -139,7 +139,7 @@ def load_all_data(table, options):
         print('Update impala table %s' % table_hive)
         _update_impala_table(table_hive, options)
 
-        spark.sql("ANALYZE TABLE {} COMPUTE STATISTICS".format(table_hive))
+        #spark.sql("ANALYZE TABLE {} COMPUTE STATISTICS".format(table_hive))
 
 
 def load_part_data(table, options):
