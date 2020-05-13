@@ -1,7 +1,15 @@
+from datetime import datetime, timedelta
+
 import pyspark
 from utils import _update_impala_table
 from happybase import Connection
 import argparse
+
+
+def check_table_exists(spark, schema, table_name):
+    spark.sql("use %s" % schema)
+    result_table_check = spark.sql("SHOW TABLES LIKE '%s'" % table_name).count()
+    return True if result_table_check > 0 else False
 
 
 def execute_process(options):
@@ -94,15 +102,27 @@ def execute_process(options):
     spark.sql("drop table temp_table_pip_investigados")
     _update_impala_table(table_name, options['impala_host'], options['impala_port'])
 
-    # Investigados que apareceram em documentos novos 
-    # TODO: Verificar data e hora?
-    # OPTIMIZATION: Possivel fazer sem collect()?
-    new_names = spark.sql("""
-        SELECT pip_codigo, collect_list(representante_dk) as representantes
-        FROM {0}.tb_pip_investigados_procedimentos
-        WHERE to_date(docu_dt_cadastro) = to_date(current_timestamp())
-        GROUP BY pip_codigo
-    """.format(schema_exadata_aux)).collect()
+
+    # Investigados que aparecem em documentos novos reiniciam flags no HBase
+    is_exists_dt_checked = check_table_exists(spark, schema_exadata_aux, "dt_checked_investigados")
+    current_time = datetime.now()
+
+    if not is_exists_dt_checked:
+        new_names = spark.sql("""
+            SELECT pip_codigo, collect_list(representante_dk) as representantes
+            FROM {0}.tb_pip_investigados_procedimentos
+            WHERE docu_dt_cadastro > '{1}'
+            GROUP BY pip_codigo
+        """.format(schema_exadata_aux, str(current_time - timedelta(minutes=20)))).collect()
+    else:
+        new_names = spark.sql("""
+            SELECT pip_codigo, collect_list(representante_dk) as representantes
+            FROM {0}.tb_pip_investigados_procedimentos
+            JOIN exadata_aux_dev.dt_checked_investigados
+            WHERE docu_dt_cadastro > dt_ultima_verificacao
+            GROUP BY pip_codigo
+        """.format(schema_exadata_aux)).collect()
+
 
     conn = Connection('bda1node05.pgj.rj.gov.br')
     t = conn.table('dev:pip_investigados_flags')
@@ -118,6 +138,15 @@ def execute_process(options):
         for row in removed_rows:
             if row[1]['identificacao:representante_dk'].decode('utf-8') in representantes:
                 t.delete(row[0])
+
+    # Usa tabela para guardar a data de ultima verificacao de novos documentos
+    tb_ultima_verificacao = spark.sql("""
+        SELECT '{0}' as dt_ultima_verificacao
+    """.format(str(current_time)))
+
+    table_name = "{}.dt_checked_investigados".format(schema_exadata_aux)
+    tb_ultima_verificacao.write.mode("overwrite").saveAsTable(table_name)
+    _update_impala_table(table_name, options['impala_host'], options['impala_port'])
 
 
 if __name__ == "__main__":
