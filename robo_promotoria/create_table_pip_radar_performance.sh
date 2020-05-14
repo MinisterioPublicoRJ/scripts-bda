@@ -10,5 +10,4 @@ spark2-submit --master yarn --deploy-mode cluster \
     --conf spark.debug.maxToStringFields=2000 \
     --conf spark.executor.memoryOverhead=4096 \
     --conf spark.network.timeout=360 \
-    --conf "spark.executor.extraJavaOptions=-XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=35 -XX:G1HeapRegionSize=16M" \
     --py-files src/utils.py,packages/*.whl,packages/*.egg,packages/*.zip src/tabela_pip_radar_performance.py $@
