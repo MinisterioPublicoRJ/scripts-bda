@@ -16,20 +16,20 @@ def get_descendants(line, table):
     return result
 
 
-def get_hierarchy(line, table):
-    result = line['DESCRICAO']
+def get_hierarchy(line, table, column):
+    result = line[column]
     for line_work in table:
         if line_work['ID'] == line['ID_PAI']:
-            result = get_hierarchy(line_work, table) + ' > ' + result
+            result = get_hierarchy(line_work, table, column) + ' > ' + result
     return result
 
 
-def create_hierarchical_table(spark, dataframe, table_name):
+def create_hierarchical_table(spark, dataframe, table_name, column):
     for line in dataframe:
         line['ID'] = int(line['ID'])
         line['ID_PAI'] = int(line['ID_PAI']) if line['ID_PAI'] else None
         line['ID_DESCENDENTES'] = ', '.join(str(id) for id in get_descendants(line, dataframe))
-        line['HIERARQUIA'] = get_hierarchy(line, dataframe)
+        line['HIERARQUIA'] = get_hierarchy(line, dataframe, column)
 
     table_df = spark.createDataFrame(dataframe)
     table_df.coalesce(20).write.format('parquet').saveAsTable(table_name, mode='overwrite')
@@ -80,15 +80,15 @@ def execute_process(options):
     )
     
     table_name = "{}.mmps_tp_andamento".format(schema_exadata_aux)
-    create_hierarchical_table(spark, andamentos, table_name)
+    create_hierarchical_table(spark, andamentos, table_name, 'DESCRICAO')
     print('andamentos gravados')
 
     table_name = "{}.mmps_classe_docto".format(schema_exadata_aux)
-    create_hierarchical_table(spark, classes, table_name)
+    create_hierarchical_table(spark, classes, table_name, 'DESCRICAO')
     print('classes gravados')
 
     table_name = "{}.mmps_assunto_docto".format(schema_exadata_aux)
-    create_hierarchical_table(spark, assuntos, table_name)
+    create_hierarchical_table(spark, assuntos, table_name, 'NOME')
     print('assuntos gravados')
 
     _update_impala_table(table_name, options['impala_host'], options['impala_port'])
