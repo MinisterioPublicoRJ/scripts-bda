@@ -34,6 +34,7 @@ def create_hierarchical_table(spark, dataframe, table_name):
     table_df = spark.createDataFrame(dataframe)
     table_df.coalesce(20).write.format('parquet').saveAsTable(table_name, mode='overwrite')
 
+
 def execute_process(options):
 
     spark = pyspark.sql.session.SparkSession\
@@ -67,6 +68,17 @@ def execute_process(options):
         ).collect()
     )
 
+    assuntos = map(
+        lambda row: row.asDict(),
+        spark.table("{}.mcpr_assunto".format(schema_exadata)).select(
+            col('ASSU_DK').alias('ID'),
+            col('ASSU_NM_ASSUNTO').alias('NOME'),
+            col('ASSU_DESCRICAO').alias('DESCRICAO'),
+            col('ASSU_TX_DISPOSITIVO_LEGAL').alias('ARTIGO_LEI'),
+            col('ASSU_ASSU_DK').alias('ID_PAI')
+        ).collect()
+    )
+    
     table_name = "{}.mmps_tp_andamento".format(schema_exadata_aux)
     create_hierarchical_table(spark, andamentos, table_name)
     print('andamentos gravados')
@@ -74,6 +86,10 @@ def execute_process(options):
     table_name = "{}.mmps_classe_docto".format(schema_exadata_aux)
     create_hierarchical_table(spark, classes, table_name)
     print('classes gravados')
+
+    table_name = "{}.mmps_assunto_docto".format(schema_exadata_aux)
+    create_hierarchical_table(spark, assuntos, table_name)
+    print('assuntos gravados')
 
     _update_impala_table(table_name, options['impala_host'], options['impala_port'])
 
