@@ -31,21 +31,21 @@ def execute_process(options):
 
     assuntos = spark.sql("""
         SELECT asdo_docu_dk, concat_ws(' --- ', collect_list(assu_descricao)) as assuntos
-        FROM exadata_dev.mcpr_assunto_documento
-        JOIN exadata_dev.mcpr_assunto ON assu_dk = asdo_assu_dk
-        JOIN exadata_dev.mcpr_documento ON asdo_docu_dk = docu_dk
+        FROM {0}.mcpr_assunto_documento
+        JOIN {0}.mcpr_assunto ON assu_dk = asdo_assu_dk
+        JOIN {0}.mcpr_documento ON asdo_docu_dk = docu_dk
         JOIN lista_pips P ON pip_codigo = docu_orgi_orga_dk_responsavel
         WHERE asdo_dt_fim IS NULL
         GROUP BY asdo_docu_dk
         UNION ALL
         SELECT asdo_docu_dk, concat_ws(' --- ', collect_list(assu_descricao)) as assuntos
-        FROM exadata_dev.mcpr_assunto_documento
-        JOIN exadata_dev.mcpr_assunto ON assu_dk = asdo_assu_dk
-        JOIN exadata_dev.mcpr_documento ON asdo_docu_dk = docu_dk
+        FROM {0}.mcpr_assunto_documento
+        JOIN {0}.mcpr_assunto ON assu_dk = asdo_assu_dk
+        JOIN {0}.mcpr_documento ON asdo_docu_dk = docu_dk
         JOIN lista_pips P ON pip_codigo = docu_orgi_orga_dk_responsavel
         WHERE asdo_dt_fim > current_timestamp()
         GROUP BY asdo_docu_dk
-    """)
+    """.format(schema_exadata))
     assuntos.createOrReplaceTempView('assuntos')
     spark.catalog.cacheTable('assuntos')
 
@@ -81,13 +81,13 @@ def execute_process(options):
             GROUP BY representante_dk, pip_codigo) t
         LEFT JOIN (
             SELECT representante_dk, True as flag_multipromotoria
-            FROM exadata_aux_dev.tb_pip_investigados_procedimentos
+            FROM {1}.tb_pip_investigados_procedimentos
             GROUP BY representante_dk
             HAVING COUNT(DISTINCT pip_codigo) > 1
         ) MULTI ON MULTI.representante_dk = t.representante_dk
         LEFT JOIN (
             SELECT representante_dk, True as flag_top50
-            FROM exadata_aux_dev.tb_pip_investigados_procedimentos
+            FROM {1}.tb_pip_investigados_procedimentos
             GROUP BY representante_dk
             ORDER BY COUNT(1) DESC, MAX(docu_dt_cadastro) DESC
             LIMIT 50
@@ -118,7 +118,7 @@ def execute_process(options):
         new_names = spark.sql("""
             SELECT pip_codigo, collect_list(representante_dk) as representantes
             FROM {0}.tb_pip_investigados_procedimentos
-            JOIN exadata_aux_dev.dt_checked_investigados
+            JOIN {0}.dt_checked_investigados
             WHERE docu_dt_cadastro > dt_ultima_verificacao
             GROUP BY pip_codigo
         """.format(schema_exadata_aux)).collect()
