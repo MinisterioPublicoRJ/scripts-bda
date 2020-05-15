@@ -48,25 +48,25 @@ def execute_process(options):
     schema_exadata = options['schema_exadata']
     schema_exadata_aux = options['schema_exadata_aux']
 
-    andamentos = map(
-        lambda row: row.asDict(),
-        spark.table("{}.mcpr_tp_andamento".format(schema_exadata)).select(
-            col('TPPR_DK').alias('ID'),
-            col('TPPR_DESCRICAO').alias('DESCRICAO'),
-            col('TPPR_CD_TP_ANDAMENTO').alias('COD_MGP'),
-            col('TPPR_TPPR_DK').alias('ID_PAI')
-        ).collect()
-    )
+    #andamentos = map(
+    #    lambda row: row.asDict(),
+    #   spark.table("{}.mcpr_tp_andamento".format(schema_exadata)).select(
+    #        col('TPPR_DK').alias('ID'),
+    #        col('TPPR_DESCRICAO').alias('DESCRICAO'),
+    #        col('TPPR_CD_TP_ANDAMENTO').alias('COD_MGP'),
+    #        col('TPPR_TPPR_DK').alias('ID_PAI')
+    #    ).collect()
+    #)
 
-    classes = map(
-        lambda row: row.asDict(),
-        spark.table("{}.mcpr_classe_docto_mp".format(schema_exadata)).select(
-            col('CLDC_DK').alias('ID'),
-            col('CLDC_DS_CLASSE').alias('DESCRICAO'),
-            col('CLDC_CD_CLASSE').alias('COD_MGP'),
-            col('CLDC_CLDC_DK_SUPERIOR').alias('ID_PAI')
-        ).collect()
-    )
+    #classes = map(
+    #    lambda row: row.asDict(),
+    #    spark.table("{}.mcpr_classe_docto_mp".format(schema_exadata)).select(
+    #        col('CLDC_DK').alias('ID'),
+    #        col('CLDC_DS_CLASSE').alias('DESCRICAO'),
+    #        col('CLDC_CD_CLASSE').alias('COD_MGP'),
+    #        col('CLDC_CLDC_DK_SUPERIOR').alias('ID_PAI')
+    #    ).collect()
+    #)
 
     assuntos = map(
         lambda row: row.asDict(),
@@ -79,13 +79,13 @@ def execute_process(options):
         ).collect()
     )
     
-    table_name = "{}.mmps_tp_andamento".format(schema_exadata_aux)
-    create_hierarchical_table(spark, andamentos, table_name, 'DESCRICAO')
-    print('andamentos gravados')
+    #table_name = "{}.mmps_tp_andamento".format(schema_exadata_aux)
+    #create_hierarchical_table(spark, andamentos, table_name, 'DESCRICAO')
+    #print('andamentos gravados')
 
-    table_name = "{}.mmps_classe_docto".format(schema_exadata_aux)
-    create_hierarchical_table(spark, classes, table_name, 'DESCRICAO')
-    print('classes gravados')
+    #table_name = "{}.mmps_classe_docto".format(schema_exadata_aux)
+    #create_hierarchical_table(spark, classes, table_name, 'DESCRICAO')
+    #print('classes gravados')
 
     table_name = "{}.mmps_assunto_docto".format(schema_exadata_aux)
     create_hierarchical_table(spark, assuntos, table_name, 'NOME')
