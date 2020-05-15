@@ -24,11 +24,12 @@ def get_hierarchy(line, table, column):
     return result
 
 
-def create_hierarchical_table(spark, dataframe, table_name, column):
+def create_hierarchical_table(spark, dataframe, table_name, column, descendants=True):
     for line in dataframe:
         line['ID'] = int(line['ID'])
         line['ID_PAI'] = int(line['ID_PAI']) if line['ID_PAI'] else None
-        #line['ID_DESCENDENTES'] = ', '.join(str(id) for id in get_descendants(line, dataframe))
+        if descendants:
+            line['ID_DESCENDENTES'] = ', '.join(str(id) for id in get_descendants(line, dataframe))
         line['HIERARQUIA'] = get_hierarchy(line, dataframe, column)
 
     table_df = spark.createDataFrame(dataframe)
@@ -88,7 +89,7 @@ def execute_process(options):
     #print('classes gravados')
 
     table_name = "{}.mmps_assunto_docto".format(schema_exadata_aux)
-    create_hierarchical_table(spark, assuntos, table_name, 'NOME')
+    create_hierarchical_table(spark, assuntos, table_name, 'NOME', descendants=False)
     print('assuntos gravados')
 
     _update_impala_table(table_name, options['impala_host'], options['impala_port'])
