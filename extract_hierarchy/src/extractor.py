@@ -28,7 +28,7 @@ def create_hierarchical_table(spark, dataframe, table_name, column):
     for line in dataframe:
         line['ID'] = int(line['ID'])
         line['ID_PAI'] = int(line['ID_PAI']) if line['ID_PAI'] else None
-        line['ID_DESCENDENTES'] = ', '.join(str(id) for id in get_descendants(line, dataframe))
+        #line['ID_DESCENDENTES'] = ', '.join(str(id) for id in get_descendants(line, dataframe))
         line['HIERARQUIA'] = get_hierarchy(line, dataframe, column)
 
     table_df = spark.createDataFrame(dataframe)
