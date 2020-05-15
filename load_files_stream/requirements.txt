@@ -1,3 +1,4 @@
 python-decouple
 pysolr
 kazoo
+argparse
