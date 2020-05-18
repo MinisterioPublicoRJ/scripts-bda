@@ -29,7 +29,7 @@ def execute_process(options):
                 count(docu_dk) as acervo,
                 docu_cldc_dk as tipo_acervo
             FROM {}.mcpr_documento
-                JOIN {}.atualizacao_pj_pacote ON docu_orgi_orga_dk_responsavel = id_orgao
+                LEFT JOIN {}.atualizacao_pj_pacote ON docu_orgi_orga_dk_responsavel = id_orgao
                 
             WHERE 
                 docu_fsdc_dk = 1
