@@ -11,5 +11,8 @@ spark2-submit --master yarn --deploy-mode cluster \
     --conf spark.executor.memoryOverhead=4096 \
     --conf spark.default.parallelism=30 \
     --conf spark.sql.shuffle.partitions=30 \
-    --conf spark.network.timeout=300 \
+    --conf spark.speculation=true \
+    --conf spark.shuffle.io.maxRetries=5 \
+    --conf spark.shuffle.io.retryWait=15s \
+    --conf "spark.executor.extraJavaOptions=-XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=35" \
     --py-files src/utils.py,packages/*.whl,packages/*.egg,packages/*.zip src/tabela_pip_investigados_representantes.py $@
