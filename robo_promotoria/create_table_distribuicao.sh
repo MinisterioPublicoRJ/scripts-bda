@@ -2,7 +2,7 @@
 export PYTHONIOENCODING=utf8
 
 spark2-submit --master yarn --deploy-mode cluster \
-    --queue root.mpmapas \
+    --queue root.robopromotoria \
     --num-executors 3 \
     --executor-cores 1 \
     --executor-memory 5g \
