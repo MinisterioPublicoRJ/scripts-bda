@@ -3,8 +3,8 @@ import pyspark
 from utils import _update_impala_table
 import argparse
 
-from tramitacao.inquerito_civil import execute_process as inquerito_process
-from tramitacao.acoes import execute_process as acoes_process
+from tramitacao.tutela_acoes import execute_process as acoes_process_2
+from tramitacao.utils_tempo import execute_process as processa_regra
 
 
 if __name__ == "__main__":
@@ -54,30 +54,53 @@ if __name__ == "__main__":
         'impala_port': args.impalaPort,
     }
 
-    inquerito_process(spark, options)
-    acoes_process(spark, options)
+    # Regras
+    classes_1 = "(392)"
+    andamentos_1 = """(7912,6548,6326,6681,6678,6645,6682,6680,
+                    6679,6644,6668,6666,6665,6669,6667,6664,
+                    6655,6662,6659,6658,6663,6661,6660,6657,
+                    6670,6676,6674,6673,6677,6675,6672,6018,
+                    6341,6338,6019,6017,6591,6339,6553,7871,
+                    6343,6340,6342,6021,6334,6331,6022,6020,
+                    6593,6332,7872,6336,6333,6335,7745,6346,
+                    6345,6015,6016,6325,6327,6328,6329,6330,
+                    6337,6344,6656,6671,7869,7870,6324,6251)"""
+    pacotes_1 = "(20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33)"
+    nm_table_1 = processa_regra(spark, options, classes_1, andamentos_1, pacotes_1, 'tutela_inqueritos_civis')
+    
+    classes_2 = "(18, 126, 127, 159, 175, 176, 177, 441)"
+    andamentos_2 = "(6374,6375,6376,6377,6378)"
+    pacotes_2 = "(20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33)"
+    nm_table_2 = processa_regra(spark, options, classes_2, andamentos_2, pacotes_2, 'tutela_acoes_sentenca')
+
+    acoes_process_2(spark, options)
+
+    classes_3 = "(3, 494, 590)"
+    andamentos_3 = """(6682,6669,6018,6341,6338,6019,6017,6591,6339,7871,
+                       6343,6340,6342,7745,6346,7915,6272,6253,6392,6377,
+                       6378,6359,6362,6361,6436,6524,7737,7811,6625,6718)"""
+    pacotes_3 = "(200)"
+    nm_table_3 = processa_regra(spark, options, classes_3, andamentos_3, pacotes_3, 'pip_investigacoes')
+
     tramitacao_final = spark.sql("""
-        select
-         ic.id_orgao,
-          media_orgao, minimo_orgao,maximo_orgao,mediana_orgao,
-          media_pacote, minimo_pacote, maximo_pacote, mediana_pacote,
-          media_pacote_t1, minimo_pacote_t1, maximo_pacote_t1, mediana_pacote_t1,
-          media_orgao_t1, minimo_orgao_t1, maximo_orgao_t1, mediana_orgao_t1,
-          media_pacote_t2, minimo_pacote_t2, maximo_pacote_t2, mediana_pacote_t2,
-          media_orgao_t2, minimo_orgao_t2, maximo_orgao_t2, mediana_orgao_t2
-       from tramitacao_ic_final ic
-        join tramitacao_acoes_final acoes on ic.id_orgao = acoes.id_orgao
-        """
+        select * from {0}
+        UNION ALL
+        select * from {1}
+        UNION ALL
+        select * from {2}
+        UNION ALL
+        select * from {3}
+        """.format(nm_table_1, nm_table_2, "tutela_final_acoes_tempo_2", nm_table_3)
     )
 
-    table_name = "{}.tb_tempo_tramitacao".format(
+    table_name = "{}.tb_tempo_tramitacao_integrado".format(
         options["schema_exadata_aux"]
     )
 
-    tramitacao_final.write.mode("overwrite").saveAsTable("temp_table_tempo_tramitacao")
-    temp_table = spark.table("temp_table_tempo_tramitacao")
+    tramitacao_final.write.mode("overwrite").saveAsTable("temp_table_tempo_tramitacao_integrado")
+    temp_table = spark.table("temp_table_tempo_tramitacao_integrado")
 
     temp_table.write.mode("overwrite").saveAsTable(table_name)
-    spark.sql("drop table temp_table_tempo_tramitacao")
+    spark.sql("drop table temp_table_tempo_tramitacao_integrado")
 
     _update_impala_table(table_name, options['impala_host'], options['impala_port'])
