@@ -26,28 +26,28 @@ STORED AS PARQUET
 ---EOS---
 
 INSERT INTO {schema_exadata_aux}.tb_regra_negocio_investigacao PARTITION(cod_atribuicao)
-SELECT cldc_dk as classe_documento, cod_pct as cod_atribuicao 
+SELECT cldc_dk as classe_documento, cod_pct as cod_atribuicao
 FROM {schema_exadata}.mcpr_classe_docto_mp
-JOIN (SELECT DISTINCT cod_pct FROM {schema_exadata_aux}.atualizacao_pj_pacote) p
+CROSS JOIN (SELECT DISTINCT cod_pct FROM {schema_exadata_aux}.atualizacao_pj_pacote) p
 WHERE cldc_dk IN (51219, 51220, 51221, 51222, 51223, 392, 395)
 AND cod_pct IN (20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33)
 ---EOS---
 INSERT INTO {schema_exadata_aux}.tb_regra_negocio_saida PARTITION(cod_atribuicao)
-SELECT tppr_dk as tp_andamento, cod_pct as cod_atribuicao 
+SELECT tppr_dk as tp_andamento, cod_pct as cod_atribuicao
 FROM {schema_exadata}.mcpr_tp_andamento
-JOIN (SELECT DISTINCT cod_pct FROM {schema_exadata_aux}.atualizacao_pj_pacote) p
+CROSS JOIN (SELECT DISTINCT cod_pct FROM {schema_exadata_aux}.atualizacao_pj_pacote) p
 WHERE tppr_dk IN (6251,6644,6657,6326,6655)
 AND cod_pct IN (20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33)
 ---EOS---
 INSERT INTO {schema_exadata_aux}.tb_regra_negocio_processo PARTITION(cod_atribuicao)
-SELECT cldc_dk as classe_documento, cod_pct as cod_atribuicao 
+SELECT cldc_dk as classe_documento, cod_pct as cod_atribuicao
 FROM {schema_exadata}.mcpr_classe_docto_mp
-JOIN (SELECT DISTINCT cod_pct FROM {schema_exadata_aux}.atualizacao_pj_pacote) p
+CROSS JOIN (SELECT DISTINCT cod_pct FROM {schema_exadata_aux}.atualizacao_pj_pacote) p
 WHERE cldc_dk IN (18, 126, 127, 159, 175, 176, 177, 319, 320, 323, 441, 582, 51205, 51217, 51218)
 AND cod_pct IN (20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33)
 ---EOS---
 INSERT INTO {schema_exadata_aux}.tb_regra_negocio_investigacao PARTITION(cod_atribuicao)
-SELECT cldc_dk as classe_documento, 200 as cod_atribuicao 
+SELECT cldc_dk as classe_documento, 200 as cod_atribuicao
 FROM {schema_exadata}.mcpr_classe_docto_mp WHERE cldc_dk IN (3, 494, 590)
 ---EOS---
 INSERT INTO {schema_exadata_aux}.tb_regra_negocio_saida PARTITION(cod_atribuicao)
