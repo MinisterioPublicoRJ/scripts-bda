@@ -10,7 +10,7 @@ spark2-submit --master yarn --deploy-mode cluster \
     --conf spark.debug.maxToStringFields=2000 \
     --conf spark.executor.memoryOverhead=4096 \
     --conf spark.network.timeout=360 \
-    --conf spark.speculation=true
+    --conf spark.speculation=true \
     --conf spark.locality.wait=0 \
     --conf spark.shuffle.io.numConnectionsPerPeer=3 \
     --conf "spark.executor.extraJavaOptions=-XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=35" \

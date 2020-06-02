@@ -551,6 +551,7 @@ if __name__ == "__main__":
         "impala_host": args.impalaHost,
         "impala_port": args.impalaPort,
         "days_ago": args.daysAgo,
+	"table_name": args.tableName
     }
 
     execute_process(options)
