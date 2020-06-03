@@ -4,14 +4,15 @@ import pyspark
 from hdfs import InsecureClient
 from pyspark.sql.functions import year
 from utils import _update_impala_table
-from send_request_solr import send_log, ERROR, SUCCESS, SUCCESS_MESSAGE
+from send_request_solr import send_log, ERROR, SUCCESS, SUCCESS_MESSAGE, ERROR_MESSAGE
 
 
 def execute_process(args):
 
+    app_name = "criar_tabela_tce"
     spark = pyspark.sql.session.SparkSession \
         .builder \
-        .appName("criar_tabela_tce") \
+        .appName(app_name) \
         .config("hive.exec.dynamic.partition.mode", "nonstrict") \
         .enableHiveSupport() \
         .getOrCreate()
@@ -44,11 +45,10 @@ def execute_process(args):
 
                 _update_impala_table(table, args.impalaHost, args.impalaPort)
 
-                send_log(SUCCESS_MESSAGE.format(directory), "generate_table_tce", SUCCESS, args.solrServer)
+                send_log(SUCCESS_MESSAGE.format(directory), app_name, SUCCESS, args.solrServer)
 
         except Exception as message:
-            error_message = "Error in {} : {}".format(directory, message)
-            send_log(error_message, "generate_table_tce", ERROR, args.solrServer)
+            send_log(ERROR_MESSAGE.format(directory, message), app_name, ERROR, args.solrServer)
 
 
 
