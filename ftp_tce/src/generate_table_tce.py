@@ -44,7 +44,7 @@ def execute_process(args):
 
                 _update_impala_table(table, args.impalaHost, args.impalaPort)
 
-                send_log(SUCCESS_MESSAGE, "generate_table_tce", SUCCESS, args.solrServer)
+                send_log(SUCCESS_MESSAGE.format(directory), "generate_table_tce", SUCCESS, args.solrServer)
 
         except Exception as message:
             error_message = "Error in {} : {}".format(directory, message)

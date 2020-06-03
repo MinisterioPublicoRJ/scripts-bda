@@ -1,17 +1,18 @@
 import datetime
 import requests
 import json
+import os
 
 ERROR = "ERROR"
 SUCCESS = "SUCCESS"
-SUCCESS_MESSAGE = "Processo {} executado com sucesso".format(__file__)
+SUCCESS_MESSAGE = "Processo {} executado com sucesso"
 
 def send_log(message, module, levelname, solr_server):
     time_stamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3].replace(" ", "T") + "Z"
     date_now = datetime.datetime.now().strftime("%Y-%m-%d")
 
     data = [
-            {"name": __file__, 
+            {"name": os.path.basename(__file__), 
             "module": module, 
             "asctime": time_stamp, 
             "date": date_now, 
