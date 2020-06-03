@@ -2,6 +2,7 @@ import datetime
 import requests
 import json
 import os
+import sys
 
 ERROR = "ERROR"
 SUCCESS = "SUCCESS"
@@ -13,7 +14,7 @@ def send_log(message, module, levelname, solr_server):
     date_now = datetime.datetime.now().strftime("%Y-%m-%d")
 
     data = [
-            {"name": os.path.basename(__main__.__file__), 
+            {"name": os.path.basename(sys.argv[0]), 
             "module": module, 
             "asctime": time_stamp, 
             "date": date_now, 
