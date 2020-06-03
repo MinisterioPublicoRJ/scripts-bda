@@ -47,8 +47,8 @@ def execute_process(args):
                 send_log(SUCCESS_MESSAGE, "generate_table_tce", SUCCESS, args.solrServer)
 
         except Exception as message:
-
-            send_log(message, "generate_table_tce", ERROR, args.solrServer)
+            error_message = "Error in {} : {}".format(directory, message)
+            send_log(error_message, "generate_table_tce", ERROR, args.solrServer)
 
 
 
