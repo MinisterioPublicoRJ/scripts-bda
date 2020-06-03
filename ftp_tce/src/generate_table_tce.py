@@ -4,6 +4,7 @@ import pyspark
 from hdfs import InsecureClient
 from pyspark.sql.functions import year
 from utils import _update_impala_table
+from send_request_solr import send_log, ERROR, SUCCESS, SUCCESS_MESSAGE
 
 
 def execute_process(args):
@@ -21,25 +22,34 @@ def execute_process(args):
 
     for directory in hdfs_files:
 
-        actual_directory = args.pathDirectoryBase + directory
+        try:
 
-        schema_tce = args.schemaTce
+            actual_directory = args.pathDirectoryBase + directory
 
-        df = spark.read.text(actual_directory)
+            schema_tce = args.schemaTce
 
-        if not df.rdd.isEmpty():
+            df = spark.read.text(actual_directory)
 
-	    df = spark.read.option("encoding", "ISO-8859-1").load(actual_directory, format="csv",
-                             sep=args.delimiter, inferSchema=True, header=True)
-	    
-	    columns = [column_name.replace(" ", "_") for column_name in df.columns]
-	    df = df.toDF(*columns)
+            if not df.rdd.isEmpty():
+
+                df = spark.read.option("encoding", "ISO-8859-1").load(actual_directory, format="csv",
+                                    sep=args.delimiter, inferSchema=True, header=True)
                 
-            table = "{}.{}".format(schema_tce, directory)
-            
-            df.write.mode("overwrite").format("parquet").saveAsTable(table)
+                columns = [column_name.replace(" ", "_") for column_name in df.columns]
+                df = df.toDF(*columns)
+                    
+                table = "{}.{}".format(schema_tce, directory)
+                
+                df.write.mode("overwrite").format("parquet").saveAsTable(table)
 
-            _update_impala_table(table, args.impalaHost, args.impalaPort)
+                _update_impala_table(table, args.impalaHost, args.impalaPort)
+
+                send_log(SUCCESS_MESSAGE, "generate_table_tce", SUCCESS, args.solrServer)
+
+        except Exception as message:
+
+            send_log(message, "generate_table_tce", ERROR, args.solrServer)
+
 
 
 if __name__ == "__main__":
@@ -59,6 +69,8 @@ if __name__ == "__main__":
                         metavar='impalaHost', type=str, help='')
     parser.add_argument('-o', '--impalaPort',
                         metavar='impalaPort', type=str, help='')
+    parser.add_argument('-sl', '--solrServer',
+                        metavar='solrServer', type=str, help='')
     args = parser.parse_args()
 
     execute_process(args)
