@@ -12,6 +12,7 @@ SUCCESS_MESSAGE = "Processo {} executado com sucesso"
 ERROR_MESSAGE = "Erro em {}: {}"
 
 def connect_to_solr(zookeeper_server):
+    print(zookeeper_server)
     zookeeper = pysolr.ZooKeeper(zookeeper_server)
     return pysolr.SolrCloud(zookeeper, "log_files", timeout=300)
 
@@ -31,6 +32,7 @@ def send_log(message, module, levelname, solr_server):
             "message": message, 
             "levelname": levelname
             }]
+    print(data)
     send_data_to_solr(data, solr_server)
 
 def _update_impala_table(table, impalaHost, impalaPort):
