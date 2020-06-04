@@ -3,8 +3,8 @@ import argparse
 import pyspark
 from hdfs import InsecureClient
 from pyspark.sql.functions import year
-from utils import _update_impala_table
-from send_request_solr import send_log, ERROR, SUCCESS, SUCCESS_MESSAGE, ERROR_MESSAGE
+from utils import _update_impala_table, send_log, ERROR, SUCCESS, SUCCESS_MESSAGE, ERROR_MESSAGE
+#from send_request_solr import send_log, ERROR, SUCCESS, SUCCESS_MESSAGE, ERROR_MESSAGE
 
 
 def execute_process(args):
