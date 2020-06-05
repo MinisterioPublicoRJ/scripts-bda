@@ -32,6 +32,8 @@ def execute_process(options):
                 from {1}.temp_pip_aisp 
                 GROUP BY pip_codigo_antigo, pip_codigo
             ) p ON p.pip_codigo_antigo = vist_orgi_orga_dk
+            -- este operador OR pode duplicar as linhas?
+            OR p.pip_codigo = vist_orgi_orga_dk
             JOIN {0}.mcpr_pessoa_fisica pess ON pess.pesf_pess_dk = vist_pesf_pess_dk_resp_andam
             JOIN {0}.rh_funcionario f ON pess.pesf_cpf = f.cpf
         WHERE docu_cldc_dk IN (3, 494, 590) -- PIC e Inqueritos
