@@ -21,7 +21,7 @@ def send_data_to_solr(data, solr_server):
     solr.add(data, overwrite=True)
 
 def send_log(message, module, levelname, solr_server):
-    time_stamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3].replace(" ", "T") + "Z"
+    time_stamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S").replace(" ", "T") + "Z"
     date_now = datetime.datetime.now().strftime("%Y-%m-%d")
 
     data = [
@@ -32,7 +32,6 @@ def send_log(message, module, levelname, solr_server):
             "message": message, 
             "levelname": levelname
             }]
-    print(data)
     send_data_to_solr(data, solr_server)
 
 def _update_impala_table(table, impalaHost, impalaPort):
