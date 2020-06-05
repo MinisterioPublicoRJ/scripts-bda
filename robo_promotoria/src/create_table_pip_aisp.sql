@@ -170,4 +170,4 @@ INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (30069516, 15, "15 BPM DUQUE
 ---EOS---
 INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (30069516, 21, "21 BPM SAO JOAO DE MERITI", 400754)
 ---EOS---
-INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (30069516, 39, "39 BPM BELFORD ROXO", 400754)-
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (30069516, 39, "39 BPM BELFORD ROXO", 400754)
