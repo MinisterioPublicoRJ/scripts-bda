@@ -23,10 +23,8 @@ def execute_process(options):
     grupo = spark.sql(
         """
         SELECT
-            orgi_nm_orgao as orgao,
-            f.nmfuncionario as promotor,
-            vist_docu_dk, 
-            count(Distinct vist_docu_dk) as count_vist
+            pip_codigo as orgao,
+            count(Distinct vist_docu_dk) as vistas
         FROM {0}.mcpr_documento
             JOIN {0}.mcpr_vista ON vist_docu_dk = docu_dk
             JOIN (
@@ -36,18 +34,51 @@ def execute_process(options):
             ) p ON p.pip_codigo_antigo = vist_orgi_orga_dk
             JOIN {0}.mcpr_pessoa_fisica pess ON pess.pesf_pess_dk = vist_pesf_pess_dk_resp_andam
             JOIN {0}.rh_funcionario f ON pess.pesf_cpf = f.cpf
-            JOIN {0}.orgi_orgao o ON pip_codigo = orgi_dk
         WHERE docu_cldc_dk IN (3, 494, 590) -- PIC e Inqueritos
             AND vist_dt_abertura_vista >= cast(date_sub(current_timestamp(), {2}) as timestamp)
             AND vist_dt_abertura_vista <= cast(date_sub(current_timestamp(), {3}) as timestamp)
             AND f.cdtipfunc IN ('1', '2')
-        GROUP BY orgi_nm_orgao , f.nmfuncionario
-        ORDER BY 1, 2
+        GROUP BY pip_codigo
         """.format(schema_exadata, schema_exadata_aux, days_past_start, days_past_end)
     )
     grupo.createOrReplaceTempView('grupo')
 
-    ############### Código original abaixo
+    denuncia = spark.sql(
+        """
+        SELECT
+            pip_codigo as orgao,
+            count(Distinct vist_docu_dk) as denuncias
+        FROM {0}.mcpr_documento
+            JOIN {0}.mcpr_vista ON vist_docu_dk = docu_dk
+            JOIN {0}.mcpr_andamento ON pcao_vist_dk = vist_dk
+            JOIN {0}.mcpr_sub_andamento ON stao_pcao_dk = pcao_dk
+            JOIN (
+                SELECT pip_codigo_antigo, pip_codigo
+                from {1}.temp_pip_aisp 
+                GROUP BY pip_codigo_antigo, pip_codigo
+            ) p ON p.pip_codigo_antigo = vist_orgi_orga_dk
+            JOIN {0}.mcpr_pessoa_fisica pess ON pess.pesf_pess_dk = vist_pesf_pess_dk_resp_andam
+            JOIN {0}.rh_funcionario f ON pess.pesf_cpf = f.cpf
+        WHERE docu_cldc_dk IN (3, 494, 590) -- PIC e Inqueritos
+            AND vist_dt_abertura_vista >= cast(date_sub(current_timestamp(), {2}) as timestamp)
+            AND f.cdtipfunc IN ('1', '2')
+            AND stao_tppr_dk IN (6252, 6253, 1201, 1202, 6254)
+        GROUP BY pip_codigo
+        """.format(schema_exadata, schema_exadata_aux, days_past_start)
+    )
+    denuncia.createOrReplaceTempView('denuncia')
+
+    indice_elucidacao = spark.sql(
+        """
+            SELECT 
+                g.orgao,
+                g.vistas,
+                d.denuncias,
+                (d.denuncias/g.vistas) AS rate
+            FROM grupo g
+            JOIN denuncia d ON g.orgao = d.orgao
+        """.format(schema_exadata, schema_exadata_aux)
+    )
 
     table_name = "{}.tb_indicadores_sucesso".format(schema_exadata_aux)
 
