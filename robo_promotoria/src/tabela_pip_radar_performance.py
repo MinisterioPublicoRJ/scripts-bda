@@ -76,7 +76,7 @@ def execute_process(options):
         JOIN (
             SELECT stao_tppr_dk, stao_pcao_dk
             FROM SUB_ANDAMENTOS
-            WHERE stao_tppr_dk IN (7914,7928,7883,7827,7920) --7920 rescisao do acordo
+	    WHERE stao_tppr_dk IN (7914,7928,7883,7827,7920) --7920 rescisao do acordo
             ) D
             ON D.stao_pcao_dk = C.pcao_dk
         INNER JOIN (SELECT DISTINCT pip_codigo FROM TABELA_PIP_AISP) p
@@ -110,7 +110,7 @@ def execute_process(options):
         FROM (
             SELECT
             CASE WHEN pcao_dt_andamento >= cast(date_sub(current_timestamp(), {0}) as timestamp)
-                      AND stao_tppr_dk IN (7914,7928,7883,7827)
+			AND stao_tppr_dk IN (7914,7928,7883,7827)
                 THEN 1 ELSE 0 END as acordo,
             A.docu_dk, A.vist_orgi_orga_dk, A.pcao_dt_andamento, A.stao_tppr_dk
             FROM DOC_ACORDOS A
@@ -180,7 +180,7 @@ def execute_process(options):
         FROM (
             SELECT
             CASE WHEN pcao_dt_andamento > cast(date_sub(current_timestamp(), {0}) as timestamp)
-                      AND stao_tppr_dk IN (7914,7928,7883,7827)
+			AND stao_tppr_dk IN (7914,7928,7883,7827)	
                 THEN 1 ELSE 0 END as acordo_n_persecucao,
             A.docu_dk, A.vist_orgi_orga_dk, A.pcao_dt_andamento, A.stao_tppr_dk
             FROM DOC_ACORDOS_N_PERSECUCAO A
