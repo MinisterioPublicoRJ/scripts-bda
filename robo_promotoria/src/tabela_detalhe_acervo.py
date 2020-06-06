@@ -235,33 +235,34 @@ def execute_process(options):
     schema_exadata_aux = options['schema_exadata_aux']
 
     # Tabela agregada orgao cpf
-    # nm_tipo = 'pip_inqueritos'
-    # days_past = 30
-    # pacotes = "(200)"
-    # cldc_dks = "(3, 494)"
-    # tppr_dks = ("(6549,6593,6591,6343,6338,6339,6340,6341,6342,7871,7897,7912,"
-    #             "6346,6350,6359,6392,6017,6018,6020,7745,6648,6649,6650,6651,6652,6653,6654,"
-    #             "6038,6039,6040,6041,6042,6043,7815,7816,6620,6257,6258,7878,7877,6367,6368,6369,6370,1208,1030,6252,6253,1201,1202,6254)")
-    # nm_table_1 = create_regra_cpf(spark, options, nm_tipo, pacotes, cldc_dks, tppr_dks, days_past)
+    nm_tipo = 'pip_inqueritos'
+    days_past = 30
+    pacotes = "(200)"
+    cldc_dks = "(3, 494)"
+    tppr_dks = ("(6549,6593,6591,6343,6338,6339,6340,6341,6342,7871,7897,7912,"
+                "6346,6350,6359,6392,6017,6018,6020,7745,6648,6649,6650,6651,6652,6653,6654,"
+                "6038,6039,6040,6041,6042,6043,7815,7816,6620,6257,6258,7878,7877,6367,6368,6369,6370,1208,1030,6252,6253,1201,1202,6254)")
+    nm_table_1 = create_regra_cpf(spark, options, nm_tipo, pacotes, cldc_dks, tppr_dks, days_past)
 
-    # nm_tipo = 'pip_pics'
-    # cldc_dks = "(590)"
-    # nm_table_2 = create_regra_cpf(spark, options, nm_tipo, pacotes, cldc_dks, tppr_dks, days_past)
+    nm_tipo = 'pip_pics'
+    cldc_dks = "(590)"
+    nm_table_2 = create_regra_cpf(spark, options, nm_tipo, pacotes, cldc_dks, tppr_dks, days_past)
 
-    # table_cpf = spark.sql("""
-    #     SELECT * FROM {0}
-    #     UNION ALL
-    #     SELECT * FROM {1}
-    # """.format(nm_table_1, nm_table_2))
+    table_cpf = spark.sql("""
+        SELECT * FROM {0}
+        UNION ALL
+        SELECT * FROM {1}
+    """.format(nm_table_1, nm_table_2))
 
-    # table_name = "{}.tb_detalhe_documentos_orgao_cpf".format(schema_exadata_aux)
-    # table_cpf.write.mode("overwrite").saveAsTable("temp_table_detalhe_documentos_orgao_cpf")
-    # temp_table = spark.table("temp_table_detalhe_documentos_orgao_cpf")
-    # temp_table.write.mode("overwrite").saveAsTable(table_name)
-    # spark.sql("drop table temp_table_detalhe_documentos_orgao_cpf")
+    table_name = "{}.tb_detalhe_documentos_orgao_cpf".format(schema_exadata_aux)
+    table_cpf.write.mode("overwrite").saveAsTable("temp_table_detalhe_documentos_orgao_cpf")
+    temp_table = spark.table("temp_table_detalhe_documentos_orgao_cpf")
+    temp_table.write.mode("overwrite").saveAsTable(table_name)
+    spark.sql("drop table temp_table_detalhe_documentos_orgao_cpf")
 
-    # _update_impala_table(table_name, options['impala_host'], options['impala_port'])
-    # spark.catalog.clearCache()
+    _update_impala_table(table_name, options['impala_host'], options['impala_port'])
+    spark.catalog.clearCache()
+
 
     # Tabela agregada orgao
     nm_tipo = 'pip_inqueritos'
@@ -277,11 +278,19 @@ def execute_process(options):
     cldc_dks = "(590)"
     nm_table_2 = create_regra_orgao(spark, options, nm_tipo, pacotes, cldc_dks, tppr_dks, days_past)
 
+    nm_tipo = 'tutela_investigacoes'
+    cldc_dks = "(51219, 51220, 51221, 51222, 51223, 392, 395)"
+    pacotes = "(20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33)"
+    tppr_dks = "(-1)"
+    nm_table_3 = create_regra_orgao(spark, options, nm_tipo, pacotes, cldc_dks, tppr_dks, days_past)
+
     table_orgao = spark.sql("""
         SELECT * FROM {0}
         UNION ALL
         SELECT * FROM {1}
-    """.format(nm_table_1, nm_table_2))
+        UNION ALL
+        SELECT * FROM {2}
+    """.format(nm_table_1, nm_table_2, nm_table_3))
 
     table_name = "{}.tb_detalhe_documentos_orgao".format(schema_exadata_aux)
     table_orgao.write.mode("overwrite").saveAsTable("temp_table_detalhe_documentos_orgao")
