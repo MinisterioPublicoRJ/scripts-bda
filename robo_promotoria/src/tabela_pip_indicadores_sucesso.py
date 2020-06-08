@@ -108,14 +108,14 @@ def execute_process(options):
                 'p_elucidacoes' AS tipo
             FROM grupo g
             JOIN denuncia d ON g.orgao_id = d.orgao_id
-            UNION
+            UNION ALL
             SELECT
                f.orgao_id,
                f.finalizacoes / g.vistas AS indice,
                'p_finalizacoes' AS tipo
             FROM FINALIZADOS f
             JOIN grupo g ON f.orgao_id = g.orgao_id
-            UNION
+            UNION ALL
             SELECT orgao_id,
             (
                 nr_denuncias_periodo_atual
