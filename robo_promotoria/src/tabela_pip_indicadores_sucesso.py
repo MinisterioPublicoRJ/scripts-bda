@@ -40,7 +40,6 @@ def execute_process(options):
             ) p
             ON p.pip_codigo_antigo = vist_orgi_orga_dk
             OR p.pip_codigo = vist_orgi_orga_dk
-            OR p.pip_codigo_antigo = vist_orgi_orga_dk
         JOIN {0}.mcpr_pessoa_fisica pess ON pess.pesf_pess_dk = vist_pesf_pess_dk_resp_andam
         JOIN {0}.rh_funcionario f ON pess.pesf_cpf = f.cpf
         JOIN {0}.mcpr_andamento ON pcao_vist_dk = vist_dk
