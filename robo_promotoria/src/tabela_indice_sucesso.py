@@ -2,12 +2,14 @@ import argparse
 
 import pyspark
 
+from utils import _update_impala_table
+
 
 def execute_process(options):
 
     spark = (
         pyspark.sql.session.SparkSession.builder.appName(
-            "criar_tabela_indice_sucesso"
+            "criar_tabela_indicadores_sucesso"
         )
         .enableHiveSupport()
         .getOrCreate()
@@ -99,7 +101,7 @@ def execute_process(options):
     """
     ).createOrReplaceTempView("FINALIZADOS")
 
-    spark.sql(
+    indicadores_sucesso = spark.sql(
         """
             SELECT
                 g.orgao_id,
@@ -124,14 +126,28 @@ def execute_process(options):
             'p_resolutividade' AS tipo
             FROM {0}.tb_pip_detalhe_aproveitamentos
         """.format(schema_exadata_aux)
-    ).createOrReplaceTempView("INDICES_SUCESSO")
-    table_name = "{}.tb_indicadores_sucesso".format(schema_exadata_aux)
+    )
+
+    output_table_name = options["table_name"]
+    table_name = "{0}.{1}".format(schema_exadata_aux, output_table_name)
+    indicadores_sucesso.write.mode("overwrite").saveAsTable(
+        "temp_table_{0}".format(output_table_name)
+    )
+    temp_table = spark.table("temp_table_{0}".format(output_table_name))
+
+    temp_table.write.mode("overwrite").saveAsTable(table_name)
+    spark.sql("drop table temp_table_{0}".format(output_table_name))
+
+    _update_impala_table(
+        table_name, options["impala_host"], options["impala_port"]
+    )
+    spark.catalog.clearCache()
 
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
-        description="Create table distribuicao entradas"
+        description="Create table indices de sucesso das PIPs"
     )
     parser.add_argument(
         "-e", "--schemaExadata", metavar="schemaExadata", type=str, help=""
@@ -165,6 +181,14 @@ if __name__ == "__main__":
         default=180,
         help="",
     )
+    parser.add_argument(
+        "-t",
+        "--tableName",
+        metavar="tableName",
+        type=str,
+        default="tb_pip_indicadores_sucesso",
+        help="",
+    )
 
     args = parser.parse_args()
 
@@ -175,6 +199,7 @@ if __name__ == "__main__":
         "impala_port": args.impalaPort,
         "days_past_start": args.daysPastStart,
         "days_past_end": args.daysPastEnd,
+        "table_name": args.tableName,
     }
 
     execute_process(options)
