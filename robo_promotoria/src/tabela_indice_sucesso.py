@@ -33,7 +33,7 @@ def execute_process(options):
         JOIN {0}.mcpr_vista ON vist_docu_dk = docu_dk
         JOIN (
                 SELECT pip_codigo_antigo, pip_codigo
-                from {1}.temp_pip_aisp
+                from {1}.tb_pip_aisp
                 GROUP BY pip_codigo_antigo, pip_codigo
             ) p
             ON p.pip_codigo_antigo = vist_orgi_orga_dk
@@ -104,17 +104,26 @@ def execute_process(options):
             SELECT
                 g.orgao_id,
                 (d.denuncias/g.vistas) AS indice,
-		'p_elucidacoes' AS tipo
+                'p_elucidacoes' AS tipo
             FROM grupo g
             JOIN denuncia d ON g.orgao_id = d.orgao_id
-	    UNION
+            UNION
             SELECT
-		f.orgao_id,
-		f.finalizacoes / g.vistas AS indice,
-		'p_finalizacoes' AS tipo
-	   FROM FINALIZADOS f
-	   JOIN grupo g ON f.orgao_id = g.orgao_id
-        """
+               f.orgao_id,
+               f.finalizacoes / g.vistas AS indice,
+               'p_finalizacoes' AS tipo
+            FROM FINALIZADOS f
+            JOIN grupo g ON f.orgao_id = g.orgao_id
+            UNION
+            SELECT orgao_id,
+            (
+                nr_denuncias_periodo_atual
+                + nr_arquivamentos_periodo_atual
+                + nr_acordos_periodo_atual
+            ) / nr_aberturas_vista_periodo_atual AS indice,
+            'p_resolutividade' AS tipo
+            FROM {0}.tb_pip_detalhe_aproveitamentos
+        """.format(schema_exadata_aux)
     ).createOrReplaceTempView("INDICES_SUCESSO")
     table_name = "{}.tb_indicadores_sucesso".format(schema_exadata_aux)
 
