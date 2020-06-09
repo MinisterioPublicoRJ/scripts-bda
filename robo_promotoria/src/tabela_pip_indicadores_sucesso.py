@@ -34,12 +34,15 @@ def execute_process(options):
         FROM {0}.mcpr_documento
         JOIN {0}.mcpr_vista ON vist_docu_dk = docu_dk
         JOIN (
-                SELECT pip_codigo_antigo, pip_codigo
-                from {1}.tb_pip_aisp
-                GROUP BY pip_codigo_antigo, pip_codigo
-            ) p
-            ON p.pip_codigo_antigo = vist_orgi_orga_dk
-            OR p.pip_codigo = vist_orgi_orga_dk
+            SELECT pip_codigo_antigo as codigo, pip_codigo
+            from {1}.tb_pip_aisp
+            GROUP BY pip_codigo_antigo, pip_codigo
+            UNION all
+            SELECT pip_codigo as codigo, pip_codigo
+            from {1}.tb_pip_aisp
+            GROUP BY pip_codigo
+        ) p
+        ON p.codigo = vist_orgi_orga_dk
         JOIN {0}.mcpr_pessoa_fisica pess ON pess.pesf_pess_dk = vist_pesf_pess_dk_resp_andam
         JOIN {0}.rh_funcionario f ON pess.pesf_cpf = f.cpf
         JOIN {0}.mcpr_andamento ON pcao_vist_dk = vist_dk
@@ -47,11 +50,13 @@ def execute_process(options):
         WHERE docu_cldc_dk IN (3, 494, 590) -- PIC e Inqueritos
         AND vist_dt_abertura_vista >= cast(date_sub(current_timestamp(), {2}) as timestamp)
         AND f.cdtipfunc IN ('1', '2')
-    """.format(
-        schema_exadata, schema_exadata_aux, days_past_start
-    )).createOrReplaceTempView(
-        "FILTRADOS"
-    )
+	AND docu_tpst_dk != 11 -- Documento não cancelado
+	AND pcao_dt_cancelamento IS NULL -- Andamento não cancelado
+	""".format(
+            schema_exadata, schema_exadata_aux, days_past_start
+	)).createOrReplaceTempView(
+            "FILTRADOS"
+	)
 
     spark.sql(
         """
