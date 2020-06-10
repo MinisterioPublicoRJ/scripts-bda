@@ -2,7 +2,7 @@
 export PYTHONIOENCODING=utf8
 
 spark2-submit --master yarn --deploy-mode cluster \
-    --queue root.services \
+    --queue root.robopromotoria \
     --num-executors 5 \
     --driver-memory 2g \
     --executor-cores 3 \
@@ -14,4 +14,4 @@ spark2-submit --master yarn --deploy-mode cluster \
     --conf spark.shuffle.io.maxRetries=5 \
     --conf spark.shuffle.io.retryWait=15s \
     --conf "spark.executor.extraJavaOptions=-XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=35" \
-    --py-files src/utils.py,packages/*.whl,packages/*.egg,packages/*.zip src/tabela_detalhe_acervo.py $@
+    --py-files src/utils.py,packages/*.whl,packages/*.egg,packages/*.zip src/tabela_detalhe_documento.py $@
