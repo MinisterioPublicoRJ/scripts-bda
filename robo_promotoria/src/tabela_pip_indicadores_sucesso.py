@@ -50,8 +50,8 @@ def execute_process(options):
         WHERE docu_cldc_dk IN (3, 494, 590) -- PIC e Inqueritos
         AND vist_dt_abertura_vista >= cast(date_sub(current_timestamp(), {2}) as timestamp)
         AND f.cdtipfunc IN ('1', '2')
-	AND docu_tpst_dk != 11 -- Documento não cancelado
-	AND pcao_dt_cancelamento IS NULL -- Andamento não cancelado
+	AND docu_tpst_dk != 11 -- Documento nao cancelado
+	AND pcao_dt_cancelamento IS NULL -- Andamento nao cancelado
 	""".format(
             schema_exadata, schema_exadata_aux, days_past_start
 	)).createOrReplaceTempView(
