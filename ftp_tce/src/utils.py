@@ -21,7 +21,8 @@ def send_data_to_solr(data, solr_server):
     solr.add(data, overwrite=True)
 
 def send_log(message, module, levelname, solr_server):
-    time_stamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S").replace(" ", "T") + "Z"
+    #time_stamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S").replace(" ", "T") + "Z"
+    time_stamp = datetime.datetime.now().isoformat()+'Z'
     date_now = datetime.datetime.now().strftime("%Y-%m-%d")
 
     data = [
