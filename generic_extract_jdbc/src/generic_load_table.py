@@ -6,13 +6,15 @@ import params_table_promotron
 import params_table_oraupsert
 import params_table_oracle
 import params_table_postgre
+import params_table_oracle_views
 from pyspark.sql.functions import base64, col, date_format
 
 
 dic_params = {
                 "ORACLE_PROMOTRON" : params_table_promotron.params,
                 "ORACLE_UPSERT" : params_table_oraupsert.params,
-                "ORACLE": params_table_oracle.params, 
+                "ORACLE": params_table_oracle.params,
+                "ORACLE_VIEWS": params_table_oracle_views.params, 
                 "POSTGRE" : params_table_postgre.params
             }
 
