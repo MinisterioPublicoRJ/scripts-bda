@@ -71,6 +71,7 @@ def execute_process(options):
                     row_number() OVER (PARTITION BY docu_nr_mp ORDER BY pess_dk DESC) as nr_pers
                 FROM DOCU_TOTAIS
                 JOIN {0}.mcpr_personagem ON pers_docu_dk = docu_dk
+                AND pers_tppe_dk IN (290, 7, 21, 317, 20, 14, 32, 345, 40, 5)
                 JOIN {0}.mcpr_pessoa ON pers_pess_dk = pess_dk) t
             WHERE nr_pers <= {1}) t1
         GROUP BY docu_nr_mp
