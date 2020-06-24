@@ -92,6 +92,13 @@ def execute_process(options):
         GROUP BY pip_codigo
         """.format(days_past_end)).createOrReplaceTempView("GRUPO")
 
+    spark.sql(
+        """SELECT DISTINCT docu_dk
+            FROM FILTRADOS_SEM_ANDAMENTO
+            WHERE vist_dt_fechamento_vista <= cast(date_sub(current_timestamp(), {0}) as timestamp)
+        """.format(days_past_end)
+    ).createOrReplaceTempView("DOCUMENTOS_GRUPO")
+
     # Ordem de prioridade para desambiguação se ocorrerem multiplas vistas
     # no mesmo dia (para mesmo órgão e documento):
     #       denúncia > cautelar > acordo > arquivamento
@@ -128,6 +135,7 @@ def execute_process(options):
             FROM FILTRADOS_SEM_ANDAMENTO FSA
         JOIN {0}.mcpr_andamento ANDAMENTO ON pcao_vist_dk = vist_dk
         JOIN {0}.mcpr_sub_andamento SUBANDAMENTO ON stao_pcao_dk = pcao_dk
+        JOIN DOCUMENTOS_GRUPO DG ON FSA.docu_dk = DG.docu_dk --  Essse join serve para filtrar os Documentos que estão dentro da tabela GRUPO
 	WHERE pcao_dt_cancelamento IS NULL -- Andamento nao cancelado
         AND stao_tppr_dk IN {ANDAMENTOS_IMPORTANTES}) --cautelares part 2/2
         SELECT TA.* FROM ANDAMENTOS_IMPORTANTES TA
