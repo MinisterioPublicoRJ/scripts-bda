@@ -29,6 +29,7 @@ def execute_process(options):
         vist_dk,
         vist_docu_dk,
         vist_dt_abertura_vista,
+        vist_dt_fechamento_vista,
         cdtipfunc
         FROM {0}.mcpr_documento
         JOIN {0}.mcpr_vista ON vist_docu_dk = docu_dk
@@ -45,7 +46,8 @@ def execute_process(options):
         JOIN {0}.mcpr_pessoa_fisica pess ON pess.pesf_pess_dk = vist_pesf_pess_dk_resp_andam
         JOIN {0}.rh_funcionario f ON pess.pesf_cpf = f.cpf
         WHERE docu_cldc_dk IN (3, 494, 590) -- PIC e Inqueritos
-        AND vist_dt_abertura_vista >= cast(date_sub(current_timestamp(), {2}) as timestamp)
+        AND (vist_dt_fechamento_vista >= cast(date_sub(current_timestamp(), {2}) as timestamp)
+        OR vist_dt_fechamento_vista IS NULL)
 	AND docu_tpst_dk != 11 -- Documento nao cancelado
 	""".format(
             schema_exadata, schema_exadata_aux, days_past_start
@@ -65,7 +67,7 @@ def execute_process(options):
         SELECT pip_codigo as orgao_id,
         COUNT(vist_dk) as vistas
         FROM FILTRADOS_SEM_ANDAMENTO
-        WHERE vist_dt_abertura_vista <= cast(date_sub(current_timestamp(), {0}) as timestamp)
+        WHERE vist_dt_fechamento_vista <= cast(date_sub(current_timestamp(), {0}) as timestamp)
         AND cdtipfunc IN ('1', '2') -- Filtra por vistas abertas por PROMOTORES
         GROUP BY pip_codigo
         """.format(days_past_end)).createOrReplaceTempView("GRUPO")
@@ -134,12 +136,11 @@ def execute_process(options):
         """.format(schema_exadata)
     ).createOrReplaceTempView("FILTRADOS_IMPORTANTES_DESAMBIGUADOS")
 
-
     spark.sql(
         """
         SELECT
             pip_codigo as orgao_id,
-            COUNT(DISTINCT docu_dk) as denuncias --distinct docu_dk para evitar andamentos duplicados no mesm dia
+            COUNT(DISTINCT docu_dk) as denuncias --distinct docu_dk para evitar andamentos duplicados no mesmo dia
         FROM FILTRADOS_IMPORTANTES_DESAMBIGUADOS
         WHERE stao_tppr_dk IN (6252, 6253, 1201, 1202, 6254)
         GROUP BY pip_codigo
@@ -159,6 +160,16 @@ def execute_process(options):
 
     spark.sql(
         """
+        SELECT pip_codigo as orgao_id,
+        COUNT(vist_dk) as vistas
+        FROM FILTRADOS_SEM_ANDAMENTO
+        WHERE vist_dt_fechamento_vista > cast(date_sub(current_timestamp(), 30) as timestamp)
+        OR vist_dt_fechamento_vista IS NULL
+        GROUP BY pip_codigo
+        """.format(days_past_end)).createOrReplaceTempView("VISTA_30_DIAS")
+
+    spark.sql(
+        """
         SELECT
         pip_codigo as orgao_id,
         COUNT(DISTINCT docu_dk) as resolutividade
@@ -167,21 +178,12 @@ def execute_process(options):
         7914,7928,7883,7827, --acordo
             6549,6593,6591,6343,6338,6339,6340,6341,6342,7871,7897,7912,6346,6350,6359,6392,6017, --arquivado part 1/2
             6018,6020,7745) --arquvidado part 2/2
-    AND pcao_dt_andamento > cast(date_sub(current_timestamp(), 30) as timestamp)
-    AND pcao_dt_andamento <= current_timestamp()
+    AND (vist_dt_fechamento_vista > cast(date_sub(current_timestamp(), 30) as timestamp)
+    OR vist_dt_fechamento_vista IS NULL)
     GROUP BY pip_codigo
         """
     ).createOrReplaceTempView("RESOLUCOES")
 
-    spark.sql(
-        """
-        SELECT pip_codigo as orgao_id,
-        COUNT(vist_dk) as vistas
-        FROM FILTRADOS_SEM_ANDAMENTO
-        WHERE vist_dt_abertura_vista > cast(date_sub(current_timestamp(), 30) as timestamp)
-        AND vist_dt_abertura_vista  <= current_timestamp()
-        GROUP BY pip_codigo
-        """.format(days_past_end)).createOrReplaceTempView("VISTA_30_DIAS")
 
     indicadores_sucesso = spark.sql(
         """
