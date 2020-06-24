@@ -15,6 +15,26 @@ def execute_process(options):
         .getOrCreate()
     )
 
+    # ANDAMENTOS DE INTERESSE DA PIP
+    DENUNCIA = (6252, 6253, 1201, 1202, 6254)
+    ACORDO = (7914, 7928, 7883, 7827)
+    DESACORDO = 7920
+    ARQUIVAMENTO = (
+        6549, 6593, 6591, 6343, 6338, 6339, 6340, 6341, 6342, 7871, 7897, 7912,
+        6346, 6350, 6359, 6392, 6017, 6018, 6020, 7745
+    )
+    DESARQUIVAMENTO = (
+        6075, 1028, 6798, 7245, 6307, 1027, 7803, 6003, 7802, 7801
+    )
+    CAUTELAR = (
+        6648, 6649, 6650, 6651, 6652, 6653, 6654, 6038, 6039, 6040, 6041, 6042,
+        6043, 7815, 7816, 6620, 6257, 6258, 7878, 7877, 6367, 6368, 6369, 6370,
+        1208,1030
+    )
+    ANDAMENTOS_IMPORTANTES = (
+        DENUNCIA + ACORDO + (DESACORDO,) + ARQUIVAMENTO + DESARQUIVAMENTO + CAUTELAR
+    )
+
     schema_exadata = options["schema_exadata"]
     schema_exadata_aux = options["schema_exadata_aux"]
 
@@ -80,6 +100,9 @@ def execute_process(options):
     # imortantes (denúncia, arquivamento, desarquivamento, acordo, desacordo)
     # já desambiguado pela ordem de prioridade supracitada e, consequentemente,
     # sem repetição de vistas abertas no mesmo Órgão, mesmo Documento e mesmo Dia.
+    # É possível que existam Andamentos repetidos (com mesmo stao_tppr_dk)
+    # no mesmo mesmo órgão, mesmo documento e mesmo dia, mas esse caso
+    # é resolvido com  COUNT(DISTINCT docu_dk)
 
     spark.sql(
         """WITH ANDAMENTOS_IMPORTANTES AS (SELECT
@@ -87,44 +110,26 @@ def execute_process(options):
             ANDAMENTO.pcao_dt_andamento,
             SUBANDAMENTO.stao_tppr_dk,
         CASE
-            WHEN stao_tppr_dk in (6252, 6253, 1201, 1202, 6254) THEN 'denunciado'
-            WHEN stao_tppr_dk in (7914, 7928, 7883, 7827) THEN 'acordado'
-            WHEN stao_tppr_dk = 7920 THEN 'desacordado'
-            WHEN stao_tppr_dk in (6549,6593,6591,6343,6338,6339,6340,6341,
-                                  6342,7871,7897,7912,6346,6350,6359,6392,
-                                  6017,6018,6020,7745) THEN 'arquivado'
-            WHEN stao_tppr_dk in (6075,1028,6798,7245,6307,1027,7803,6003,7802,7801) THEN 'desarquivado'
-            WHEN stao_tppr_dk in (6648,6649,6650,6651,6652,6653,6654,6038,
-                                   6039,6040,6041,6042,6043,7815,7816,6620,
-                                   6257,6258,7878,7877,6367,6368,6369,6370,
-                                   1208,1030) THEN 'cautelado'
+            WHEN stao_tppr_dk in {DENUNCIA} THEN 'denunciado'
+            WHEN stao_tppr_dk in {ACORDO} THEN 'acordado'
+            WHEN stao_tppr_dk = {DESACORDO} THEN 'desacordado'
+            WHEN stao_tppr_dk in {ARQUIVAMENTO} THEN 'arquivado'
+            WHEN stao_tppr_dk in {DESARQUIVAMENTO} THEN 'desarquivado'
+            WHEN stao_tppr_dk in {CAUTELAR} THEN 'cautelado'
         END as tipo,
         CASE
-            WHEN stao_tppr_dk in (6252, 6253, 1201, 1202, 6254) THEN 4 -- denuncia
-            WHEN stao_tppr_dk in (6648,6649,6650,6651,6652,6653,6654,6038,
-                                   6039,6040,6041,6042,6043,7815,7816,6620,
-                                   6257,6258,7878,7877,6367,6368,6369,6370,
-                                   1208,1030) THEN 3 -- cautelar
-            WHEN stao_tppr_dk in (7914, 7928, 7883, 7827) THEN 2.1 -- acordo
-            WHEN stao_tppr_dk = 7920 THEN 2 -- desacordo
-            WHEN stao_tppr_dk in (6549,6593,6591,6343,6338,6339,6340,6341,
-                                  6342,7871,7897,7912,6346,6350,6359,6392,
-                                  6017,6018,6020,7745) THEN 1.1 -- arquivamento
-            WHEN stao_tppr_dk in (6075,1028,6798,7245,6307,1027,7803,6003,7802,7801) THEN 1 -- desarquivamento
+            WHEN stao_tppr_dk in {DENUNCIA} THEN 4 -- denuncia
+            WHEN stao_tppr_dk in {CAUTELAR} THEN 3 -- cautelar
+            WHEN stao_tppr_dk in {ACORDO} THEN 2.1 -- acordo
+            WHEN stao_tppr_dk = {DESACORDO} THEN 2 -- desacordo
+            WHEN stao_tppr_dk in {ARQUIVAMENTO} THEN 1.1 -- arquivamento
+            WHEN stao_tppr_dk in {DESARQUIVAMENTO} THEN 1 -- desarquivamento
         END as peso_prioridade --Quanto maior mais importante
             FROM FILTRADOS_SEM_ANDAMENTO FSA
         JOIN {0}.mcpr_andamento ANDAMENTO ON pcao_vist_dk = vist_dk
         JOIN {0}.mcpr_sub_andamento SUBANDAMENTO ON stao_pcao_dk = pcao_dk
 	WHERE pcao_dt_cancelamento IS NULL -- Andamento nao cancelado
-        AND stao_tppr_dk IN (6252,6253,1201,1202,6254,-- denuncia
-            7914,7928,7883,7827, --acordo
-            7920, --desacordado
-            6549,6593,6591,6343,6338,6339,6340,6341,6342,7871,7897,7912,6346,6350,6359,6392,6017, --arquivado part 1/2
-            6018,6020,7745, --arquvidado part 2/2
-            6075,1028,6798,7245,6307,1027,7803,6003,7802,7801, --desarquivado
-            6648,6649,6650,6651,6652,6653,6654,6038,6039,6040,6041, -- cautelares part 1/2
-            6042,6043,7815,7816,6620,6257,6258,7878,7877,6367,6368,6369,6370,1208,1030)
-        ) --cautelares part 2/2
+        AND stao_tppr_dk IN {ANDAMENTOS_IMPORTANTES}) --cautelares part 2/2
         SELECT TA.* FROM ANDAMENTOS_IMPORTANTES TA
         JOIN (
             SELECT pip_codigo, docu_dk, MAX(pcao_dt_andamento) AS ultimo_andamento,
@@ -133,7 +138,16 @@ def execute_process(options):
         ON TA.pip_codigo = SUB_TA.pip_codigo AND TA.docu_dk = SUB_TA.docu_dk
         AND TA.pcao_dt_andamento = SUB_TA.ultimo_andamento
         AND TA.peso_prioridade = SUB_TA.maxima_prioridade
-        """.format(schema_exadata)
+        """.format(
+            schema_exadata,
+            DENUNCIA=DENUNCIA,
+            ARQUIVAMENTO=ARQUIVAMENTO,
+            DESARQUIVAMENTO=DESARQUIVAMENTO,
+            CAUTELAR=CAUTELAR,
+            ACORDO=ACORDO,
+            DESACORDO=DESACORDO,
+            ANDAMENTOS_IMPORTANTES=ANDAMENTOS_IMPORTANTES
+        )
     ).createOrReplaceTempView("FILTRADOS_IMPORTANTES_DESAMBIGUADOS")
 
     spark.sql(
@@ -142,9 +156,9 @@ def execute_process(options):
             pip_codigo as orgao_id,
             COUNT(DISTINCT docu_dk) as denuncias --distinct docu_dk para evitar andamentos duplicados no mesmo dia
         FROM FILTRADOS_IMPORTANTES_DESAMBIGUADOS
-        WHERE stao_tppr_dk IN (6252, 6253, 1201, 1202, 6254)
+        WHERE stao_tppr_dk IN {DENUNCIA}
         GROUP BY pip_codigo
-        """.format(schema_exadata)
+        """.format(schema_exadata, DENUNCIA=DENUNCIA)
     ).createOrReplaceTempView("DENUNCIA")
 
     spark.sql(
@@ -174,14 +188,11 @@ def execute_process(options):
         pip_codigo as orgao_id,
         COUNT(DISTINCT docu_dk) as resolutividade
     FROM FILTRADOS_IMPORTANTES_DESAMBIGUADOS
-    WHERE stao_tppr_dk IN (6252, 6253, 1201, 1202, 6254, --denuncias
-        7914,7928,7883,7827, --acordo
-            6549,6593,6591,6343,6338,6339,6340,6341,6342,7871,7897,7912,6346,6350,6359,6392,6017, --arquivado part 1/2
-            6018,6020,7745) --arquvidado part 2/2
+    WHERE stao_tppr_dk IN {FINALIZACOES} --arquvidado part 2/2
     AND (vist_dt_fechamento_vista > cast(date_sub(current_timestamp(), 30) as timestamp)
     OR vist_dt_fechamento_vista IS NULL)
     GROUP BY pip_codigo
-        """
+    """.format(FINALIZACOES=DENUNCIA+ARQUIVAMENTO+ACORDO)
     ).createOrReplaceTempView("RESOLUCOES")
 
 
