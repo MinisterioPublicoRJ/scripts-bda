@@ -1,0 +1,22 @@
+<dataConfig>
+    <dataSource driver="org.apache.hive.jdbc.HiveDriver" url="jdbc:hive2://192.168.8.6:10000/bases" 
+	user="mpmapas"
+        password="U2FsdGVkX19EG7Q8ccirWk/xtxvbOuTvWgjk2VMS8Cg=" 
+        encryptKeyFile="key.txt"/>
+    <document name="pessoa_juridica">
+        <entity name="pessoa_juridica" query="select 
+                lc_cnpj.uuid uuid,
+                nome_fantasia,
+                lc_cnpj.nome razao_social,
+                lc_cpf.nome responsavel,
+                lc_cnpj.num_cnpj cnpj,
+                num_cpf_responsavel cpf_responsavel,
+                lc_cnpj.nome_municipio municipio,
+                lc_cnpj.sigla_uf uf,
+                'Empresa' label
+            from lc_cnpj
+            inner join lc_cpf on
+                lc_cnpj.num_cpf_responsavel = lc_cpf.num_cpf">
+        </entity>
+    </document>
+</dataConfig>

@@ -1,0 +1,38 @@
+<dataConfig>
+    <dataSource driver="org.apache.hive.jdbc.HiveDriver" url="jdbc:hive2://192.168.8.6:10000/dadossinapse"
+        user="mpmapas"
+        password="U2FsdGVkX19EG7Q8ccirWk/xtxvbOuTvWgjk2VMS8Cg=" 
+        encryptKeyFile="key.txt"/>
+    <document name="documento_personagem">
+	 <entity name="documento_personagem" transformer="RegexTransformer"  query="SELECT
+	    documento_opv.uuid uuid,
+            documento_opv.cdorgao cdorgao,
+            documento_opv.cldc_ds_hierarquia cldc_ds_hierarquia,
+            documento_opv.docu_dk docu_dk,
+            concat(date_format(documento_opv.dt_cadastro, 'yyyy-MM-dd'), 'T00:00:00Z') as dt_cadastro,
+            documento_opv.nr_externo nr_externo,
+            documento_opv.nr_mp nr_mp,
+            'Documento' as label,
+	    concat_ws('#', collect_set(concat(personagem_opv.tppe_descricao, ' - ', personagem_opv.cpfcnpj, ' - ', personagem_opv.pess_nm_pessoa))) as ds_info_personagem
+	FROM documento_opv
+	INNER JOIN personagem_opv
+	on personagem_opv.pers_docu_dk = documento_opv.docu_dk 
+	GROUP BY documento_opv.uuid,
+            documento_opv.cdorgao,
+            documento_opv.cldc_ds_hierarquia,
+            documento_opv.docu_dk,
+            concat(date_format(documento_opv.dt_cadastro, 'yyyy-MM-dd'), 'T00:00:00Z'),
+            documento_opv.nr_externo,
+            documento_opv.nr_mp ">
+                <field column="uuid" name="uuid" />
+                <field column="cdorgao" name="cdorgao" />
+                <field column="cldc_ds_hierarquia" name="cldc_ds_hierarquia" />
+                <field column="docu_dk" name="docu_dk" />
+                <field column="dt_cadastro" name="dt_cadastro" />
+                <field column="nr_externo" name="nr_externo" />
+                <field column="nr_mp" name="nr_mp" />
+                <field column="label" name="label" />
+		        <field column="ds_info_personagem" splitBy="#" sourceColName="ds_info_personagem"/>
+        </entity>
+    </document>
+</dataConfig>

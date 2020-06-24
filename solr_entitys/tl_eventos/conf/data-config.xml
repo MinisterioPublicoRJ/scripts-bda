@@ -1,0 +1,44 @@
+<dataConfig>
+    <dataSource name="dsHive" driver="org.apache.hive.jdbc.HiveDriver" url="jdbc:hive2://192.168.8.6:10000/" user="mpmapas" password="U2FsdGVkX19EG7Q8ccirWk/xtxvbOuTvWgjk2VMS8Cg=" encryptKeyFile="key.txt"/>
+	<dataSource name="dsPostgres" type="JdbcDataSource" driver="org.postgresql.Driver" url="jdbc:postgresql://p-postgres01:5432/opengeo" user="mpmapas_geo" password="mpmapas_geo_pw"/>
+    <document>
+        <entity name="tl_eventos" dataSource="dsHive" query=" SELECT id, tp_evento, cpf, concat(date_format(dt, 'yyyy-MM-dd'), 'T00:00:00Z') as dt, entidade, cd_entidade, tp_entidade, texto FROM bases.tl_eventos where id % 3 = ${dataimporter.request.in} "></entity>
+        <entity name="tl_eventos_tp_evento" dataSource="dsHive" query=" SELECT id, tp_evento, cpf, concat(date_format(dt, 'yyyy-MM-dd'), 'T00:00:00Z') as dt, entidade, cd_entidade, tp_entidade, texto FROM bases.tl_eventos where tp_evento = '${dataimporter.request.tp_evento}' "></entity>
+
+        <entity name="eleitoral_candidatura" dataSource="dsPostgres" query="
+            select 
+                replace(concat(codigo_eleicao, codigo_tipo_eleicao, cpf),'-','') id,
+                '+eleicao' as tp_evento,
+                cpf,
+                to_char( data_eleicao, 'yyyy-MM-ddT00:00:00Z') as dt,
+                nome_urna as entidade,
+                cpf as cd_entidade,
+                'PF' as tp_entidade,
+                concat( 'Cargo: ', descricao_cargo, '|UF: ', descricao_ue, '|Abrangência: ', tipo_abrangencia_eleicao, '|Situação da Candidatura: ', descricao_situacao_candidatura,
+                '|Partido: ', sigla_partido, '|Resultado: ', descricao_totalizacao_turno ) as texto
+            from eleitoral.candidatos where data_eleicao is not null ">
+        </entity>
+
+	<entity name="eleitoral_doacao" dataSource="dsPostgres" query="
+	select 
+	replace(concat( numero_recibo, numero_recibo_eleitoral, cpf_cnpj_doador_originario_final, to_char( data_receita, 'yyyy-MM-ddT00:00:00Z') ),'-','') id,
+	'+doacao' as tp_evento,
+	cpf_cnpj_doador_originario_final as cpf,
+	to_char( data_receita, 'yyyy-MM-ddT00:00:00Z') as dt,
+	beneficiario as entidade,
+	cpf_cnpj_doador_originario_final as cd_entidade,
+	'CANDIDATURA' as tp_entidade,
+	concat( 
+	'Beneficiário: ', beneficiario, 
+	'|Cargo: ', cargo, 
+	'|Local: ', nome_ue,' - ', sigla_uf, 
+	'|Valor: ', valor_receita, 
+	'|Partido: ', sigla_partido
+	) as texto
+	from eleitoral.vw_eleitoral_receitas_candidatos
+	"></entity>
+    </document>
+
+
+</dataConfig>
+

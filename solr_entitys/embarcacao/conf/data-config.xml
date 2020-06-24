@@ -1,0 +1,17 @@
+<dataConfig>
+    <dataSource driver="org.apache.hive.jdbc.HiveDriver" url="jdbc:hive2://192.168.8.6:10000/bases" 
+	user="mpmapas"
+        password="U2FsdGVkX19EG7Q8ccirWk/xtxvbOuTvWgjk2VMS8Cg=" 
+        encryptKeyFile="key.txt"/>
+    <document name="embarcacao">
+        <entity name="embarcacao" query="select 
+                uuid,
+                ds_nome_embarcacao as nome_embarcacao,
+                tipo_embarcacao,
+                ano_construcao,
+                cpf_cnpj,
+                'Embarcacao' label
+            from lc_embarcacao">
+        </entity>
+    </document>
+</dataConfig>

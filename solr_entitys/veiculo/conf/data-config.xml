@@ -1,0 +1,34 @@
+<dataConfig>
+    <dataSource driver="org.apache.hive.jdbc.HiveDriver" url="jdbc:hive2://192.168.8.6:10000/bases"
+	user="mpmapas"
+        password="U2FsdGVkX19EG7Q8ccirWk/xtxvbOuTvWgjk2VMS8Cg=" 
+        encryptKeyFile="key.txt"/>
+    <document name="veiculo">
+        <entity name="veiculo" query="select
+                proprietario,
+                placa,
+                renavam,
+                marca_modelo,
+                descricao_cor cor,
+                cpfcgc cpfcnpj,
+                fabric ano_fabric,
+                modelo ano_modelo,
+                chassi,
+                proprietario,
+                uuid,
+                'Veiculo' label,
+                concat(
+                    trim(marca_modelo),
+                    ' ',
+                    trim(descricao_cor),
+                    ' ',
+                    fabric,
+                    '/',
+                    modelo,
+                    ' ',
+                    placa
+                ) descricao
+            from detran_veiculo">
+        </entity>
+    </document>
+</dataConfig>

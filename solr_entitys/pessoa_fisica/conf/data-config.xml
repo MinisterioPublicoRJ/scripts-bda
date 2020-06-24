@@ -1,0 +1,30 @@
+<dataConfig>
+    <dataSource driver="org.apache.hive.jdbc.HiveDriver" url="jdbc:hive2://192.168.8.6:10000/"
+	user="mpmapas"
+        password="U2FsdGVkX19EG7Q8ccirWk/xtxvbOuTvWgjk2VMS8Cg=" 
+        encryptKeyFile="key.txt"/>
+    <document name="pessoa_fisica">
+        <entity name="pessoa_fisica" query="SELECT 
+                pessoa_fisica_opv.uuid uuid,
+                pessoa_fisica_opv.num_cpf cpf,
+                pessoa_fisica_opv.num_rg rg,
+                concat(date_format(pessoa_fisica_opv.data_nascimento, 'yyyy-MM-dd'), 'T00:00:00Z') as dt_nasc,
+                pessoa_fisica_opv.nome nome,
+                pessoa_fisica_opv.nome_rg nome_rg,
+                pessoa_fisica_opv.nome_mae nome_mae,
+                pessoa_fisica_opv.nome_pai nome_pai,
+                case pessoa_fisica_opv.ind_sexo
+                when 'M' then 'Masculino'
+                when 'F' then 'Feminino'
+                else 'Indisponivel' end as sexo,
+                pessoa_fisica_opv.sigla_uf uf,
+                case 
+                when lc_ppe.cpf is not null then true
+                else false
+                end as sensivel,
+                'Pessoa' as label
+            FROM dadossinapse.pessoa_fisica_opv 
+            left join staging.lc_ppe on lc_ppe.cpf = pessoa_fisica_opv.num_cpf">
+        </entity>
+    </document>
+</dataConfig>
