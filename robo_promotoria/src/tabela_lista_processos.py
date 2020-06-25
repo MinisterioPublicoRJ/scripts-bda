@@ -22,6 +22,11 @@ def execute_process(options):
     nb_past_days = options['nb_past_days']
     dt_inicio = datetime.now() - timedelta(nb_past_days)
 
+    ORGAOS = (
+        "MINISTERIO PUBLICO DO ESTADO DO RIO DE JANEIRO",
+        "DEFENSORIA PÚBLICA DO ESTADO DO RIO DE JANEIRO",
+    )
+
     docu_totais = spark.sql(
         """
         SELECT 
@@ -72,7 +77,9 @@ def execute_process(options):
                 FROM DOCU_TOTAIS
                 JOIN {0}.mcpr_personagem ON pers_docu_dk = docu_dk
                 AND pers_tppe_dk IN (290, 7, 21, 317, 20, 14, 32, 345, 40, 5)
-                JOIN {0}.mcpr_pessoa ON pers_pess_dk = pess_dk) t
+                JOIN {0}.mcpr_pessoa ON pers_pess_dk = pess_dk
+                JOIN {0}.mcpr_tp_personagem ON pers_tppe_dk = tppe_dk) t
+                AND (tppe_dk <> 7 AND pess_nm_pessoa NOT IN {ORGAOS})
             WHERE nr_pers <= {1}) t1
         GROUP BY docu_nr_mp
         """.format(schema_exadata, personagens_cutoff)
