@@ -16,9 +16,7 @@ def execute_process(options):
 
     schema_exadata = options['schema_exadata']
     schema_exadata_aux = options['schema_exadata_aux']
-
     personagens_cutoff = options['personagens_cutoff']
-
     nb_past_days = options['nb_past_days']
     dt_inicio = datetime.now() - timedelta(nb_past_days)
 
@@ -79,7 +77,7 @@ def execute_process(options):
                 AND pers_tppe_dk IN (290, 7, 21, 317, 20, 14, 32, 345, 40, 5)
                 JOIN {0}.mcpr_pessoa ON pers_pess_dk = pess_dk
                 JOIN {0}.mcpr_tp_personagem ON pers_tppe_dk = tppe_dk) t
-                AND (tppe_dk <> 7 AND pess_nm_pessoa NOT IN {ORGAOS})
+                AND (tppe_dk <> 7 OR pess_nm_pessoa not rlike '(MP.*\|MINIST[EÉ]RIO\\\\s\\+P[UÚ]BLICO.*))
             WHERE nr_pers <= {1}) t1
         GROUP BY docu_nr_mp
         """.format(schema_exadata, personagens_cutoff)
