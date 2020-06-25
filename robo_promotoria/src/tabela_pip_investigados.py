@@ -22,6 +22,7 @@ def execute_process(options):
 
     schema_exadata = options['schema_exadata']
     schema_exadata_aux = options['schema_exadata_aux']
+    schema_hbase = options['schema_hbase']
 
     lista_pips = spark.sql("""
         SELECT DISTINCT pip_codigo FROM {0}.tb_pip_aisp
@@ -125,7 +126,7 @@ def execute_process(options):
 
 
     conn = Connection('bda1node05.pgj.rj.gov.br')
-    t = conn.table('dev:pip_investigados_flags')
+    t = conn.table('{}:pip_investigados_flags'.format(schema_hbase))
     for orgao in new_names:
         orgao_id = str(orgao['pip_codigo'])
         representantes = orgao['representantes']
@@ -136,7 +137,7 @@ def execute_process(options):
             )
         )
         for row in removed_rows:
-            if row[1]['identificacao:representante_dk'].decode('utf-8') in representantes:
+            if row[1].get("identificacao:representante_dk") and row[1]["identificacao:representante_dk"].decode('utf-8') in representantes:
                 t.delete(row[0])
 
     # Usa tabela para guardar a data de ultima verificacao de novos documentos
@@ -156,13 +157,15 @@ if __name__ == "__main__":
     parser.add_argument('-a','--schemaExadataAux', metavar='schemaExadataAux', type=str, help='')
     parser.add_argument('-i','--impalaHost', metavar='impalaHost', type=str, help='')
     parser.add_argument('-o','--impalaPort', metavar='impalaPort', type=str, help='')
+    parser.add_argument('-sb','--schemaHbase', metavar='schemaHbase', type=str, help='')
     args = parser.parse_args()
 
     options = {
                     'schema_exadata': args.schemaExadata, 
                     'schema_exadata_aux': args.schemaExadataAux,
                     'impala_host' : args.impalaHost,
-                    'impala_port' : args.impalaPort
+                    'impala_port' : args.impalaPort,
+                    'schema_hbase' : args.impalaPort
                 }
 
     execute_process(options)
