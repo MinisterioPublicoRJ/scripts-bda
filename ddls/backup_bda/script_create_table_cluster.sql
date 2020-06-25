@@ -1,0 +1,15 @@
+CREATE TABLE acervo_painel(  dt string,   cdorgao string,   entradas double,   saidas double,   saldo string,   tipo string,   orgao string,   cluster int) STORED AS PARQUET;
+CREATE TABLE atualizacao_pj_pacote(  cod_pct int,   pacote_atribuicao string,   id_orgao string,   orgao_codamp string) STORED AS PARQUET;
+CREATE TABLE base_mari_25_11(  orgao string,   cdorgao double,   atribuicao string,   qtd double,   cluster int,   dt string,   entradas double,   saidas double,   tipo string) STORED AS PARQUET;
+CREATE TABLE painel_acervo(  orgao string,   cdorgao string,   atribuicao string,   qtd double,   cluster int,   dt string,   entradas double,   saidas double,   tipo string) STORED AS PARQUET;
+CREATE TABLE painel_mari(  dt string,   cdorgao string,   entradas double,   saidas double,   saldo string,   tipo string,   orgao string,   cluster int) STORED AS PARQUET;
+CREATE TABLE painel_novembro_mari(  orgao string,   cdorgao double,   atribuicao string,   qtd double,   cluster int,   dt string,   entradas double,   saidas double,   tipo string) STORED AS PARQUET;
+CREATE TABLE painel_outubro(  orgao string,   cdorgao double,   atribuicao string,   qtd double,   cluster int,   dt string,   entradas double,   saidas double,   tipo string) STORED AS PARQUET;
+CREATE TABLE painel_rh_cluster_d(  cdorgao double,   orgao string,   cluster int) STORED AS PARQUET;
+CREATE TABLE painel_rh_cluster_total(  orgao string,   cdorgao double,   atribuicao string,   qtd double,   cluster int,   dt string,   entradas double,   saidas double,   tipo string) STORED AS PARQUET;
+CREATE TABLE painel_rh_crj(  orgao string,   cdorgao double,   atribuicao string,   qtd double,   cluster int,   dt string,   entradas double,   saidas double,   tipo string) STORED AS PARQUET;
+CREATE TABLE painel_setembro(  orgao string,   cdorgao double,   atribuicao string,   qtd double,   cluster int,   dt string,   entradas double,   saidas double,   tipo string) STORED AS PARQUET;
+CREATE TABLE painel_teste(  dt string,   cdorgao double,   entradas double,   saidas double,   saldo double,   tipo string,   orgao string,   cluster int) STORED AS PARQUET;
+CREATE TABLE painel_teste123(  orgao string,   cdorgao double,   atribuicao string,   qtd double,   cluster int,   dt string,   entradas double,   saidas double,   tipo string) STORED AS PARQUET;
+CREATE TABLE painel_teste1234(  orgao string,   cdorgao double,   atribuicao string,   qtd double,   cluster int,   dt string,   entradas double,   saidas double,   tipo string) STORED AS PARQUET;
+CREATE TABLE painel_teste_crj(  orgao string,   cdorgao double,   atribuicao string,   qtd double,   cluster int,   dt string,   entradas double,   saidas double,   tipo string) STORED AS PARQUET;
