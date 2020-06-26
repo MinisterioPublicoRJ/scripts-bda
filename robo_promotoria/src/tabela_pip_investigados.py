@@ -165,7 +165,7 @@ if __name__ == "__main__":
                     'schema_exadata_aux': args.schemaExadataAux,
                     'impala_host' : args.impalaHost,
                     'impala_port' : args.impalaPort,
-                    'schema_hbase' : args.impalaPort
+                    'schema_hbase' : args.schemaHbase
                 }
 
     execute_process(options)
