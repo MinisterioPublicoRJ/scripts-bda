@@ -20,14 +20,14 @@ def execute_process(options):
     nb_past_days = options['nb_past_days']
     dt_inicio = datetime.now() - timedelta(nb_past_days)
 
-    ORGAOS = (
-        "MINISTERIO PUBLICO DO ESTADO DO RIO DE JANEIRO",
-        "DEFENSORIA PÚBLICA DO ESTADO DO RIO DE JANEIRO",
+    REGEX_EXCLUSAO_ORGAOS = (
+        "(MP.*|MINIST[EÉ]RIO\\\\s\\+P[UÚ]BLICO.*|DEFENSORIA\\\\s\\+P[UÚ]BLICA.*"
+        "|MINSTERIO PUBLICO|MPRJ)"
     )
 
-    docu_totais = spark.sql(
+    spark.sql(
         """
-        SELECT 
+        SELECT
             docu_orgi_orga_dk_responsavel as orgao_dk,
             cldc_ds_classe as classe_documento,
             DOCU_NR_MP,
@@ -51,12 +51,11 @@ def execute_process(options):
         AND pcao_dt_cancelamento IS NULL
         AND docu_tpst_dk != 11
         """.format(schema_exadata, schema_exadata_aux, dt_inicio)
-    )
-    docu_totais.registerTempTable('docu_totais')
+    ).createOrReplaceTempView('DOCU_TOTAIS')
 
-    personagens = spark.sql(
+    spark.sql(
         """
-        SELECT 
+        SELECT
             docu_nr_mp,
             concat_ws(', ', collect_list(nm_personagem)) as personagens
         FROM (
@@ -76,15 +75,21 @@ def execute_process(options):
                 JOIN {0}.mcpr_personagem ON pers_docu_dk = docu_dk
                 AND pers_tppe_dk IN (290, 7, 21, 317, 20, 14, 32, 345, 40, 5)
                 JOIN {0}.mcpr_pessoa ON pers_pess_dk = pess_dk
-                JOIN {0}.mcpr_tp_personagem ON pers_tppe_dk = tppe_dk) t
-                AND (tppe_dk <> 7 OR pess_nm_pessoa not rlike '(MP.*\|MINIST[EÉ]RIO\\\\s\\+P[UÚ]BLICO.*))
+                JOIN {0}.mcpr_tp_personagem ON pers_tppe_dk = tppe_dk
+                AND (
+                    tppe_dk <> 7 OR
+                    pess_nm_pessoa not rlike '{REGEX_EXCLUSAO_ORGAOS}'
+                )) t
             WHERE nr_pers <= {1}) t1
         GROUP BY docu_nr_mp
-        """.format(schema_exadata, personagens_cutoff)
-    )
-    personagens.registerTempTable('docu_personagens')
+        """.format(
+            schema_exadata,
+            personagens_cutoff,
+            REGEX_EXCLUSAO_ORGAOS=REGEX_EXCLUSAO_ORGAOS,
+        )
+    ).createOrReplaceTempView('DOCU_PERSONAGENS')
 
-    dts_ultimos_andamentos = spark.sql(
+    spark.sql(
         """
         SELECT
             DOCU_NR_MP,
@@ -92,8 +97,7 @@ def execute_process(options):
         FROM DOCU_TOTAIS
         GROUP BY DOCU_NR_MP
         """
-    )
-    dts_ultimos_andamentos.registerTempTable('dts_ultimos_andamentos')
+    ).createOrReplaceTempView('DTS_ULTIMOS_ANDAMENTOS')
 
 
     lista_processos = spark.sql(
@@ -105,12 +109,12 @@ def execute_process(options):
             A.docu_nr_externo,
             A.docu_tx_etiqueta,
             P.personagens,
-            A.pcao_dt_andamento as dt_ultimo_andamento, 
+            A.pcao_dt_andamento as dt_ultimo_andamento,
             concat_ws(', ', collect_list(A.tppr_descricao)) as ultimo_andamento,
-            CASE WHEN length(docu_nr_externo) = 20 THEN 
+            CASE WHEN length(docu_nr_externo) = 20 THEN
                 concat('http://www4.tjrj.jus.br/numeracaoUnica/faces/index.jsp?numProcesso=',
                     concat(concat(concat(concat(concat(concat(
-                    concat(substr(docu_nr_externo, 1, 7), '-')), 
+                    concat(substr(docu_nr_externo, 1, 7), '-')),
                     concat(substr(docu_nr_externo, 8, 2), '.')),
                     concat(substr(docu_nr_externo, 10, 4), '.')),
                     concat(substr(docu_nr_externo, 14, 1), '.')),
@@ -119,11 +123,11 @@ def execute_process(options):
                 ELSE NULL
             END as url_tjrj
         FROM DOCU_TOTAIS A
-        JOIN DTS_ULTIMOS_ANDAMENTOS ULT 
+        JOIN DTS_ULTIMOS_ANDAMENTOS ULT
             ON A.DOCU_NR_MP = ULT.DOCU_NR_MP
             AND A.PCAO_DT_ANDAMENTO = ULT.DT_ULTIMO
         JOIN DOCU_PERSONAGENS P ON P.DOCU_NR_MP = A.DOCU_NR_MP
-        GROUP BY A.orgao_dk, A.classe_documento, A.docu_nr_mp, 
+        GROUP BY A.orgao_dk, A.classe_documento, A.docu_nr_mp,
             A.docu_nr_externo, A.docu_tx_etiqueta, P.personagens,
             A.pcao_dt_andamento
         """
