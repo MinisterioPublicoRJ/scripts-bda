@@ -15,6 +15,26 @@ def execute_process(options):
         .getOrCreate()
     )
 
+    # ANDAMENTOS DE INTERESSE DA PIP
+    DENUNCIA = (6252, 6253, 1201, 1202, 6254)
+    ACORDO = (7914, 7928, 7883, 7827)
+    DESACORDO = 7920
+    ARQUIVAMENTO = (
+        6549, 6593, 6591, 6343, 6338, 6339, 6340, 6341, 6342, 7871, 7897, 7912,
+        6346, 6350, 6359, 6392, 6017, 6018, 6020, 7745
+    )
+    DESARQUIVAMENTO = (
+        6075, 1028, 6798, 7245, 6307, 1027, 7803, 6003, 7802, 7801
+    )
+    CAUTELAR = (
+        6648, 6649, 6650, 6651, 6652, 6653, 6654, 6038, 6039, 6040, 6041, 6042,
+        6043, 7815, 7816, 6620, 6257, 6258, 7878, 7877, 6367, 6368, 6369, 6370,
+        1208,1030
+    )
+    ANDAMENTOS_IMPORTANTES = (
+        DENUNCIA + ACORDO + (DESACORDO,) + ARQUIVAMENTO + DESARQUIVAMENTO + CAUTELAR
+    )
+
     schema_exadata = options["schema_exadata"]
     schema_exadata_aux = options["schema_exadata_aux"]
 
@@ -29,8 +49,8 @@ def execute_process(options):
         vist_dk,
         vist_docu_dk,
         vist_dt_abertura_vista,
-        stao_tppr_dk,
-        pcao_dt_andamento
+        vist_dt_fechamento_vista,
+        cdtipfunc
         FROM {0}.mcpr_documento
         JOIN {0}.mcpr_vista ON vist_docu_dk = docu_dk
         JOIN (
@@ -45,65 +65,144 @@ def execute_process(options):
         ON p.codigo = vist_orgi_orga_dk
         JOIN {0}.mcpr_pessoa_fisica pess ON pess.pesf_pess_dk = vist_pesf_pess_dk_resp_andam
         JOIN {0}.rh_funcionario f ON pess.pesf_cpf = f.cpf
-        JOIN {0}.mcpr_andamento ON pcao_vist_dk = vist_dk
-        JOIN {0}.mcpr_sub_andamento ON stao_pcao_dk = pcao_dk
         WHERE docu_cldc_dk IN (3, 494, 590) -- PIC e Inqueritos
-        AND vist_dt_abertura_vista >= cast(date_sub(current_timestamp(), {2}) as timestamp)
-        AND f.cdtipfunc IN ('1', '2')
+        AND (vist_dt_fechamento_vista >= cast(date_sub(current_timestamp(), {2}) as timestamp)
+        OR vist_dt_fechamento_vista IS NULL)
 	AND docu_tpst_dk != 11 -- Documento nao cancelado
-	AND pcao_dt_cancelamento IS NULL -- Andamento nao cancelado
 	""".format(
             schema_exadata, schema_exadata_aux, days_past_start
 	)).createOrReplaceTempView(
-            "FILTRADOS"
+            "FILTRADOS_SEM_ANDAMENTO"
 	)
 
+    # Estamos contabilizando múltiplas vistas abertas no mesmo dia para o mesmo documento.
+    # O objetivo aqui é ter o número de vistas abertas (mesmo sem andamento associado)
+    # por órgão. Não importando se houve mais de uma abertura de vista no mesmo
+    # documento no mesmo dia.
+    #
+    # Grupo: todo inquérito policial e PIC que teve pelo menos uma
+    # vista aberta para o promotor entre 18 e 6 meses atrás.
     spark.sql(
         """
         SELECT pip_codigo as orgao_id,
-        COUNT(DISTINCT vist_docu_dk) as vistas
-        FROM FILTRADOS
-        WHERE vist_dt_abertura_vista <= cast(date_sub(current_timestamp(), {0}) as timestamp)
+        COUNT(vist_dk) as vistas
+        FROM FILTRADOS_SEM_ANDAMENTO
+        WHERE vist_dt_fechamento_vista <= cast(date_sub(current_timestamp(), {0}) as timestamp)
+        AND cdtipfunc IN ('1', '2') -- Filtra por vistas abertas por PROMOTORES
         GROUP BY pip_codigo
-        """.format(days_past_end)).createOrReplaceTempView("grupo")
+        """.format(days_past_end)).createOrReplaceTempView("GRUPO")
+
+    spark.sql(
+        """SELECT DISTINCT docu_dk
+            FROM FILTRADOS_SEM_ANDAMENTO
+            WHERE vist_dt_fechamento_vista <= cast(date_sub(current_timestamp(), {0}) as timestamp)
+        """.format(days_past_end)
+    ).createOrReplaceTempView("DOCUMENTOS_GRUPO")
+
+    # Ordem de prioridade para desambiguação se ocorrerem multiplas vistas
+    # no mesmo dia (para mesmo órgão e documento):
+    #       denúncia > cautelar > acordo > arquivamento
+
+    # Tabela com todos os Documentos + Vistas + Andamentos/Sub-Andamentos
+    # imortantes (denúncia, arquivamento, desarquivamento, acordo, desacordo)
+    # já desambiguado pela ordem de prioridade supracitada e, consequentemente,
+    # sem repetição de vistas abertas no mesmo Órgão, mesmo Documento e mesmo Dia.
+    # É possível que existam Andamentos repetidos (com mesmo stao_tppr_dk)
+    # no mesmo mesmo órgão, mesmo documento e mesmo dia, mas esse caso
+    # é resolvido com  COUNT(DISTINCT docu_dk)
+
+    spark.sql(
+        """WITH ANDAMENTOS_IMPORTANTES AS (SELECT
+            FSA.*,
+            ANDAMENTO.pcao_dt_andamento,
+            SUBANDAMENTO.stao_tppr_dk,
+        CASE
+            WHEN stao_tppr_dk in {DENUNCIA} THEN 'denunciado'
+            WHEN stao_tppr_dk in {ACORDO} THEN 'acordado'
+            WHEN stao_tppr_dk = {DESACORDO} THEN 'desacordado'
+            WHEN stao_tppr_dk in {ARQUIVAMENTO} THEN 'arquivado'
+            WHEN stao_tppr_dk in {DESARQUIVAMENTO} THEN 'desarquivado'
+            WHEN stao_tppr_dk in {CAUTELAR} THEN 'cautelado'
+        END as tipo,
+        CASE
+            WHEN stao_tppr_dk in {DENUNCIA} THEN 4 -- denuncia
+            WHEN stao_tppr_dk in {CAUTELAR} THEN 3 -- cautelar
+            WHEN stao_tppr_dk in {ACORDO} THEN 2.1 -- acordo
+            WHEN stao_tppr_dk = {DESACORDO} THEN 2 -- desacordo
+            WHEN stao_tppr_dk in {ARQUIVAMENTO} THEN 1.1 -- arquivamento
+            WHEN stao_tppr_dk in {DESARQUIVAMENTO} THEN 1 -- desarquivamento
+        END as peso_prioridade --Quanto maior mais importante
+            FROM FILTRADOS_SEM_ANDAMENTO FSA
+        JOIN {0}.mcpr_andamento ANDAMENTO ON pcao_vist_dk = vist_dk
+        JOIN {0}.mcpr_sub_andamento SUBANDAMENTO ON stao_pcao_dk = pcao_dk
+        JOIN DOCUMENTOS_GRUPO DG ON FSA.docu_dk = DG.docu_dk --  Essse join serve para filtrar os Documentos que estão dentro da tabela GRUPO
+	WHERE pcao_dt_cancelamento IS NULL -- Andamento nao cancelado
+        AND stao_tppr_dk IN {ANDAMENTOS_IMPORTANTES}) --cautelares part 2/2
+        SELECT TA.* FROM ANDAMENTOS_IMPORTANTES TA
+        JOIN (
+            SELECT pip_codigo, docu_dk, MAX(pcao_dt_andamento) AS ultimo_andamento,
+            MAX(peso_prioridade) as maxima_prioridade
+            FROM ANDAMENTOS_IMPORTANTES GROUP BY pip_codigo, docu_dk) SUB_TA
+        ON TA.pip_codigo = SUB_TA.pip_codigo AND TA.docu_dk = SUB_TA.docu_dk
+        AND TA.pcao_dt_andamento = SUB_TA.ultimo_andamento
+        AND TA.peso_prioridade = SUB_TA.maxima_prioridade
+        """.format(
+            schema_exadata,
+            DENUNCIA=DENUNCIA,
+            ARQUIVAMENTO=ARQUIVAMENTO,
+            DESARQUIVAMENTO=DESARQUIVAMENTO,
+            CAUTELAR=CAUTELAR,
+            ACORDO=ACORDO,
+            DESACORDO=DESACORDO,
+            ANDAMENTOS_IMPORTANTES=ANDAMENTOS_IMPORTANTES
+        )
+    ).createOrReplaceTempView("FILTRADOS_IMPORTANTES_DESAMBIGUADOS")
 
     spark.sql(
         """
         SELECT
             pip_codigo as orgao_id,
-            count(Distinct vist_docu_dk) as denuncias
-        FROM FILTRADOS
-        WHERE stao_tppr_dk IN (6252, 6253, 1201, 1202, 6254)
+            COUNT(DISTINCT docu_dk) as denuncias --distinct docu_dk para evitar andamentos duplicados no mesmo dia
+        FROM FILTRADOS_IMPORTANTES_DESAMBIGUADOS
+        WHERE stao_tppr_dk IN {DENUNCIA}
         GROUP BY pip_codigo
-        """.format(schema_exadata)
-    ).createOrReplaceTempView("denuncia")
+        """.format(schema_exadata, DENUNCIA=DENUNCIA)
+    ).createOrReplaceTempView("DENUNCIA")
 
     spark.sql(
     """
-     WITH TIPO_ANDAMENTO AS (
-        SELECT
-        pip_codigo,
-        docu_dk,
-        pcao_dt_andamento,
-        CASE
-            WHEN stao_tppr_dk in (6252, 6253, 1201, 1202, 6254) THEN 'denunciado'
-            WHEN stao_tppr_dk in (7914, 7928, 7883, 7827) THEN 'acordado'
-            WHEN stao_tppr_dk = 7920 THEN 'desacordado'
-            WHEN stao_tppr_dk in (6549,6593,6591,6343,6338,6339,6340,6341,6342,7871,7897,7912,6346,6350,6359,6392,6017,6018,6020,7745) THEN 'arquivado'
-            WHEN stao_tppr_dk in (6075,1028,6798,7245,6307,1027,7803,6003,7802,7801) THEN 'desarquivado'
-        END as tipo
-        FROM FILTRADOS
-    )
     SELECT
-	TA.pip_codigo AS orgao_id,
-	COUNT(TA.docu_dk) AS finalizacoes
-    FROM TIPO_ANDAMENTO TA
-    JOIN (SELECT pip_codigo, docu_dk, MAX(pcao_dt_andamento) AS ultimo_andamento FROM TIPO_ANDAMENTO GROUP BY pip_codigo, docu_dk) SUB_TA
-    ON TA.pip_codigo = SUB_TA.pip_codigo AND TA.docu_dk = SUB_TA.docu_dk AND TA.pcao_dt_andamento = SUB_TA.ultimo_andamento
-    WHERE TA.tipo in ('arquivado', 'acordo', 'denunciado')
-    GROUP BY TA.pip_codigo
+	pip_codigo AS orgao_id,
+        COUNT(DISTINCT docu_dk) as finalizacoes --distinct docu_dk para evitar andamentos duplicados no mesmo dia
+    FROM FILTRADOS_IMPORTANTES_DESAMBIGUADOS
+    WHERE tipo in ('arquivado', 'acordo', 'denunciado', 'cautelado')
+    GROUP BY pip_codigo
     """
     ).createOrReplaceTempView("FINALIZADOS")
+
+    spark.sql(
+        """
+        SELECT pip_codigo as orgao_id,
+        COUNT(vist_dk) as vistas
+        FROM FILTRADOS_SEM_ANDAMENTO
+        WHERE vist_dt_fechamento_vista > cast(date_sub(current_timestamp(), 30) as timestamp)
+        OR vist_dt_fechamento_vista IS NULL
+        GROUP BY pip_codigo
+        """.format(days_past_end)).createOrReplaceTempView("VISTA_30_DIAS")
+
+    spark.sql(
+        """
+        SELECT
+        pip_codigo as orgao_id,
+        COUNT(DISTINCT docu_dk) as resolutividade
+    FROM FILTRADOS_IMPORTANTES_DESAMBIGUADOS
+    WHERE stao_tppr_dk IN {FINALIZACOES} --arquvidado part 2/2
+    AND (vist_dt_fechamento_vista > cast(date_sub(current_timestamp(), 30) as timestamp)
+    OR vist_dt_fechamento_vista IS NULL)
+    GROUP BY pip_codigo
+    """.format(FINALIZACOES=DENUNCIA+ARQUIVAMENTO+ACORDO)
+    ).createOrReplaceTempView("RESOLUCOES")
+
 
     indicadores_sucesso = spark.sql(
         """
@@ -111,8 +210,8 @@ def execute_process(options):
                 g.orgao_id,
                 (d.denuncias/g.vistas) AS indice,
                 'p_elucidacoes' AS tipo
-            FROM grupo g
-            JOIN denuncia d ON g.orgao_id = d.orgao_id
+            FROM GRUPO g
+            JOIN DENUNCIA d ON g.orgao_id = d.orgao_id
             UNION ALL
             SELECT
                f.orgao_id,
@@ -121,14 +220,11 @@ def execute_process(options):
             FROM FINALIZADOS f
             JOIN grupo g ON f.orgao_id = g.orgao_id
             UNION ALL
-            SELECT orgao_id,
-            (
-                nr_denuncias_periodo_atual
-                + nr_arquivamentos_periodo_atual
-                + nr_acordos_periodo_atual
-            ) / nr_aberturas_vista_periodo_atual AS indice,
+            SELECT v30.orgao_id,
+            res.resolutividade / v30.vistas,
             'p_resolutividade' AS tipo
-            FROM {0}.tb_pip_detalhe_aproveitamentos
+            FROM VISTA_30_DIAS v30
+            JOIN RESOLUCOES res ON v30.orgao_id = res.orgao_id
         """.format(schema_exadata_aux)
     )
 
