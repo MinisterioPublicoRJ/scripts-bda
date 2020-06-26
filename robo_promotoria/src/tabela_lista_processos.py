@@ -1,9 +1,31 @@
+#-*-coding:utf-8-*-
+import difflib
+import re
+import unicodedata
 from datetime import datetime, timedelta
 
 import pyspark
 import argparse
 
 from utils import _update_impala_table
+
+
+def name_similarity(name_left, name_right):
+    if not name_left or not name_right:
+        return 0
+
+    def remove_accents_n(value):
+        text = unicodedata.normalize('NFD', value)
+        text = text.encode('ascii', 'ignore')
+        text = text.decode("utf-8")
+        return text
+
+    name_left = remove_accents_n(re.sub(r"\s+", "", name_left or ""))
+    name_right = remove_accents_n(re.sub(r"\s+", "", name_right or ""))
+    return difflib.SequenceMatcher(None, name_left, name_right).ratio()
+
+
+spark.udf.register("name_similarity", name_similarity)
 
 
 def execute_process(options):
@@ -18,11 +40,13 @@ def execute_process(options):
     schema_exadata_aux = options['schema_exadata_aux']
     personagens_cutoff = options['personagens_cutoff']
     nb_past_days = options['nb_past_days']
+    LIMIAR_SIMILARIDADE = options["limiar_similaridade"]
+
     dt_inicio = datetime.now() - timedelta(nb_past_days)
 
     REGEX_EXCLUSAO_ORGAOS = (
         "(MP.*|MINIST[EÉ]RIO\\\\s\\+P[UÚ]BLICO.*|DEFENSORIA\\\\s\\+P[UÚ]BLICA.*"
-        "|MINSTERIO PUBLICO|MPRJ)"
+        "|MINSTERIO PUBLICO|MPRJ|MINITÉRIO PÚBLICO)"
     )
 
     spark.sql(
@@ -46,12 +70,53 @@ def execute_process(options):
         JOIN {1}.tb_regra_negocio_processo
             ON cod_pct = cod_atribuicao
             AND classe_documento = docu_cldc_dk
-	    JOIN {0}.mcpr_classe_docto_mp ON cldc_dk = docu_cldc_dk
+        JOIN {0}.mcpr_classe_docto_mp ON cldc_dk = docu_cldc_dk
         WHERE PCAO_DT_ANDAMENTO >= '{2}'
         AND pcao_dt_cancelamento IS NULL
         AND docu_tpst_dk != 11
         """.format(schema_exadata, schema_exadata_aux, dt_inicio)
     ).createOrReplaceTempView('DOCU_TOTAIS')
+
+    spark.sql(
+        """
+            WITH PERSONAGENS AS (SELECT
+                docu_nr_mp,
+                pess_dk,
+                pess_nm_pessoa,
+                LEAD(pess_nm_pessoa) OVER (PARTITION BY docu_nr_mp ORDER BY pess_nm_pessoa) proximo_nome
+            FROM DOCU_TOTAIS
+            JOIN {0}.mcpr_personagem ON pers_docu_dk = docu_dk
+            AND pers_tppe_dk IN (290, 7, 21, 317, 20, 14, 32, 345, 40, 5)
+            JOIN {0}.mcpr_pessoa ON pers_pess_dk = pess_dk
+            JOIN {0}.mcpr_tp_personagem ON pers_tppe_dk = tppe_dk
+            AND (
+                tppe_dk <> 7 OR
+                pess_nm_pessoa not rlike '{REGEX_EXCLUSAO_ORGAOS}'
+            )
+            GROUP BY docu_nr_mp, pess_nm_pessoa, pess_dk -- remove duplicação de personagens com mesmo
+        ),
+        PERSONAGENS_SIMILARIDADE AS (
+        SELECT docu_nr_mp,
+        pess_dk,
+        pess_nm_pessoa,
+            CASE
+                WHEN name_similarity(pess_nm_pessoa, proximo_nome) > {LIMIAR_SIMILARIDADE} THEN false
+                ELSE true
+            END AS primeira_aparicao
+            FROM PERSONAGENS
+        )
+        SELECT
+            docu_nr_mp,
+            pess_nm_pessoa,
+            row_number() OVER (PARTITION BY docu_nr_mp ORDER BY pess_dk DESC) as nr_pers
+        FROM PERSONAGENS_SIMILARIDADE
+        WHERE primeira_aparicao = true
+        """.format(
+            schema_exadata,
+            REGEX_EXCLUSAO_ORGAOS=REGEX_EXCLUSAO_ORGAOS,
+            LIMIAR_SIMILARIDADE=LIMIAR_SIMILARIDADE
+        )
+    ).createOrReplaceTempView("PERSONAGENS_SIMILARIDADE")
 
     spark.sql(
         """
@@ -66,27 +131,11 @@ def execute_process(options):
                     ELSE pess_nm_pessoa END
                 AS nm_personagem,
                 nr_pers
-            FROM (
-                SELECT
-                    docu_nr_mp,
-                    pess_nm_pessoa,
-                    row_number() OVER (PARTITION BY docu_nr_mp ORDER BY pess_dk DESC) as nr_pers
-                FROM DOCU_TOTAIS
-                JOIN {0}.mcpr_personagem ON pers_docu_dk = docu_dk
-                AND pers_tppe_dk IN (290, 7, 21, 317, 20, 14, 32, 345, 40, 5)
-                JOIN {0}.mcpr_pessoa ON pers_pess_dk = pess_dk
-                JOIN {0}.mcpr_tp_personagem ON pers_tppe_dk = tppe_dk
-                AND (
-                    tppe_dk <> 7 OR
-                    pess_nm_pessoa not rlike '{REGEX_EXCLUSAO_ORGAOS}'
-                )) t
-            WHERE nr_pers <= {1}) t1
+            FROM
+            PERSONAGENS_SIMILARIDADE
+            WHERE nr_pers <= {1})
         GROUP BY docu_nr_mp
-        """.format(
-            schema_exadata,
-            personagens_cutoff,
-            REGEX_EXCLUSAO_ORGAOS=REGEX_EXCLUSAO_ORGAOS,
-        )
+        """.format(schema_exadata, personagens_cutoff)
     ).createOrReplaceTempView('DOCU_PERSONAGENS')
 
     spark.sql(
@@ -152,16 +201,18 @@ if __name__ == "__main__":
     parser.add_argument('-o','--impalaPort', metavar='impalaPort', type=str, help='')
     parser.add_argument('-c','--personagensCutoff', metavar='personagensCutoff', type=int, default=2, help='')
     parser.add_argument('-p','--nbPastDays', metavar='nbPastDays', type=int, default=7, help='')
+    parser.add_argument('-l','--limiarSimilaridade', metavar='limiarSimilaridade', type=float, default=0.85, help='')
     
     args = parser.parse_args()
 
     options = {
-                    'schema_exadata': args.schemaExadata, 
+                    'schema_exadata': args.schemaExadata,
                     'schema_exadata_aux': args.schemaExadataAux,
                     'impala_host' : args.impalaHost,
                     'impala_port' : args.impalaPort,
                     'personagens_cutoff' : args.personagensCutoff,
-                    'nb_past_days': args.nbPastDays
+                    'nb_past_days': args.nbPastDays,
+                    'limiar_similaridade': args.limiarSimilaridade,
                 }
 
     execute_process(options)
