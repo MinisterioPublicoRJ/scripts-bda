@@ -1,3 +1,4 @@
+-*- coding: utf-8 -*-
 import argparse
 
 import pyspark
@@ -166,7 +167,7 @@ def execute_process(options):
         FROM FILTRADOS_IMPORTANTES_DESAMBIGUADOS
         WHERE stao_tppr_dk IN {DENUNCIA}
         GROUP BY pip_codigo
-        """.format(schema_exadata, DENUNCIA=DENUNCIA)
+        """.format(DENUNCIA=DENUNCIA)
     ).createOrReplaceTempView("DENUNCIA")
 
     spark.sql(
