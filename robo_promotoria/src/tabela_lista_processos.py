@@ -25,9 +25,6 @@ def name_similarity(name_left, name_right):
     return difflib.SequenceMatcher(None, name_left, name_right).ratio()
 
 
-spark.udf.register("name_similarity", name_similarity)
-
-
 def execute_process(options):
 
     spark = pyspark.sql.session.SparkSession \
@@ -35,6 +32,8 @@ def execute_process(options):
             .appName("criar_tabela_andamento_processos") \
             .enableHiveSupport() \
             .getOrCreate()
+
+    spark.udf.register("name_similarity", name_similarity)
 
     schema_exadata = options['schema_exadata']
     schema_exadata_aux = options['schema_exadata_aux']
