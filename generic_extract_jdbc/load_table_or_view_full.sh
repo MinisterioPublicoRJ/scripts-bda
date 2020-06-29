@@ -10,12 +10,14 @@ spark2-submit --master yarn --deploy-mode cluster \
     --executor-memory 10g \
     --conf spark.debug.maxToStringFields=2000 \
     --conf spark.executor.memoryOverhead=4096 \
-    --conf spark.network.timeout=360 \
+    --conf spark.network.timeout=900 \
     --conf spark.speculation=true \
     --conf spark.default.parallelism=150 \
     --conf spark.sql.shuffle.partitions=100 \
     --conf spark.locality.wait=0 \
     --conf spark.shuffle.io.numConnectionsPerPeer=4 \
+    --conf spark.shuffle.io.maxRetries=5 \
+    --conf spark.shuffle.io.retryWait=15s \
     --conf "spark.executor.extraJavaOptions=-XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=35" \
     --py-files src/*.py,packages/*.egg,packages/*.whl,packages/*.zip\
     src/generic_load_table.py $@
