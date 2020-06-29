@@ -9,7 +9,7 @@ spark2-submit \
     --executor-memory 2g \
     --conf spark.debug.maxToStringFields=2000 \
     --conf spark.executor.memoryOverhead=4096 \
-    --conf spark.network.timeout=360 \
+    --conf spark.network.timeout=900 \
     --conf spark.speculation=true \
     --conf spark.speculation.quantile=0.5 \
     --conf spark.shuffle.io.maxRetries=5 \

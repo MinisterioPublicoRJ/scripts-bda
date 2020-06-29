@@ -12,7 +12,7 @@ spark2-submit --master yarn --deploy-mode cluster \
     --conf spark.driver.maxResultSize=6000 \
     --conf spark.default.parallelism=30 \
     --conf spark.sql.shuffle.partitions=30 \
-    --conf spark.network.timeout=360 \
+    --conf spark.network.timeout=900 \
     --conf spark.speculation=true \
     --conf spark.shuffle.io.maxRetries=5 \
     --conf spark.shuffle.io.retryWait=15s \
