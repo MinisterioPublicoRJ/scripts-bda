@@ -2,7 +2,7 @@ import argparse
 
 import pyspark
 from pyspark.sql import Window
-from pyspark.sql.functions import max, col, count, concat_ws, collect_list
+from pyspark.sql.functions import max, col, lit, count, concat_ws, collect_list, when
 
 from utils import _update_impala_table
 
@@ -46,17 +46,30 @@ def execute_process(options):
                            6343,6340,6342,6021,6334,6331,6022,6020,6593,6332,
                            7872,6336,6333,6335,7745,6346,6345,6015,6016,6325,
                            6327,6328,6329,6330,6337,6344,6656,6671,7869,7870,
-                           6324,6322,6011,6012,6013,1092,1094,1095, 6370,6251)
+                           6324,6322,6011,6012,6013,1092,1094,1095,6251,7834,
+                           6007)
     """
     ).createOrReplaceTempView("andamentos_codigos")
 
+    # -2 indica cancelamento de indeferimento (cancela 2)
+    # -1 indica desarquivamento (cancela arquivamento - 1, 4, 5)
+    # -3 indica indeferimento (ou seja, cancela instauracao 3)
     cancela_indeferimento = spark.sql(
         """
-        select docu_dk, orgao_id, pcao_dt_andamento, -1 as tipo_andamento
+        select docu_dk, orgao_id, pcao_dt_andamento, -2 as tipo_andamento
         from andamentos where stao_tppr_dk = 6007
+        union all
+        select docu_dk, orgao_id, pcao_dt_andamento, -1 as tipo_andamento
+        from andamentos where stao_tppr_dk IN (
+            6075, 1028, 6798, 7245, 6307, 1027, 7803, 6003, 7802,
+            7801, 6004, 6696)
+        union all
+        select docu_dk, orgao_id, pcao_dt_andamento, -3 as tipo_andamento
+        from andamentos where stao_tppr_dk = 6322
         """
     )
 
+    # cancelamento de indeferimento conta como instauracao
     documento_andamentos = spark.sql(
         """
         select
@@ -70,31 +83,34 @@ def execute_process(options):
                                        6343,6340,6342,6021,6334,6331,6022,6020,
                                        6593,6332,7872,6336,6333,6335,7745,6346,
                                        6345,6015,6016,6325,6327,6328,6329,6330,
-                                       6337,6344,6656,6671,7869,7870,6324)
+                                       6337,6344,6656,6671,7869,7870,6324,7834)
              THEN 1
              WHEN stao_tppr_dk = 6322 THEN 2
-             WHEN stao_tppr_dk IN (6011, 6012, 6013, 1092, 1094, 1095) THEN 3
-             WHEN stao_tppr_dk IN (6655, 6326, 6370) THEN 4
+             WHEN stao_tppr_dk IN (6011, 6012, 6013, 1092, 1094, 1095, 6007) THEN 3
+             WHEN stao_tppr_dk IN (6655, 6326) THEN 4
              WHEN stao_tppr_dk = 6251 THEN 5 end tipo_andamento,
             pcao_dt_andamento
         from andamentos_codigos
     """
     )
-
     cancela_df = cancela_indeferimento.groupby(
         ["orgao_id", "docu_dk", "pcao_dt_andamento"]
     ).agg(max("tipo_andamento").alias("tipo_andamento"))
 
+    # Faz sentido usar o max aqui? So um andamento por data? N pode ter mais?
     documento_df = documento_andamentos.groupby(
         ["orgao_id", "docu_dk", "pcao_dt_andamento"]
     ).agg(max("tipo_andamento").alias("tipo_andamento"))
 
     final_df = (
-        documento_df.alias("d")
+        documento_df\
+        .withColumn("group_type", when(col("tipo_andamento").isin(1, 4, 5), 1).otherwise(col("tipo_andamento")))
+        .alias("d")
         .join(
             cancela_df.alias("c"),
             (col("d.docu_dk") == col("c.docu_dk"))
-            & (col("c.pcao_dt_andamento") >= col("d.pcao_dt_andamento")),
+            & (col("c.pcao_dt_andamento") >= col("d.pcao_dt_andamento"))
+            & (col("c.tipo_andamento") + col("d.group_type") == 0),
             "left",
         )
         .where("c.tipo_andamento is null")
@@ -263,7 +279,7 @@ def execute_process(options):
         .join(orgao_max_acoes, col("cod_pct") == col("acoes_cod_pct"))
         .drop("acoes_cod_pct")
     )
-    table_name = "{}.tb_radar_performance".format(
+    table_name = "{}.test_tb_radar_performance".format(
         options["schema_exadata_aux"]
     )
 
