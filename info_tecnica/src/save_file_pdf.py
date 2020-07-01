@@ -3,19 +3,7 @@ from os import path
 import happybase
 from base import spark
 import argparse
-# from decouple import config
 
-
-# url_oracle_server = config('ORACLE_SERVER')
-# user_oracle = config("ORACLE_USER")
-# passwd_oracle = config("ORACLE_PASSWORD")
-
-# dir_files_pdf = config('DIR_FILES_PDF')
-# server = config('HDFS_SERVER')
-# user_name_hdfs = config('HDFS_USER')
-
-# server_hdfs = 'http://%s:50070' % server
-# table_oracle = "GATE.GATE_INFO_TECNICA"
 
 
 """ 
