@@ -51,15 +51,15 @@ def execute_process(options):
     """
     ).createOrReplaceTempView("andamentos_codigos")
 
-    # -2 indica cancelamento de indeferimento (cancela 2)
-    # -1 indica desarquivamento (cancela arquivamento - 1, 4, 5)
+    # -1 indica cancelamento de indeferimento (cancela 1)
+    # -2 indica desarquivamento (cancela arquivamento - 2, 4, 5)
     # -3 indica indeferimento (ou seja, cancela instauracao 3)
     cancela_indeferimento = spark.sql(
         """
-        select docu_dk, orgao_id, pcao_dt_andamento, -2 as tipo_andamento
+        select docu_dk, orgao_id, pcao_dt_andamento, -1 as tipo_andamento
         from andamentos where stao_tppr_dk = 6007
         union all
-        select docu_dk, orgao_id, pcao_dt_andamento, -1 as tipo_andamento
+        select docu_dk, orgao_id, pcao_dt_andamento, -2 as tipo_andamento
         from andamentos where stao_tppr_dk IN (
             6075, 1028, 6798, 7245, 6307, 1027, 7803, 6003, 7802,
             7801, 6004, 6696)
@@ -70,6 +70,9 @@ def execute_process(options):
     )
 
     # cancelamento de indeferimento conta como instauracao
+    # tipo_andamento funciona como hierarquia para priorizar certos tipos
+    # quando ocorrem no mesmo dia:
+    # Aj.Acao (5) > TAC (4) > Instauracao (3) > Arquivamento (2) > Indeferimento (1)
     documento_andamentos = spark.sql(
         """
         select
@@ -84,8 +87,8 @@ def execute_process(options):
                                        6593,6332,7872,6336,6333,6335,7745,6346,
                                        6345,6015,6016,6325,6327,6328,6329,6330,
                                        6337,6344,6656,6671,7869,7870,6324,7834)
-             THEN 1
-             WHEN stao_tppr_dk = 6322 THEN 2
+             THEN 2
+             WHEN stao_tppr_dk = 6322 THEN 1
              WHEN stao_tppr_dk IN (6011, 6012, 6013, 1092, 1094, 1095, 6007) THEN 3
              WHEN stao_tppr_dk IN (6655, 6326) THEN 4
              WHEN stao_tppr_dk = 6251 THEN 5 end tipo_andamento,
@@ -97,14 +100,13 @@ def execute_process(options):
         ["orgao_id", "docu_dk", "pcao_dt_andamento"]
     ).agg(max("tipo_andamento").alias("tipo_andamento"))
 
-    # Faz sentido usar o max aqui? So um andamento por data? N pode ter mais?
     documento_df = documento_andamentos.groupby(
         ["orgao_id", "docu_dk", "pcao_dt_andamento"]
     ).agg(max("tipo_andamento").alias("tipo_andamento"))
 
     final_df = (
         documento_df\
-        .withColumn("group_type", when(col("tipo_andamento").isin(1, 4, 5), 1).otherwise(col("tipo_andamento")))
+        .withColumn("group_type", when(col("tipo_andamento").isin(2, 4, 5), 2).otherwise(col("tipo_andamento")))
         .alias("d")
         .join(
             cancela_df.alias("c"),
@@ -118,8 +120,8 @@ def execute_process(options):
         .pivot("d.tipo_andamento")
         .agg(count("d.tipo_andamento"))
         .na.fill(0)
-        .withColumnRenamed("1", "arquivamento")
-        .withColumnRenamed("2", "indeferimento")
+        .withColumnRenamed("2", "arquivamento")
+        .withColumnRenamed("1", "indeferimento")
         .withColumnRenamed("3", "instauracao")
         .withColumnRenamed("4", "tac")
         .withColumnRenamed("5", "acao")
