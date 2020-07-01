@@ -21,7 +21,7 @@ import argparse
 """ 
     Connection to hbase
 """
-def get_table(table_name):
+def get_table(table_name, server):
     try:
         connection = happybase.Connection(server, timeout=300000)
         return connection.table(table_name)
@@ -54,7 +54,7 @@ def execute_process(args):
     server_hdfs = 'http://%s:50070' % server
     table_oracle = "GATE.GATE_INFO_TECNICA"
 
-    row = get_table('file_info_tecnica').row('row1')
+    row = get_table('file_info_tecnica', server).row('row1')
     last_id = int(row["last_id:"])
 
 
