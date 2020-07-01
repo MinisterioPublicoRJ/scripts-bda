@@ -2,7 +2,7 @@ import argparse
 
 import pyspark
 from pyspark.sql import Window
-from pyspark.sql.functions import max, col, lit, count, concat_ws, collect_list, when
+from pyspark.sql.functions import max, col, count, concat_ws, collect_list, when
 
 from utils import _update_impala_table
 
@@ -281,7 +281,7 @@ def execute_process(options):
         .join(orgao_max_acoes, col("cod_pct") == col("acoes_cod_pct"))
         .drop("acoes_cod_pct")
     )
-    table_name = "{}.test_tb_radar_performance".format(
+    table_name = "{}.tb_radar_performance".format(
         options["schema_exadata_aux"]
     )
 
