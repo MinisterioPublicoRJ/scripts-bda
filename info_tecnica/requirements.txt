@@ -1,2 +1,3 @@
 hdfs
 argparse
+happybase==1.2.0
