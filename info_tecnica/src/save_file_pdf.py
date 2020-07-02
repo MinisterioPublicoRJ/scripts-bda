@@ -64,7 +64,7 @@ def execute_process(args):
     max_value = table.groupBy().max("ITCN_DK").first()[0]
 
     #Update value last_id in hbase table
-    get_table('file_info_tecnica').put(b'row1',{b'last_id:': str(int(max_value))})
+    get_table('file_info_tecnica', server).put(b'row1',{b'last_id:': str(int(max_value))})
 
 
 if __name__ == "__main__":
