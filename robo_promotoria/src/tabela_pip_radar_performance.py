@@ -50,35 +50,8 @@ def execute_process(options):
       acordo for de rescisao (ou desarquivamento no caso de arquivamentos) a soma fica zerada.
     """
 
-    ANDAMENTOS_FILTERED = spark.sql(
-        """
-        SELECT *
-        FROM {0}.mcpr_andamento s
-        WHERE s.year_month >= cast(date_format(date_sub(current_timestamp(), {1}), 'yyyyMM') as INT)
-        and pcao_dt_andamento > cast(date_sub(current_timestamp(), {1}) as timestamp)
-        and pcao_dt_andamento <= current_timestamp()
-    """.format(
-            schema_exadata, days_ago
-        )
-    )
-    ANDAMENTOS_FILTERED.createOrReplaceTempView("ANDAMENTOS_FILTERED")
-    spark.catalog.cacheTable("ANDAMENTOS_FILTERED")
-
     spark.sql("SELECT pip_codigo, aisp_codigo, aisp_nome FROM {0}.tb_pip_aisp".format(schema_exadata_aux)).createOrReplaceTempView("TABELA_PIP_AISP")
     spark.catalog.cacheTable("TABELA_PIP_AISP")
-
-    spark.sql("""
-	SELECT stao_tppr_dk, stao_pcao_dk
-        FROM {0}.mcpr_sub_andamento
-	WHERE stao_tppr_dk IN (6648,6649,6650,6651,6652,6653,6654,6038,6039,6040,6041,6042,6043,
-	7815,7816,6620,6257,6258,7878,7877,6367,6368,6369,6370,1208,1030,
-	7827,7914,7883,7868,6361,6362,6391,7922,7928,7915,7917,7920,6549,
-	6593,6591,6343,6338,6339,6340,6341,6342,7871,7897,7912,6346,6350,
-	6359,6392,6017,6018,6020,7745,6075,1028,6798,7245,6307,1027,7803,
-	6003,7802,7801,6252,6253,1201,1202,6254)
-	""".format(schema_exadata)).createOrReplaceTempView("SUB_ANDAMENTOS")
-
-    spark.catalog.cacheTable("SUB_ANDAMENTOS")
 
     spark.sql(
         """
@@ -92,7 +65,7 @@ def execute_process(options):
         vist_dt_fechamento_vista
         FROM {0}.mcpr_documento
         JOIN {0}.mcpr_vista ON vist_docu_dk = docu_dk
-        JOIN TABELA_PIP_AISP TPA ON TPA.pip_codigo = vist_orgi_orga_dk
+        JOIN (SELECT DISTINCT pip_codigo FROM TABELA_PIP_AISP) TPA ON TPA.pip_codigo = vist_orgi_orga_dk
         WHERE docu_cldc_dk IN (3, 494, 590) -- PIC e Inqueritos
         AND vist_dt_abertura_vista >= cast(date_sub(current_timestamp(), {2}) as timestamp)
 	AND docu_tpst_dk != 11 -- Documento nao cancelado
@@ -125,7 +98,8 @@ def execute_process(options):
             FROM VISTAS_FILTRADAS_SEM_ANDAMENTO FSA
         JOIN {0}.mcpr_andamento ANDAMENTO ON pcao_vist_dk = vist_dk
         JOIN {0}.mcpr_sub_andamento SUBANDAMENTO ON stao_pcao_dk = pcao_dk
-    WHERE pcao_dt_cancelamento IS NULL -- Andamento nao cancelado
+        WHERE pcao_dt_cancelamento IS NULL -- Andamento nao cancelado
+        AND pcao_dt_andamento > cast(date_sub(current_timestamp(), {1}) as timestamp)
         AND stao_tppr_dk IN {ANDAMENTOS_IMPORTANTES}) --cautelares part 2/2
         SELECT TA.* FROM ANDAMENTOS_IMPORTANTES TA
         JOIN (
@@ -135,231 +109,47 @@ def execute_process(options):
         ON TA.pip_codigo = SUB_TA.pip_codigo AND TA.docu_dk = SUB_TA.docu_dk
         AND TA.pcao_dt_andamento = SUB_TA.ultimo_andamento
         AND TA.peso_prioridade = SUB_TA.maxima_prioridade
+        AND stao_tppr_dk IN {FINALIZACOES}
         """.format(
             schema_exadata,
+            days_ago,
             DENUNCIA=DENUNCIA,
             ARQUIVAMENTO=ARQUIVAMENTO,
             DESARQUIVAMENTO=DESARQUIVAMENTO,
             CAUTELAR=CAUTELAR,
             ACORDO=ACORDO,
             DESACORDO=DESACORDO,
-            ANDAMENTOS_IMPORTANTES=ANDAMENTOS_IMPORTANTES
+            ANDAMENTOS_IMPORTANTES=ANDAMENTOS_IMPORTANTES,
+            FINALIZACOES=DENUNCIA+ARQUIVAMENTO+ACORDO+CAUTELAR
         )
     ).createOrReplaceTempView("FILTRADOS_IMPORTANTES_DESAMBIGUADOS")
 
-    # Numero de acordos
-    DOC_ACORDOS = spark.sql(
-        """
-        SELECT
-            A.docu_dk,
-            B.vist_orgi_orga_dk,
-            C.pcao_dt_andamento,
-            D.stao_tppr_dk
-        FROM {0}.mcpr_documento A
-        JOIN {0}.mcpr_vista B on B.vist_docu_dk = A.DOCU_DK
-        JOIN ANDAMENTOS_FILTERED C
-        ON C.pcao_vist_dk = B.vist_dk
-        JOIN (
-            SELECT stao_tppr_dk, stao_pcao_dk
-            FROM SUB_ANDAMENTOS
-	    WHERE stao_tppr_dk IN (7914,7928,7883,7827,7920) --7920 rescisao do acordo
-            ) D
-            ON D.stao_pcao_dk = C.pcao_dk
-        INNER JOIN (SELECT DISTINCT pip_codigo FROM TABELA_PIP_AISP) p
-            ON p.pip_codigo = B.vist_orgi_orga_dk
-        WHERE docu_cldc_dk IN (3, 494, 590)
-        AND docu_tpst_dk != 11
-    """.format(
-            schema_exadata, schema_exadata_aux
-        )
-    )
-    DOC_ACORDOS.createOrReplaceTempView("DOC_ACORDOS")
-    spark.catalog.cacheTable("DOC_ACORDOS")
-
-    MAX_DT_ACORD = spark.sql(
-        """
-        SELECT
-            docu_dk,
-            MAX(pcao_dt_andamento) AS max_dt_acordo
-        FROM DOC_ACORDOS
-        GROUP BY docu_dk
-    """
-    )
-    MAX_DT_ACORD.createOrReplaceTempView("MAX_DT_ACORD")
-
-    ACORDOS_POR_DOC = spark.sql(
-        """
-        SELECT
-            docu_dk,
-            vist_orgi_orga_dk,
-            MAX(acordo) as acordos
-        FROM (
-            SELECT
-            CASE WHEN pcao_dt_andamento >= cast(date_sub(current_timestamp(), {0}) as timestamp)
-			AND stao_tppr_dk IN (7914,7928,7883,7827)
-                THEN 1 ELSE 0 END as acordo,
-            A.docu_dk, A.vist_orgi_orga_dk, A.pcao_dt_andamento, A.stao_tppr_dk
-            FROM DOC_ACORDOS A
-            JOIN MAX_DT_ACORD MDT ON MDT.docu_dk = A.docu_dk AND MDT.max_dt_acordo = A.pcao_dt_andamento) t
-        GROUP BY docu_dk, vist_orgi_orga_dk
-    """.format(
-            days_ago
-        )
-    )
-    ACORDOS_POR_DOC.createOrReplaceTempView("ACORDOS_POR_DOC")
     NR_ACORDOS = spark.sql(
         """
         SELECT
-            vist_orgi_orga_dk as orgao_id,
-            SUM(acordos) as nr_acordos
-        FROM ACORDOS_POR_DOC
-        GROUP BY vist_orgi_orga_dk
+            pip_codigo as orgao_id,
+            COUNT(DISTINCT docu_dk) as nr_acordos_n_persecucao
+        FROM FILTRADOS_IMPORTANTES_DESAMBIGUADOS
+        WHERE stao_tppr_dk IN {ACORDO}
+        GROUP BY pip_codigo
     """.format(
-            schema_exadata
+            schema_exadata,
+            ACORDO=ACORDO,
         )
     )
     NR_ACORDOS.createOrReplaceTempView("NR_ACORDOS")
 
-    # Numero de acordos de nao persecucao
-    DOC_ACORDOS_N_PERSECUCAO = spark.sql(
-        """
-        SELECT
-            A.docu_dk,
-            B.vist_orgi_orga_dk,
-            C.pcao_dt_andamento,
-            D.stao_tppr_dk
-        FROM {0}.mcpr_documento A
-        JOIN {0}.mcpr_vista B on B.vist_docu_dk = A.DOCU_DK
-        JOIN ANDAMENTOS_FILTERED C
-        ON C.pcao_vist_dk = B.vist_dk
-        JOIN (
-            SELECT stao_tppr_dk, stao_pcao_dk
-            FROM SUB_ANDAMENTOS
-            WHERE stao_tppr_dk IN (7914,7928,7883,7827,7920) --7920 rescisao do acordo
-            ) D
-            ON D.stao_pcao_dk = C.pcao_dk
-        INNER JOIN (SELECT DISTINCT pip_codigo FROM TABELA_PIP_AISP) p
-            ON p.pip_codigo = B.vist_orgi_orga_dk
-        WHERE docu_cldc_dk IN (3, 494, 590)
-        AND docu_tpst_dk != 11
-    """.format(
-            schema_exadata, schema_exadata_aux
-        )
-    )
-    DOC_ACORDOS_N_PERSECUCAO.createOrReplaceTempView("DOC_ACORDOS_N_PERSECUCAO")
-    MAX_DT_ACORD_N_PERSECUCAO = spark.sql(
-        """
-        SELECT
-            docu_dk,
-            MAX(pcao_dt_andamento) AS max_dt_acordo
-        FROM DOC_ACORDOS_N_PERSECUCAO
-        GROUP BY docu_dk
-    """
-    )
-    MAX_DT_ACORD_N_PERSECUCAO.createOrReplaceTempView("MAX_DT_ACORD_N_PERSECUCAO")
-    ACORDOS_POR_DOC_N_PERSECUCAO = spark.sql(
-        """
-        SELECT
-            docu_dk,
-            vist_orgi_orga_dk,
-            MAX(acordo_n_persecucao) as acordos_n_persecucao
-        FROM (
-            SELECT
-            CASE WHEN pcao_dt_andamento > cast(date_sub(current_timestamp(), {0}) as timestamp)
-			AND stao_tppr_dk IN (7914,7928,7883,7827)	
-                THEN 1 ELSE 0 END as acordo_n_persecucao,
-            A.docu_dk, A.vist_orgi_orga_dk, A.pcao_dt_andamento, A.stao_tppr_dk
-            FROM DOC_ACORDOS_N_PERSECUCAO A
-            JOIN MAX_DT_ACORD_N_PERSECUCAO MDT ON MDT.docu_dk = A.docu_dk AND MDT.max_dt_acordo = A.pcao_dt_andamento) t
-        GROUP BY docu_dk, vist_orgi_orga_dk
-    """.format(
-            days_ago
-        )
-    )
-    ACORDOS_POR_DOC_N_PERSECUCAO.createOrReplaceTempView(
-        "ACORDOS_POR_DOC_N_PERSECUCAO"
-    )
-    NR_ACORDOS_N_PERSECUCAO = spark.sql(
-        """
-        SELECT
-            vist_orgi_orga_dk as orgao_id,
-            SUM(acordos_n_persecucao) as nr_acordos_n_persecucao
-        FROM ACORDOS_POR_DOC_N_PERSECUCAO
-        GROUP BY vist_orgi_orga_dk
-    """.format(
-            schema_exadata
-        )
-    )
-    NR_ACORDOS_N_PERSECUCAO.createOrReplaceTempView("NR_ACORDOS_N_PERSECUCAO")
-
-    # Numero de Arquivamentos
-    DOC_ARQUIVAMENTOS = spark.sql(
-        """
-        SELECT
-            A.docu_dk,
-            B.vist_orgi_orga_dk,
-            C.pcao_dt_andamento,
-            D.stao_tppr_dk
-        FROM {0}.mcpr_documento A
-        JOIN {0}.mcpr_vista B on B.vist_docu_dk = A.DOCU_DK
-        JOIN ANDAMENTOS_FILTERED C
-        ON C.pcao_vist_dk = B.vist_dk
-        JOIN (
-            SELECT stao_tppr_dk, stao_pcao_dk
-            FROM SUB_ANDAMENTOS
-            WHERE stao_tppr_dk IN (
-                6549,6593,6591,6343,6338,6339,6340,6341,6342,7871,7897,7912,6346,6350,6359,6392,6017,6018,6020,7745, --arquivamentos
-                6075,1028,6798,7245,6307,1027,7803,6003,7802,7801) --desarquivamentos
-            ) D
-            ON D.stao_pcao_dk = C.pcao_dk
-        INNER JOIN (SELECT DISTINCT pip_codigo FROM TABELA_PIP_AISP) p
-            ON p.pip_codigo = B.vist_orgi_orga_dk
-        WHERE docu_cldc_dk IN (3, 494, 590)
-        AND docu_tpst_dk != 11
-    """.format(
-            schema_exadata, schema_exadata_aux
-        )
-    )
-    DOC_ARQUIVAMENTOS.createOrReplaceTempView("DOC_ARQUIVAMENTOS")
-    MAX_DT_ARQUIV = spark.sql(
-        """
-        SELECT
-            docu_dk,
-            MAX(pcao_dt_andamento) AS max_dt_arquivamento
-        FROM DOC_ARQUIVAMENTOS
-        GROUP BY docu_dk
-    """
-    )
-    MAX_DT_ARQUIV.createOrReplaceTempView("MAX_DT_ARQUIV")
-    ARQUIVAMENTOS_POR_DOC = spark.sql(
-        """
-        SELECT
-            docu_dk,
-            vist_orgi_orga_dk,
-            MAX(arquivamento) as arquivamentos
-        FROM (
-            SELECT
-            CASE WHEN pcao_dt_andamento > cast(date_sub(current_timestamp(), {0}) as timestamp)
-                      AND stao_tppr_dk IN (6549,6593,6591,6343,6338,6339,6340,6341,6342,7871,7897,7912,6346,6350,6359,6392,6017,6018,6020,7745)
-                THEN 1 ELSE 0 END as arquivamento,
-            A.docu_dk, A.vist_orgi_orga_dk, A.pcao_dt_andamento, A.stao_tppr_dk
-            FROM DOC_ARQUIVAMENTOS A
-            JOIN MAX_DT_ARQUIV MDT ON MDT.docu_dk = A.docu_dk AND MDT.max_dt_arquivamento = A.pcao_dt_andamento) t
-        GROUP BY docu_dk, vist_orgi_orga_dk
-    """.format(
-            days_ago
-        )
-    )
-    ARQUIVAMENTOS_POR_DOC.createOrReplaceTempView("ARQUIVAMENTOS_POR_DOC")
     NR_ARQUIVAMENTOS = spark.sql(
         """
         SELECT
-            vist_orgi_orga_dk as orgao_id,
-            SUM(arquivamentos) as nr_arquivamentos
-        FROM ARQUIVAMENTOS_POR_DOC
-        GROUP BY vist_orgi_orga_dk
+            pip_codigo as orgao_id,
+            COUNT(DISTINCT docu_dk) as nr_arquivamentos
+        FROM FILTRADOS_IMPORTANTES_DESAMBIGUADOS
+        WHERE stao_tppr_dk IN {ARQUIVAMENTO}
+        GROUP BY pip_codigo
     """.format(
-            schema_exadata
+            schema_exadata,
+            ARQUIVAMENTO=ARQUIVAMENTO
         )
     )
     NR_ARQUIVAMENTOS.createOrReplaceTempView("NR_ARQUIVAMENTOS")
@@ -368,30 +158,14 @@ def execute_process(options):
     NR_CAUTELARES = spark.sql(
         """
         SELECT
-            orgao_id,
-            SUM(cautelar) as nr_cautelares
-        FROM (
-            SELECT
-                CASE WHEN pcao_dt_andamento > cast(date_sub(current_timestamp(), {2}) as timestamp) THEN 1 ELSE 0 END as cautelar,
-                vist_orgi_orga_dk as orgao_id
-            FROM {0}.mcpr_documento A
-            JOIN {0}.mcpr_vista B on B.vist_docu_dk = A.DOCU_DK
-            JOIN ANDAMENTOS_FILTERED C
-            ON C.pcao_vist_dk = B.vist_dk
-            JOIN (
-                SELECT *
-                FROM {0}.mcpr_sub_andamento
-                WHERE stao_tppr_dk IN (
-                    6648,6649,6650,6651,6652,6653,6654,6038,6039,6040,6041,6042,6043,7815,7816,6620,6257,6258,7878,7877,6367,6368,6369,6370,1208,1030) --Cautelares
-                    ) D
-            ON D.stao_pcao_dk = C.pcao_dk
-            WHERE docu_cldc_dk IN (3, 494, 590)
-            AND docu_tpst_dk != 11
-        ) t
-        INNER JOIN (SELECT DISTINCT pip_codigo FROM TABELA_PIP_AISP) p ON p.pip_codigo = t.orgao_id
-        GROUP BY orgao_id
+            pip_codigo as orgao_id,
+            COUNT(DISTINCT docu_dk) as nr_cautelares
+        FROM FILTRADOS_IMPORTANTES_DESAMBIGUADOS
+        WHERE stao_tppr_dk IN {CAUTELAR}
+        GROUP BY pip_codigo
     """.format(
-            schema_exadata, schema_exadata_aux, days_ago
+            schema_exadata,
+            CAUTELAR=CAUTELAR
         )
     )
     NR_CAUTELARES.createOrReplaceTempView("NR_CAUTELARES")
@@ -399,63 +173,29 @@ def execute_process(options):
     # Numero de denuncias
     NR_DENUNCIAS = spark.sql(
         """
-        SELECT 
-            orgao_id,
-            SUM(denuncia) as nr_denuncias
-        FROM (
-            SELECT 
-                CASE WHEN pcao_dt_andamento > cast(date_sub(current_timestamp(), {2}) as timestamp) THEN 1 ELSE 0 END as denuncia,
-                vist_orgi_orga_dk as orgao_id
-            FROM {0}.mcpr_documento A
-            JOIN {0}.mcpr_vista B on B.vist_docu_dk = A.DOCU_DK
-            JOIN ANDAMENTOS_FILTERED C 
-            ON C.pcao_vist_dk = B.vist_dk 
-            JOIN (
-                SELECT stao_tppr_dk, stao_pcao_dk
-                FROM SUB_ANDAMENTOS
-                WHERE stao_tppr_dk IN (6252,6253,1201,1202,6254) --Denuncias
-                    ) D
-            ON D.stao_pcao_dk = C.pcao_dk
-            WHERE docu_cldc_dk IN (3, 494, 590)
-            AND docu_tpst_dk != 11
-        ) t
-        INNER JOIN (SELECT DISTINCT pip_codigo FROM TABELA_PIP_AISP) p ON p.pip_codigo = t.orgao_id
-        GROUP BY orgao_id
+        SELECT
+            pip_codigo as orgao_id,
+            COUNT(DISTINCT docu_dk) as nr_denuncias
+        FROM FILTRADOS_IMPORTANTES_DESAMBIGUADOS
+        WHERE stao_tppr_dk IN {DENUNCIA}
+        GROUP BY pip_codigo
     """.format(
-            schema_exadata, schema_exadata_aux, days_ago
+            schema_exadata,
+            DENUNCIA=DENUNCIA
         )
     )
     NR_DENUNCIAS.createOrReplaceTempView("NR_DENUNCIAS")
 
-    spark.sql(
-        """
-        SELECT
-            vist_orgi_orga_dk as orgao_id,
-            vist_dk,
-            docu_dk,
-            vist_dt_abertura_vista
-        FROM {0}.mcpr_documento
-        JOIN {0}.mcpr_vista ON vist_docu_dk = docu_dk
-        INNER JOIN (SELECT DISTINCT pip_codigo FROM TABELA_PIP_AISP) p 
-            ON p.pip_codigo = vist_orgi_orga_dk
-        WHERE docu_cldc_dk IN (3, 494, 590) -- PIC e Inqueritos
-        AND vist_dt_abertura_vista >= cast(date_sub(current_timestamp(), {2}) as timestamp)
-        AND docu_tpst_dk != 11
-    """.format(
-            schema_exadata, schema_exadata_aux, days_ago
-        )
-    ).createOrReplaceTempView("VISTAS_ABERTAS")
- 
    # A baixa a DP vai ser o numero de vistas abertas subtraída do
    # total de ANDAMENTOS IMPORTANTES desambiguados(sem repetição de andameto por mesma vista)
 
     spark.sql("""
-	SELECT orgao_id,
+	SELECT VA.pip_codigo as orgao_id,
 	COUNT(DISTINCT VA.vist_dk) as nr_baixa_dp
-        FROM VISTAS_ABERTAS VA
+        FROM VISTAS_FILTRADAS_SEM_ANDAMENTO VA
         LEFT JOIN FILTRADOS_IMPORTANTES_DESAMBIGUADOS FID ON VA.vist_dk = FID.vist_dk
         WHERE stao_tppr_dk IS NULL -- vista sem ANDAMENTOS_IMPORTANTES
-	GROUP BY orgao_id
+	GROUP BY VA.pip_codigo
     """).createOrReplaceTempView("NR_BAIXA_DP")
 
     metricas = spark.sql(
@@ -494,8 +234,7 @@ def execute_process(options):
             LEFT JOIN NR_CAUTELARES B ON p.pip_codigo= B.orgao_id
             LEFT JOIN NR_ACORDOS C ON p.pip_codigo = C.orgao_id
             LEFT JOIN NR_ARQUIVAMENTOS D ON p.pip_codigo = D.orgao_id
-            LEFT JOIN NR_BAIXA_DP E ON p.pip_codigo = E.orgao_id
-            LEFT JOIN NR_ACORDOS_N_PERSECUCAO F ON p.pip_codigo = F.orgao_id) t
+            LEFT JOIN NR_BAIXA_DP E ON p.pip_codigo = E.orgao_id) t
 	    GROUP BY orgao_id, nm_orgao
     """.format(schema_exadata, schema_exadata_aux))
     metricas.createOrReplaceTempView("metricas")
