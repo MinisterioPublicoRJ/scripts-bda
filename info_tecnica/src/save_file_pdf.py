@@ -1,5 +1,6 @@
+import os
+os.environ['PYTHON_EGG_CACHE'] = "/tmp"
 from hdfs import InsecureClient
-from os import path
 import happybase
 from base import spark
 import argparse
@@ -26,7 +27,7 @@ def save_file_hdfs(rdd, dir_files_pdf, server_hdfs, user_name_hdfs):
     n_info_tec = rdd[1].replace("/", "-")
     n_file = rdd[2]
     hdfsclient = InsecureClient(server_hdfs, user=user_name_hdfs) 
-    hdfsclient.write(path.join(dir_files_pdf, '{}_{}.pdf'.format(n_file_id, n_info_tec)), n_file, overwrite=True)
+    hdfsclient.write(os.path.join(dir_files_pdf, '{}_{}.pdf'.format(n_file_id, n_info_tec)), n_file, overwrite=True)
     return rdd
 
 def execute_process(args):
