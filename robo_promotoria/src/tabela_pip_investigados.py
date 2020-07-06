@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import os
 
 import pyspark
 from utils import _update_impala_table
@@ -196,6 +197,7 @@ def execute_process(options):
 
 
 if __name__ == "__main__":
+    os.environ['PYTHON_EGG_CACHE'] = "/tmp"
 
     parser = argparse.ArgumentParser(description="Create table tabela pip_investigados")
     parser.add_argument('-e','--schemaExadata', metavar='schemaExadata', type=str, help='')
