@@ -6,6 +6,22 @@ from pyspark.sql.functions import year
 from utils import _update_impala_table, send_log, ERROR, SUCCESS, SUCCESS_MESSAGE, ERROR_MESSAGE
 
 
+def export_to_postgres(df, args, tablePostgres):
+
+    properties = {
+        "user": args.jdbcUser,
+        "password": args.jdbcPassword, 
+        "driver": "org.postgresql.Driver",
+        }
+
+    df.write.jdbc(
+        "jdbc:postgresql://{jdbcServer}:5432/{database}".format(
+            jdbcServer=args.jdbcServer, 
+            database=args.jdbcDatabase),
+        tablePostgres,
+        properties=properties, 
+        mode="append")
+
 def execute_process(args):
 
     app_name = "criar_tabela_tce"
@@ -26,23 +42,26 @@ def execute_process(args):
 
             actual_directory = args.pathDirectoryBase + directory
 
-            schema_tce = args.schemaTce
-
             df = spark.read.text(actual_directory)
 
             if not df.rdd.isEmpty():
 
                 df = spark.read.load(actual_directory, format="csv", multiLine=True,
-			sep=args.delimiter, inferSchema=True, header=True)
+			                        sep=args.delimiter, inferSchema=True, header=True)
                 
                 columns = [column_name.replace(" ", "_") for column_name in df.columns]
+                
                 df = df.toDF(*columns)
                     
-                table = "{}.{}".format(schema_tce, directory)
+                table_hive = "{}.{}".format(args.schemaHive, directory)
                 
-                df.write.mode("overwrite").format("parquet").saveAsTable(table)
+                table_postgres = "{}.{}".format(args.schemaPostgres, directory)
 
-                _update_impala_table(table, args.impalaHost, args.impalaPort)
+                df.write.mode("overwrite").format("parquet").saveAsTable(table_hive)
+
+                _update_impala_table(table_hive, args.impalaHost, args.impalaPort)
+
+                export_to_postgres(df, args, table_postgres)
 
                 send_log(SUCCESS_MESSAGE.format(directory), app_name, SUCCESS, args.solrServer)
 
@@ -50,12 +69,11 @@ def execute_process(args):
             send_log(ERROR_MESSAGE.format(directory, message), app_name, ERROR, args.solrServer)
 
 
-
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="criar tabela tce")
-    parser.add_argument('-st', '--schemaTce',
-                        metavar='schemaTce', type=str, help='')
+    parser.add_argument('-sh', '--schemaHive',
+                        metavar='schemaHive', type=str, help='')
     parser.add_argument('-wh', '--webHdfs',
                         metavar='webHdfs', type=str, help='')
     parser.add_argument('-u', '--userWebHdfs',
@@ -70,7 +88,17 @@ if __name__ == "__main__":
                         metavar='impalaPort', type=str, help='')
     parser.add_argument('-sl', '--solrServer',
                         metavar='solrServer', type=str, help='')
+    parser.add_argument('-ju', '--jdbcUser',
+                        metavar='jdbcUser', type=str, help='')
+    parser.add_argument('-jp', '--jdbcPassword',
+                        metavar='jdbcPassword', type=str, help='')
+    parser.add_argument('-js', '--jdbcServer',
+                        metavar='jdbcServer', type=str, help='')
+    parser.add_argument('-jd', '--jdbcDatabase',
+                        metavar='jdbcDatabase', type=str, help='')
+    parser.add_argument('-sp', '--schemaPostgres',
+                        metavar='jdbcPassword', type=str, help='')
+
     args = parser.parse_args()
 
     execute_process(args)
-
