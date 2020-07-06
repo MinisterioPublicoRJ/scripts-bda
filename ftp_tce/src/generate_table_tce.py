@@ -97,7 +97,7 @@ if __name__ == "__main__":
     parser.add_argument('-jd', '--jdbcDatabase',
                         metavar='jdbcDatabase', type=str, help='')
     parser.add_argument('-sp', '--schemaPostgres',
-                        metavar='jdbcPassword', type=str, help='')
+                        metavar='schemaPostgres', type=str, help='')
 
     args = parser.parse_args()
 
