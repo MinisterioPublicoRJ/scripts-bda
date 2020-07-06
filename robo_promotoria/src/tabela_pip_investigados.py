@@ -119,8 +119,8 @@ def execute_process(options):
             FROM (
                 SELECT representante_dk, COUNT(1) as nr_investigacoes
                 FROM {1}.tb_pip_investigados_procedimentos
-                JOIN {0}.mcpr_pessoa ON pess_dk = representante_dk
-                WHERE pess_nm_pessoa NOT REGEXP 'IDENTIFICADO|IGNORAD[OA]|P.BLICO|JUSTI.A P.BLICA'
+                JOIN {0}.mcpr_pessoa P ON pess_dk = representante_dk
+                WHERE P.pess_nm_pessoa NOT REGEXP 'IDENTIFICADO|IGNORAD[OA]|P.BLICO|JUSTI.A P.BLICA'
                 GROUP BY representante_dk
             ) c
             JOIN (
