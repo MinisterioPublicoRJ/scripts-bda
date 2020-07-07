@@ -1,7 +1,25 @@
+import difflib
+import re
+import unicodedata
+
 import pyspark
 from utils import _update_impala_table
-from happybase import Connection
 import argparse
+
+
+def name_similarity(name_left, name_right):
+    if not name_left or not name_right:
+        return 0
+
+    def remove_accents_n(value):
+        text = unicodedata.normalize('NFD', value)
+        text = text.encode('ascii', 'ignore')
+        text = text.decode("utf-8")
+        return text
+
+    name_left = remove_accents_n(re.sub(r"\s+", "", name_left or ""))
+    name_right = remove_accents_n(re.sub(r"\s+", "", name_right or ""))
+    return difflib.SequenceMatcher(None, name_left, name_right).ratio()
 
 
 def execute_process(options):
@@ -12,8 +30,11 @@ def execute_process(options):
             .enableHiveSupport() \
             .getOrCreate()
 
+    spark.udf.register("name_similarity", name_similarity)
+
     schema_exadata = options['schema_exadata']
     schema_exadata_aux = options['schema_exadata_aux']
+    LIMIAR_SIMILARIDADE = options["limiar_similaridade"]
 
     PERS_DOCS_PIPS = spark.sql("""
         SELECT DISTINCT pers_pess_dk
@@ -57,16 +78,16 @@ def execute_process(options):
             UNION ALL
             SELECT A.pesf_pess_dk as pess_dk, B.pesf_pess_dk as representante_dk
             FROM INVESTIGADOS_FISICOS_PIP_TOTAL A
-            JOIN INVESTIGADOS_FISICOS_PIP_TOTAL B ON A.pesf_nm_pessoa_fisica = B.pesf_nm_pessoa_fisica
-                AND A.pesf_nm_mae = B.pesf_nm_mae
+            JOIN INVESTIGADOS_FISICOS_PIP_TOTAL B ON name_similarity(A.pesf_nm_pessoa_fisica, B.pesf_nm_pessoa_fisica) > {LIMIAR_SIMILARIDADE}
+                AND name_similarity(A.pesf_nm_mae, B.pesf_nm_mae) > {LIMIAR_SIMILARIDADE}
             UNION ALL
             SELECT A.pesf_pess_dk as pess_dk, B.pesf_pess_dk as representante_dk
             FROM INVESTIGADOS_FISICOS_PIP_TOTAL A
-            JOIN INVESTIGADOS_FISICOS_PIP_TOTAL B ON A.pesf_nm_pessoa_fisica = B.pesf_nm_pessoa_fisica
+            JOIN INVESTIGADOS_FISICOS_PIP_TOTAL B ON name_similarity(A.pesf_nm_pessoa_fisica, B.pesf_nm_pessoa_fisica) > {LIMIAR_SIMILARIDADE}
                 AND A.pesf_dt_nasc = B.pesf_dt_nasc
         ) t
         GROUP BY t.pess_dk
-    """)
+    """.format(LIMIAR_SIMILARIDADE=LIMIAR_SIMILARIDADE))
     pessoas_juridicas_representativas_1 = spark.sql("""
         SELECT t.pess_dk, min(t.representante_dk) as representante_dk
         FROM (
@@ -114,13 +135,15 @@ if __name__ == "__main__":
     parser.add_argument('-a','--schemaExadataAux', metavar='schemaExadataAux', type=str, help='')
     parser.add_argument('-i','--impalaHost', metavar='impalaHost', type=str, help='')
     parser.add_argument('-o','--impalaPort', metavar='impalaPort', type=str, help='')
+    parser.add_argument('-l','--limiarSimilaridade', metavar='limiarSimilaridade', type=float, default=0.85, help='')
     args = parser.parse_args()
 
     options = {
                     'schema_exadata': args.schemaExadata, 
                     'schema_exadata_aux': args.schemaExadataAux,
                     'impala_host' : args.impalaHost,
-                    'impala_port' : args.impalaPort
+                    'impala_port' : args.impalaPort,
+                    'limiar_similaridade': args.limiarSimilaridade,
                 }
 
     execute_process(options)
