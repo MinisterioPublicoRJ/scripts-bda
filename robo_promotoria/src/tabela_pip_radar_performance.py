@@ -67,11 +67,8 @@ def execute_process(options):
         JOIN {0}.mcpr_vista ON vist_docu_dk = docu_dk
         JOIN (SELECT DISTINCT pip_codigo FROM TABELA_PIP_AISP) TPA ON TPA.pip_codigo = vist_orgi_orga_dk
         WHERE docu_cldc_dk IN (3, 494, 590) -- PIC e Inqueritos
-        AND vist_dt_abertura_vista >= cast(date_sub(current_timestamp(), {2}) as timestamp)
 	AND docu_tpst_dk != 11 -- Documento nao cancelado
-    """.format(
-            schema_exadata, schema_exadata_aux, days_ago
-    )).createOrReplaceTempView(
+    """.format(schema_exadata)).createOrReplaceTempView(
             "VISTAS_FILTRADAS_SEM_ANDAMENTO"
     )
     spark.sql(
@@ -195,8 +192,9 @@ def execute_process(options):
         FROM VISTAS_FILTRADAS_SEM_ANDAMENTO VA
         LEFT JOIN FILTRADOS_IMPORTANTES_DESAMBIGUADOS FID ON VA.vist_dk = FID.vist_dk
         WHERE stao_tppr_dk IS NULL -- vista sem ANDAMENTOS_IMPORTANTES
+        AND vist_dt_abertura_vista >= cast(date_sub(current_timestamp(), {0}) as timestamp)
 	GROUP BY VA.pip_codigo
-    """).createOrReplaceTempView("NR_BAIXA_DP")
+    """.format(days_ago)).createOrReplaceTempView("NR_BAIXA_DP")
 
     metricas = spark.sql(
         """
