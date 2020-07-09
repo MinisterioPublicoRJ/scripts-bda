@@ -2,9 +2,15 @@ import argparse
 
 import pyspark
 from hdfs import InsecureClient
-from pyspark.sql.functions import year
+from pyspark.sql.functions import year, col, regexp_replace
 from utils import _update_impala_table, send_log, ERROR, SUCCESS, SUCCESS_MESSAGE, ERROR_MESSAGE
 
+
+def check_type(df, (col_name, dtype)):
+    
+    df = df.withColumn(col_name, regexp_replace(col(col_name),'\r','').cast(dtype))
+
+    return df
 
 def export_to_postgres(df, args, tablePostgres):
 
@@ -20,7 +26,7 @@ def export_to_postgres(df, args, tablePostgres):
             database=args.jdbcDatabase),
         tablePostgres,
         properties=properties, 
-        mode="append")
+        mode="overwrite")
 
 def execute_process(args):
 
@@ -49,9 +55,11 @@ def execute_process(args):
                 df = spark.read.load(actual_directory, format="csv", multiLine=True,
 			                        sep=args.delimiter, inferSchema=True, header=True)
                 
-                columns = [column_name.replace(" ", "_") for column_name in df.columns]
+                columns = [column_name.replace(" ", "_").replace("\r", "") for column_name in df.columns]
                 
                 df = df.toDF(*columns)
+
+                df = reduce(check_type, df.dtypes, df)
                     
                 table_hive = "{}.{}".format(args.schemaHive, directory)
                 
