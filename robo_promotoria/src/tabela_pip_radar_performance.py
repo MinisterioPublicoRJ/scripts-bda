@@ -193,7 +193,7 @@ def execute_process(options):
         FROM VISTAS_FILTRADAS_SEM_ANDAMENTO VA
         LEFT JOIN FILTRADOS_IMPORTANTES_DESAMBIGUADOS FID ON VA.vist_dk = FID.vist_dk
         WHERE stao_tppr_dk IS NULL -- vista sem ANDAMENTOS_IMPORTANTES
-        AND vist_dt_abertura_vista >= cast(date_sub(current_timestamp(), {0}) as timestamp)
+        AND VA.vist_dt_abertura_vista >= cast(date_sub(current_timestamp(), {0}) as timestamp)
 	GROUP BY VA.pip_codigo
     """.format(days_ago)).createOrReplaceTempView("NR_BAIXA_DP")
 
