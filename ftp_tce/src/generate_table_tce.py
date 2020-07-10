@@ -32,8 +32,8 @@ def execute_process(args):
 
             if not df.rdd.isEmpty():
 
-                df = spark.read.option("encoding", "ISO-8859-1").load(actual_directory, format="csv",
-                                    sep=args.delimiter, inferSchema=True, header=True)
+                df = spark.read.load(actual_directory, format="csv", multiLine=True,
+			sep=args.delimiter, inferSchema=True, header=True)
                 
                 columns = [column_name.replace(" ", "_") for column_name in df.columns]
                 df = df.toDF(*columns)
