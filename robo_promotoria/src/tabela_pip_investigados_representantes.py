@@ -8,7 +8,12 @@ import argparse
 
 
 def name_similarity(name_left, name_right):
-    if not name_left or not name_right:
+    invalid_regex = r"DECLARAD[OA]|IGNORAD[OA]|IDENTIFICAD[OA]"
+
+    if (not name_left or not name_right 
+        or re.search(invalid_regex, name_left.upper()) 
+        or re.search(invalid_regex, name_right.upper())
+        ):
         return 0
 
     def remove_accents_n(value):
@@ -30,17 +35,25 @@ def execute_process(options):
             .enableHiveSupport() \
             .getOrCreate()
 
+    #spark.catalog.clearCache()
     spark.udf.register("name_similarity", name_similarity)
 
     schema_exadata = options['schema_exadata']
     schema_exadata_aux = options['schema_exadata_aux']
     LIMIAR_SIMILARIDADE = options["limiar_similaridade"]
 
+    PIP_CODIGOS = spark.sql("""
+        SELECT DISTINCT pip_codigo as pip_codigo FROM {0}.tb_pip_aisp
+        UNION ALL
+        SELECT DISTINCT pip_codigo_antigo as pip_codigo FROM {0}.tb_pip_aisp
+    """.format(schema_exadata_aux))
+    PIP_CODIGOS.createOrReplaceTempView('PIP_CODIGOS')
+
     PERS_DOCS_PIPS = spark.sql("""
         SELECT DISTINCT pers_pess_dk
         FROM {0}.mcpr_personagem
         JOIN {0}.mcpr_documento ON docu_dk = pers_docu_dk
-        JOIN (SELECT DISTINCT pip_codigo FROM {1}.tb_pip_aisp) P ON pip_codigo = docu_orgi_orga_dk_responsavel
+        JOIN PIP_CODIGOS P ON pip_codigo = docu_orgi_orga_dk_responsavel
         WHERE pers_tppe_dk IN (290, 7, 21, 317, 20, 14, 32, 345, 40, 5)
         AND docu_tpst_dk != 11
     """.format(schema_exadata, schema_exadata_aux))
@@ -63,7 +76,6 @@ def execute_process(options):
     """.format(schema_exadata, schema_exadata_aux))
     investigados_juridicos_pip_total.createOrReplaceTempView("INVESTIGADOS_JURIDICOS_PIP_TOTAL")
     spark.catalog.cacheTable('INVESTIGADOS_JURIDICOS_PIP_TOTAL')
-
 
     similarity_nome_dtnasc = spark.sql("""
         SELECT pess_dk, MIN(pess_dk) OVER(PARTITION BY grupo) AS representante_dk
@@ -116,7 +128,9 @@ def execute_process(options):
                             ) <= {LIMIAR_SIMILARIDADE}
                         WHEN true THEN 1 ELSE 0 END as col_grupo_mae
                 FROM INVESTIGADOS_FISICOS_PIP_TOTAL
-                WHERE pesf_nm_mae IS NOT NULL) t
+                WHERE pesf_nm_mae IS NOT NULL
+                --AND pesf_nm_mae NOT REGEXP 'IDENTIFICAD[OA]|IGNORAD[OA]|DECLARAD[OA]'
+                ) t
             ) t2
     """.format(LIMIAR_SIMILARIDADE=LIMIAR_SIMILARIDADE))
     similarity_nome_nomemae.createOrReplaceTempView("SIMILARITY_NOME_NOMEMAE")
@@ -169,11 +183,11 @@ def execute_process(options):
         JOIN REPR_1 B ON A.representante_dk = B.pess_dk
     """)
 
-    table_name = "{}.tb_pip_investigados_representantes".format(schema_exadata_aux)
-    pessoas_representativas_2.write.mode("overwrite").saveAsTable("temp_table_pip_investigados_representantes")
-    temp_table = spark.table("temp_table_pip_investigados_representantes")
+    table_name = "{}.test_tb_pip_investigados_representantes".format(schema_exadata_aux)
+    pessoas_representativas_2.write.mode("overwrite").saveAsTable("test_temp_table_pip_investigados_representantes")
+    temp_table = spark.table("test_temp_table_pip_investigados_representantes")
     temp_table.write.mode("overwrite").saveAsTable(table_name)
-    spark.sql("drop table temp_table_pip_investigados_representantes")
+    spark.sql("drop table test_temp_table_pip_investigados_representantes")
     _update_impala_table(table_name, options['impala_host'], options['impala_port'])
 
     spark.catalog.clearCache()
