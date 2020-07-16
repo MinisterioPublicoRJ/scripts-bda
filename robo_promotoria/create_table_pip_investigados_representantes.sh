@@ -3,16 +3,13 @@ export PYTHONIOENCODING=utf8
 
 spark2-submit --master yarn --deploy-mode cluster \
     --queue root.robopromotoria \
-    --num-executors 3 \
+    --num-executors 12 \
     --driver-memory 4g \
     --executor-cores 5 \
     --executor-memory 10g \
     --conf spark.debug.maxToStringFields=2000 \
     --conf spark.executor.memoryOverhead=4096 \
     --conf spark.network.timeout=900 \
-    --conf spark.default.parallelism=30 \
-    --conf spark.sql.shuffle.partitions=30 \
-    --conf spark.speculation=true \
     --conf spark.shuffle.io.maxRetries=5 \
     --conf spark.shuffle.io.retryWait=15s \
     --conf spark.locality.wait=0 \
