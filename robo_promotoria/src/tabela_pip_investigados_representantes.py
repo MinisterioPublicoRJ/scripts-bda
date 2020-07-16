@@ -178,11 +178,11 @@ def execute_process(options):
         JOIN REPR_1 B ON A.representante_dk = B.pess_dk
     """)
 
-    table_name = "{}.test_tb_pip_investigados_representantes".format(schema_exadata_aux)
-    pessoas_representativas_2.write.mode("overwrite").saveAsTable("test_temp_table_pip_investigados_representantes")
-    temp_table = spark.table("test_temp_table_pip_investigados_representantes")
+    table_name = "{}.tb_pip_investigados_representantes".format(schema_exadata_aux)
+    pessoas_representativas_2.write.mode("overwrite").saveAsTable("temp_table_pip_investigados_representantes")
+    temp_table = spark.table("temp_table_pip_investigados_representantes")
     temp_table.write.mode("overwrite").saveAsTable(table_name)
-    spark.sql("drop table test_temp_table_pip_investigados_representantes")
+    spark.sql("drop table temp_table_pip_investigados_representantes")
     _update_impala_table(table_name, options['impala_host'], options['impala_port'])
 
     spark.catalog.clearCache()
