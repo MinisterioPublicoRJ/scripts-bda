@@ -7,23 +7,22 @@ from utils import _update_impala_table
 import argparse
 
 
-def name_similarity(name_left, name_right):
-    invalid_regex = r"DECLARAD[OA]|IGNORAD[OA]|IDENTIFICAD[OA]"
+def clean_name(value):
+    if not isinstance(value, str) and not isinstance(value, unicode):
+        return None
+    text = unicodedata.normalize('NFD', unicode(value) or "")
+    text = text.encode('ascii', 'ignore')
+    text = text.decode("utf-8")
+    text = text.upper()
+    text = re.sub(r"[^A-Z]", "", text)
+    if not text:
+        return None
+    return text
 
-    if (not name_left or not name_right 
-        or re.search(invalid_regex, name_left.upper()) 
-        or re.search(invalid_regex, name_right.upper())
-        ):
+def name_similarity(name_left, name_right):
+    if not name_left or not name_right:
         return 0
 
-    def remove_accents_n(value):
-        text = unicodedata.normalize('NFD', value)
-        text = text.encode('ascii', 'ignore')
-        text = text.decode("utf-8")
-        return text
-
-    name_left = remove_accents_n(re.sub(r"\s+", "", name_left or ""))
-    name_right = remove_accents_n(re.sub(r"\s+", "", name_right or ""))
     return difflib.SequenceMatcher(None, name_left, name_right).ratio()
 
 
@@ -35,8 +34,8 @@ def execute_process(options):
             .enableHiveSupport() \
             .getOrCreate()
 
-    #spark.catalog.clearCache()
     spark.udf.register("name_similarity", name_similarity)
+    spark.udf.register("clean_name", clean_name)
 
     schema_exadata = options['schema_exadata']
     schema_exadata_aux = options['schema_exadata_aux']
@@ -62,7 +61,7 @@ def execute_process(options):
 
 
     investigados_fisicos_pip_total = spark.sql("""
-        SELECT pesf_pess_dk, pesf_nm_pessoa_fisica, pesf_cpf, pesf_nm_mae, pesf_dt_nasc
+        SELECT pesf_pess_dk, clean_name(pesf_nm_pessoa_fisica) as pesf_nm_pessoa_fisica, pesf_cpf, clean_name(pesf_nm_mae) as pesf_nm_mae, pesf_dt_nasc
         FROM PERS_DOCS_PIPS
         JOIN {0}.mcpr_pessoa_fisica ON pers_pess_dk = pesf_pess_dk
     """.format(schema_exadata, schema_exadata_aux))
@@ -70,7 +69,7 @@ def execute_process(options):
     spark.catalog.cacheTable('INVESTIGADOS_FISICOS_PIP_TOTAL')
 
     investigados_juridicos_pip_total = spark.sql("""
-        SELECT pesj_pess_dk, pesj_nm_pessoa_juridica, pesj_cnpj
+        SELECT pesj_pess_dk, clean_name(pesj_nm_pessoa_juridica) as pesj_nm_pessoa_juridica, pesj_cnpj
         FROM PERS_DOCS_PIPS
         JOIN {0}.mcpr_pessoa_juridica ON pers_pess_dk = pesj_pess_dk
     """.format(schema_exadata, schema_exadata_aux))
@@ -105,10 +104,6 @@ def execute_process(options):
         FROM (
             SELECT
                 pess_dk,
-                pesf_nm_pessoa_fisica,
-                pesf_nm_mae,
-                col_grupo,
-                col_grupo_mae,
                 SUM(col_grupo + col_grupo_mae) OVER(ORDER BY pesf_nm_pessoa_fisica, pesf_nm_mae, pess_dk ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) as grupo
             FROM (
                 SELECT
@@ -129,7 +124,7 @@ def execute_process(options):
                         WHEN true THEN 1 ELSE 0 END as col_grupo_mae
                 FROM INVESTIGADOS_FISICOS_PIP_TOTAL
                 WHERE pesf_nm_mae IS NOT NULL
-                --AND pesf_nm_mae NOT REGEXP 'IDENTIFICAD[OA]|IGNORAD[OA]|DECLARAD[OA]'
+                AND pesf_nm_mae NOT REGEXP 'IDENTIFICAD[OA]|IGNORAD[OA]|DECLARAD[OA]'
                 ) t
             ) t2
     """.format(LIMIAR_SIMILARIDADE=LIMIAR_SIMILARIDADE))
