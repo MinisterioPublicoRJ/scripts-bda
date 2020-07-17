@@ -9,9 +9,9 @@ spark2-submit --master yarn --deploy-mode cluster \
     --executor-memory 10g \
     --conf spark.debug.maxToStringFields=2000 \
     --conf spark.executor.memoryOverhead=4096 \
-    --conf spark.network.timeout=900 \
-    --conf spark.shuffle.io.maxRetries=5 \
-    --conf spark.shuffle.io.retryWait=15s \
+    --conf spark.network.timeout=3600 \
+    --conf spark.shuffle.io.maxRetries=15 \
+    --conf spark.shuffle.io.retryWait=60s \
     --conf spark.locality.wait=0 \
     --conf spark.shuffle.io.numConnectionsPerPeer=3 \
     --conf "spark.executor.extraJavaOptions=-XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=35" \
