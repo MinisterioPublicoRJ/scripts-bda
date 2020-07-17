@@ -86,7 +86,7 @@ def execute_process(options):
     spark.sql(
         """
         SELECT pip_codigo as orgao_id,
-        COUNT(vist_dk) as vistas
+        COUNT(DISTINCT docu_dk) as vistas
         FROM FILTRADOS_SEM_ANDAMENTO
         WHERE vist_dt_fechamento_vista <= cast(date_sub(current_timestamp(), {0}) as timestamp)
         AND cdtipfunc IN ('1', '2') -- Filtra por vistas abertas por PROMOTORES
