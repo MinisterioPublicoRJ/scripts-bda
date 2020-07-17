@@ -70,19 +70,23 @@ def execute_process(options):
     assuntos.createOrReplaceTempView('assuntos')
 
     documentos_pips = spark.sql("""
-        SELECT representante_dk, pip_codigo, docu_dk, docu_nr_mp, docu_dt_cadastro, docu_cldc_dk, docu_fsdc_dk, docu_tx_etiqueta
+        SELECT representante_dk, PS.pess_nm_pessoa, tppe_descricao, pip_codigo, docu_dk, docu_nr_mp, docu_dt_cadastro, docu_cldc_dk, docu_fsdc_dk, docu_tx_etiqueta
         FROM {0}.mcpr_personagem
-        JOIN {1}.tb_pip_investigados_representantes ON pers_pess_dk = pess_dk
+        JOIN {0}.mcpr_tp_personagem ON tppe_dk = pers_tppe_dk
+        JOIN {1}.tb_pip_investigados_representantes R ON pers_pess_dk = R.pess_dk
         JOIN {0}.mcpr_documento ON docu_dk = pers_docu_dk
+        JOIN {0}.mcpr_pessoa PS ON PS.pess_dk = R.pess_dk 
         JOIN lista_pips P ON pip_codigo = docu_orgi_orga_dk_responsavel
         WHERE pers_tppe_dk IN (290, 7, 21, 317, 20, 14, 32, 345, 40, 5)
         AND docu_tpst_dk != 11
         AND pers_dt_fim IS NULL OR pers_dt_fim > current_timestamp()
         UNION ALL
-        SELECT representante_dk, pip_codigo, docu_dk, docu_nr_mp, docu_dt_cadastro, docu_cldc_dk, docu_fsdc_dk, docu_tx_etiqueta
+        SELECT representante_dk, PS.pess_nm_pessoa, tppe_descricao, pip_codigo, docu_dk, docu_nr_mp, docu_dt_cadastro, docu_cldc_dk, docu_fsdc_dk, docu_tx_etiqueta
         FROM {0}.mcpr_personagem
-        JOIN {1}.tb_pip_investigados_representantes ON pers_pess_dk = pess_dk
+        JOIN {0}.mcpr_tp_personagem ON tppe_dk = pers_tppe_dk
+        JOIN {1}.tb_pip_investigados_representantes R ON pers_pess_dk = R.pess_dk
         JOIN {0}.mcpr_documento ON docu_dk = pers_docu_dk
+        JOIN {0}.mcpr_pessoa PS ON PS.pess_dk = R.pess_dk
         JOIN lista_pips P ON pip_codigo_antigo = docu_orgi_orga_dk_responsavel
         WHERE pers_tppe_dk IN (290, 7, 21, 317, 20, 14, 32, 345, 40, 5)
         AND docu_tpst_dk != 11
@@ -91,7 +95,7 @@ def execute_process(options):
     documentos_pips.createOrReplaceTempView('documentos_pips')
 
     documentos_investigados = spark.sql("""
-        SELECT D.representante_dk, pip_codigo, docu_nr_mp, docu_dt_cadastro, cldc_ds_classe, orgi_nm_orgao, docu_tx_etiqueta, assuntos, fsdc_ds_fase
+        SELECT D.representante_dk, pess_nm_pessoa, tppe_descricao, pip_codigo, docu_nr_mp, docu_dt_cadastro, cldc_ds_classe, orgi_nm_orgao, docu_tx_etiqueta, assuntos, fsdc_ds_fase
         FROM documentos_pips D
         JOIN {0}.orgi_orgao ON orgi_dk = pip_codigo
         JOIN {0}.mcpr_classe_docto_mp ON cldc_dk = docu_cldc_dk
@@ -115,8 +119,8 @@ def execute_process(options):
             FROM (
                 SELECT representante_dk, COUNT(1) as nr_investigacoes
                 FROM {1}.tb_pip_investigados_procedimentos
-                JOIN {0}.mcpr_pessoa ON pess_dk = representante_dk
-                WHERE pess_nm_pessoa NOT REGEXP 'IDENTIFICADO|IGNORAD[OA]|P.BLICO|JUSTI.A P.BLICA'
+                JOIN {0}.mcpr_pessoa P ON pess_dk = representante_dk
+                WHERE P.pess_nm_pessoa NOT REGEXP 'IDENTIFICADO|IGNORAD[OA]|P.BLICO|JUSTI.A P.BLICA'
                 GROUP BY representante_dk
             ) c
             JOIN (
