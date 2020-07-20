@@ -6,7 +6,7 @@ from pyspark.sql.functions import year, col, regexp_replace
 from utils import _update_impala_table, send_log, ERROR, SUCCESS, SUCCESS_MESSAGE, ERROR_MESSAGE
 
 
-def check_type(df, (col_name, dtype)):
+def remove_break_lines(df, (col_name, dtype)):
     
     df = df.withColumn(col_name, regexp_replace(col(col_name),'\r','').cast(dtype))
 
@@ -59,7 +59,7 @@ def execute_process(args):
                 
                 df = df.toDF(*columns)
 
-                df = reduce(check_type, df.dtypes, df)
+                df = reduce(remove_break_lines, df.dtypes, df)
                     
                 table_hive = "{}.{}".format(args.schemaHive, directory)
                 
