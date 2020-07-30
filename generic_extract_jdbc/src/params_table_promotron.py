@@ -13,6 +13,7 @@ params = {
             "table_jdbc": "MCPR.MCPR_DOCUMENTO",
             "pk_table_jdbc": "DOCU_DK",
             "update_date_table_jdbc": "DOAA_DT_ALTERACAO",
+            "num_partitions": 20,
             "table_hive": "mcpr_documento",
             "fields":
             """
@@ -116,6 +117,7 @@ params = {
         {
             "table_jdbc": "MCPR.MCPR_ITEM_MOVIMENTACAO",
             "pk_table_jdbc": "ITEM_DK",
+            "num_partitions": 20,
             "update_date_table_jdbc": "",
             "table_hive": "mcpr_item_movimentacao"
         },
@@ -128,12 +130,14 @@ params = {
         {
             "table_jdbc": "MCPR.MCPR_MOVIMENTACAO",
             "pk_table_jdbc": "MOVI_DK",
+            "num_partitions": 20,
             "update_date_table_jdbc": "",
             "table_hive": "mcpr_movimentacao"
         },
         {
             "table_jdbc": "MCPR.MCPR_PERSONAGEM",
             "pk_table_jdbc": "PERS_DK",
+            "num_partitions": 20,
             "update_date_table_jdbc": "",
             "table_hive": "mcpr_personagem"
         },
@@ -146,12 +150,14 @@ params = {
         {
             "table_jdbc": "MCPR.MCPR_PESSOA",
             "pk_table_jdbc": "PESS_DK",
+            "num_partitions": 20,
             "update_date_table_jdbc": "",
             "table_hive": "mcpr_pessoa"
         },
         {
             "table_jdbc": "MCPR.MCPR_PESSOA_FISICA",
             "pk_table_jdbc": "PESF_PESS_DK",
+            "num_partitions": 20,
             "update_date_table_jdbc": "",
             "table_hive": "mcpr_pessoa_fisica"
         },
@@ -176,12 +182,14 @@ params = {
         {
             "table_jdbc": "MCPR.MCPR_SUB_ANDAMENTO",
             "pk_table_jdbc": "STAO_DK",
+            "num_partitions": 20,
             "update_date_table_jdbc": "",
             "table_hive": "mcpr_sub_andamento"
         },
         {
             "table_jdbc": "MCPR.MCPR_VISTA",
             "pk_table_jdbc": "VIST_DK",
+            "num_partitions": 20,
             "update_date_table_jdbc": "",
             "table_hive": "mcpr_vista",
             "fields":

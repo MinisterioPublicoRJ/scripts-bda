@@ -124,16 +124,18 @@ def load_all_data(table, options):
             final_df = final_df.withColumn("year_month",
                 date_format(table['partition_column'], table['date_partition_format']).cast("int"))
 
-            final_df.write.partitionBy('year_month') \
+            final_df.repartition("year_month").write.partitionBy('year_month') \
                 .mode("overwrite") \
                 .saveAsTable(table_hive)
 
         elif table.get('partition_column'):
-            final_df.write.partitionBy(table['partition_column']) \
+            final_df.repartition(table['partition_column']) \
+                .write.partitionBy(table['partition_column']) \
                 .mode("overwrite") \
                 .saveAsTable(table_hive)
         else:
             final_df \
+                .coalesce(table.get('num_partitions', 1)) \
                 .write \
                 .mode('overwrite') \
                 .saveAsTable(table_hive)
