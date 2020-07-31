@@ -1,6 +1,6 @@
 <dataConfig>
     <dataSource name="dsHive" driver="org.apache.hive.jdbc.HiveDriver" url="jdbc:hive2://192.168.8.6:10000/" user="mpmapas" password="U2FsdGVkX19EG7Q8ccirWk/xtxvbOuTvWgjk2VMS8Cg=" encryptKeyFile="key.txt"/>
-	<dataSource name="dsPostgres" type="JdbcDataSource" driver="org.postgresql.Driver" url="jdbc:postgresql://p-postgres01:5432/opengeo" user="mpmapas_geo" password="mpmapas_geo_pw"/>
+	<dataSource name="dsPostgres" type="JdbcDataSource" driver="org.postgresql.Driver" url="" user="" password=""/>
     <document>
         <entity name="tl_eventos" dataSource="dsHive" query=" SELECT id, tp_evento, cpf, concat(date_format(dt, 'yyyy-MM-dd'), 'T00:00:00Z') as dt, entidade, cd_entidade, tp_entidade, texto FROM bases.tl_eventos where id % 3 = ${dataimporter.request.in} "></entity>
         <entity name="tl_eventos_tp_evento" dataSource="dsHive" query=" SELECT id, tp_evento, cpf, concat(date_format(dt, 'yyyy-MM-dd'), 'T00:00:00Z') as dt, entidade, cd_entidade, tp_entidade, texto FROM bases.tl_eventos where tp_evento = '${dataimporter.request.tp_evento}' "></entity>
