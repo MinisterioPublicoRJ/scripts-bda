@@ -1,4 +1,4 @@
-spark2-submit --queue root.mpmapas \
+spark-submit --queue root.mpmapas \
     --num-executors 20 \
     --executor-cores 1 \
     --executor-memory 2g \
