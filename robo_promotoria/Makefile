@@ -1,5 +1,5 @@
 default:
-	spark2-submit tabela_acervo.py
+	spark-submit tabela_acervo.py
 
 install:
 	mkdir packages

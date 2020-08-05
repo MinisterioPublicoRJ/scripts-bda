@@ -4,7 +4,7 @@ export myDependencyJarDir=/opt/cloudera/parcels/CDH/jars
 export myDependencyJarFiles=$(find $myDependencyJarDir -name 'ojdbc*.jar' | sort | tr '\n' ',' | head -c -1)
 export PYTHONIOENCODING=utf8
 
-spark2-submit --master yarn --deploy-mode cluster \
+spark-submit --master yarn --deploy-mode cluster \
     --queue root.mpmapas \
     --jars $myDependencyJarFiles \
     --num-executors 20\
