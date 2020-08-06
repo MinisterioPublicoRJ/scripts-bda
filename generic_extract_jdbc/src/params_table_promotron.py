@@ -199,6 +199,7 @@ params = {
         {
             "table_jdbc": "RH.FUNCIONARIO",
             "pk_table_jdbc": "CDMATRICULA",
+            "no_lower_upper_bound": "true",
             "update_date_table_jdbc": "",
             "table_hive": "rh_funcionario"
         },
