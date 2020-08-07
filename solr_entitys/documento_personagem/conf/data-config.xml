@@ -1,8 +1,8 @@
 <dataConfig>
     <dataSource driver="org.apache.hive.jdbc.HiveDriver" url="jdbc:hive2://192.168.8.6:10000/dadossinapse"
         user="mpmapas"
-        password="U2FsdGVkX19EG7Q8ccirWk/xtxvbOuTvWgjk2VMS8Cg=" 
-        encryptKeyFile="key.txt"/>
+        password="U2FsdGVkX1/8BxblgEjLIQoO3kUjdqCEGnJd56kZlnw=" 
+        encryptKeyFile="/var/lib/solr/server/encryptionkey"/>
     <document name="documento_personagem">
 	 <entity name="documento_personagem" transformer="RegexTransformer"  query="SELECT
 	    documento_opv.uuid uuid,
@@ -23,7 +23,7 @@
             documento_opv.docu_dk,
             concat(date_format(documento_opv.dt_cadastro, 'yyyy-MM-dd'), 'T00:00:00Z'),
             documento_opv.nr_externo,
-            documento_opv.nr_mp ">
+            documento_opv.nr_mp">
                 <field column="uuid" name="uuid" />
                 <field column="cdorgao" name="cdorgao" />
                 <field column="cldc_ds_hierarquia" name="cldc_ds_hierarquia" />

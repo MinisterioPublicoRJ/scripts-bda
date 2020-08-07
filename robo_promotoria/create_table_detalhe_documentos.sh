@@ -1,14 +1,15 @@
 #!/bin/sh
 export PYTHONIOENCODING=utf8
 
-spark2-submit --master yarn --deploy-mode cluster \
+spark-submit --master yarn --deploy-mode cluster \
     --queue root.robopromotoria \
     --num-executors 12 \
-    --driver-memory 2g \
+    --driver-memory 7g \
     --executor-cores 5 \
-    --executor-memory 10g \
+    --executor-memory 18g \
     --conf spark.debug.maxToStringFields=2000 \
-    --conf spark.executor.memoryOverhead=4096 \
+    --conf spark.executor.memoryOverhead=6g \
+    --conf spark.driver.maxResultSize=3g \
     --conf spark.network.timeout=3600 \
     --conf spark.shuffle.io.maxRetries=5 \
     --conf spark.shuffle.io.retryWait=15s \

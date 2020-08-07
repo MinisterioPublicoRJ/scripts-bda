@@ -1,10 +1,10 @@
 #!/bin/sh
 export PYTHONIOENCODING=utf8
 
-spark2-submit --master yarn --deploy-mode cluster \
+spark-submit --master yarn --deploy-mode cluster \
     --queue root.robopromotoria \
     --num-executors 12 \
-    --driver-memory 4g \
+    --driver-memory 6g \
     --executor-cores 5 \
     --executor-memory 10g \
     --conf spark.debug.maxToStringFields=2000 \

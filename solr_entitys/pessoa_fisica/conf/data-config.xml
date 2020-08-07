@@ -1,8 +1,8 @@
 <dataConfig>
     <dataSource driver="org.apache.hive.jdbc.HiveDriver" url="jdbc:hive2://192.168.8.6:10000/"
-	user="mpmapas"
-        password="U2FsdGVkX19EG7Q8ccirWk/xtxvbOuTvWgjk2VMS8Cg=" 
-        encryptKeyFile="key.txt"/>
+	    user="mpmapas"
+        password="U2FsdGVkX1/8BxblgEjLIQoO3kUjdqCEGnJd56kZlnw=" 
+        encryptKeyFile="/var/lib/solr/server/encryptionkey"/>
     <document name="pessoa_fisica">
         <entity name="pessoa_fisica" query="SELECT 
                 pessoa_fisica_opv.uuid uuid,

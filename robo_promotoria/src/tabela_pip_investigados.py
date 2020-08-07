@@ -3,7 +3,7 @@ import os
 
 import pyspark
 from utils import _update_impala_table
-from happybase import Connection
+from happybase import Connection as HBaseConnection
 import argparse
 
 
@@ -174,8 +174,13 @@ def execute_process(options):
             GROUP BY pip_codigo
         """.format(schema_exadata_aux)).collect()
 
-
-    conn = Connection('bda1node05.pgj.rj.gov.br')
+    conn = HBaseConnection(
+            'bda1node05.pgj.rj.gov.br',
+            timeout=3000,
+            transport="framed",
+            protocol="compact",
+        )
+    #conn = Connection('bda1node05.pgj.rj.gov.br')
     t = conn.table('{}:pip_investigados_flags'.format(schema_hbase))
     for orgao in new_names:
         orgao_id = str(orgao['pip_codigo'])
