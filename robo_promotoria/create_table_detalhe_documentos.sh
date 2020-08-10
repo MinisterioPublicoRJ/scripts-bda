@@ -4,9 +4,9 @@ export PYTHONIOENCODING=utf8
 spark-submit --master yarn --deploy-mode cluster \
     --queue root.robopromotoria \
     --num-executors 12 \
-    --driver-memory 7g \
+    --driver-memory 8g \
     --executor-cores 5 \
-    --executor-memory 18g \
+    --executor-memory 15g \
     --conf spark.debug.maxToStringFields=2000 \
     --conf spark.executor.memoryOverhead=6g \
     --conf spark.driver.maxResultSize=3g \
