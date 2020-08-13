@@ -23,6 +23,7 @@ def execute_process(spark, options):
          and datediff(current_timestamp(), a.pcao_dt_andamento) > 60))
         AND docu_tpst_dk != 11
         AND pcao_dt_cancelamento IS NULL
+        AND pcao_dt_andamento > docu_dt_cadastro
         AND ap.cod_pct IN (20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33)
          GROUP BY d.docu_dk, ap.id_orgao, tempo_tramitacao, dt_finalizacao, ap.cod_pct
     """.format(
