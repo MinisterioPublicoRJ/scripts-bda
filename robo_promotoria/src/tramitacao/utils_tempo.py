@@ -20,6 +20,7 @@ def execute_process(spark, options, cldc_dk_lista, tppr_dk_lista, pacote_lista, 
             and ap.cod_pct IN {pacotes}
             AND docu_tpst_dk != 11
             AND pcao_dt_cancelamento IS NULL
+            AND pcao_dt_andamento > docu_dt_cadastro
     GROUP BY d.docu_dk, ap.id_orgao, tempo_tramitacao, dt_finalizacao, ap.cod_pct
     """.format(
         schema=options["schema_exadata"],
