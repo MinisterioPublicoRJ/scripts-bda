@@ -298,7 +298,7 @@ def create_regra_cpf(spark, options, nm_tipo, pacotes, cldc_dks, tppr_dks, date_
     atuais = spark.sql("""
         SELECT
             id_orgao as vist_orgi_orga_dk,
-            cpf,
+            cpf as pesf_cpf,
             nvl(nr_documentos_distintos_atual, 0) as nr_documentos_distintos_atual, 
             nvl(nr_aberturas_vista_atual, 0) AS nr_aberturas_vista_atual, 
             nvl(nr_aproveitamentos_atual, 0) AS nr_aproveitamentos_atual,
@@ -329,7 +329,7 @@ def create_regra_cpf(spark, options, nm_tipo, pacotes, cldc_dks, tppr_dks, date_
     anteriores = spark.sql("""
         SELECT 
             id_orgao as vist_orgi_orga_dk,
-            cpf,
+            cpf as pesf_cpf,
             nvl(nr_documentos_distintos_anterior, 0) as nr_documentos_distintos_anterior,
             nvl(nr_aberturas_vista_anterior, 0) AS nr_aberturas_vista_anterior,
             nvl(nr_aproveitamentos_anterior, 0) AS nr_aproveitamentos_anterior,
@@ -374,7 +374,7 @@ def create_regra_cpf(spark, options, nm_tipo, pacotes, cldc_dks, tppr_dks, date_
             ELSE (at.nr_instaurados_atual - an.nr_instaurados_anterior)/an.nr_instaurados_anterior END as variacao_instaurados
         FROM {2} at
         LEFT JOIN {3} an ON at.vist_orgi_orga_dk = an.vist_orgi_orga_dk
-            AND at.cpf = an.cpf
+            AND at.pesf_cpf = an.pesf_cpf
     """.format(nm_tipo, nm_intervalo, nm_table_atuais, nm_table_anteriores))
     nm_table_final = "DETALHE_CPF_{}_{}".format(nm_tipo, nm_intervalo)
     table.createOrReplaceTempView(nm_table_final)
