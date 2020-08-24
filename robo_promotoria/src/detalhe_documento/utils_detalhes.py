@@ -10,8 +10,7 @@ def setup_table_cache(spark, options, min_date):
         SELECT 
             docu_dk,
             docu_cldc_dk,
-            vist_dk, 
-            docu_dt_cadastro,
+            vist_dk,
             vist_dt_abertura_vista,
             vist_dt_fechamento_vista,
             vist_orgi_orga_dk,
@@ -24,7 +23,7 @@ def setup_table_cache(spark, options, min_date):
         LEFT JOIN {0}.mcpr_andamento ON pcao_vist_dk = vist_dk
         LEFT JOIN {0}.mcpr_sub_andamento ON stao_pcao_dk = pcao_dk
         JOIN {1}.atualizacao_pj_pacote ON id_orgao = vist_orgi_orga_dk
-        JOIN {0}.mcpr_pessoa_fisica ON vist_pesf_pess_dk_resp_andam = pesf_pess_dk
+        LEFT JOIN {0}.mcpr_pessoa_fisica ON vist_pesf_pess_dk_resp_andam = pesf_pess_dk
         WHERE vist_dt_abertura_vista >= '{2}'
         AND vist_dt_abertura_vista <= current_timestamp()
         AND docu_tpst_dk != 11
@@ -33,7 +32,19 @@ def setup_table_cache(spark, options, min_date):
     vistas.createOrReplaceTempView(nm_table_vistas)
     spark.catalog.cacheTable(nm_table_vistas)
 
-    return nm_table_vistas
+    documentos = spark.sql("""
+        SELECT
+            docu_dk, docu_dt_cadastro, docu_cldc_dk, docu_orgi_orga_dk_responsavel, cod_pct
+        FROM {0}.mcpr_documento
+        JOIN {1}.atualizacao_pj_pacote ON id_orgao = docu_orgi_orga_dk_responsavel
+        WHERE docu_dt_cadastro >= '{2}'
+        AND docu_tpst_dk != 11
+    """.format(schema_exadata, schema_exadata_aux, min_date)) 
+    nm_table_documentos = "dOCUMENTOS_MAIN_TABLE"
+    documentos.createOrReplaceTempView(nm_table_documentos)
+    spark.catalog.cacheTable(nm_table_documentos)
+
+    return nm_table_vistas, nm_table_documentos
 
 # Nao e utilizada, porem fica como referencia para possivelmente o futuro
 def create_regra_andamento(spark, options, nm_tipo, pacotes, tppr_dks, days_past=30):
@@ -74,9 +85,17 @@ def create_regra_andamento(spark, options, nm_tipo, pacotes, tppr_dks, days_past
     return nm_table
 
 def create_regra_orgao(spark, options, nm_tipo, pacotes, cldc_dks, tppr_dks, date_old_begin, 
-                       date_old_end, date_current_begin, nm_intervalo, vistas_table='VISTAS_MAIN_TABLE'):
+                       date_old_end, date_current_begin, nm_intervalo, vistas_table='VISTAS_MAIN_TABLE',
+                       docs_table='dOCUMENTOS_MAIN_TABLE'):
     schema_exadata = options['schema_exadata']
     schema_exadata_aux = options['schema_exadata_aux']
+
+    orgaos_validos = spark.sql("""
+        SELECT id_orgao
+        FROM {0}.atualizacao_pj_pacote
+        WHERE cod_pct IN {1}
+    """.format(schema_exadata_aux, pacotes))
+    orgaos_validos.createOrReplaceTempView('ORGAOS_VALIDOS')
 
     # LEFT JOIN ja que vistas podem n ter andamento associado ainda
     vistas = spark.sql("""
@@ -84,20 +103,31 @@ def create_regra_orgao(spark, options, nm_tipo, pacotes, cldc_dks, tppr_dks, dat
             docu_dk,
             vist_dk,
             vist_orgi_orga_dk,
-            CASE 
-                WHEN docu_dt_cadastro >= '{3}' THEN 1 
-                WHEN docu_dt_cadastro >= '{1}' THEN 0
-                ELSE NULL END AS is_instaurado_intervalo, 
             CASE WHEN vist_dt_abertura_vista >= '{2}' THEN 1 ELSE 0 END AS is_atual,
-            CASE WHEN stao_tppr_dk IN {6} AND pcao_dt_cancelamento IS NULL THEN 1 ELSE 0 END AS is_aproveitamento
+            CASE WHEN stao_tppr_dk IN {5} AND pcao_dt_cancelamento IS NULL THEN 1 ELSE 0 END AS is_aproveitamento
         FROM {0}
+        JOIN ORGAOS_VALIDOS ON id_orgao = vist_orgi_orga_dk
         WHERE vist_dt_abertura_vista >= '{1}' AND vist_dt_abertura_vista <= current_timestamp()
         AND NOT (vist_dt_abertura_vista > '{2}' AND vist_dt_abertura_vista < '{3}')
-        AND docu_cldc_dk IN {5}
-        AND cod_pct IN {4}
-    """.format(vistas_table, date_old_begin, date_old_end, date_current_begin, pacotes, cldc_dks, tppr_dks))
+        AND docu_cldc_dk IN {4}
+    """.format(vistas_table, date_old_begin, date_old_end, date_current_begin, cldc_dks, tppr_dks))
     nm_table_vistas = "VISTAS_{}_{}".format(nm_tipo, nm_intervalo)
     vistas.createOrReplaceTempView(nm_table_vistas)
+
+    documentos = spark.sql("""
+        SELECT
+            docu_dk,
+            docu_orgi_orga_dk_responsavel,
+            CASE 
+                WHEN docu_dt_cadastro >= '{3}' THEN 1 
+                WHEN docu_dt_cadastro >= '{1}' AND docu_dt_cadastro <= '{2}' THEN 0
+                ELSE NULL END AS is_instaurado_intervalo
+        FROM {0}
+        JOIN ORGAOS_VALIDOS ON id_orgao = docu_orgi_orga_dk_responsavel
+        WHERE docu_cldc_dk IN {4}
+    """.format(docs_table, date_old_begin, date_old_end, date_current_begin, cldc_dks))
+    nm_table_documentos = "DOCUMENTOS_{}_{}".format(nm_tipo, nm_intervalo)
+    documentos.createOrReplaceTempView(nm_table_documentos)
 
     date_partition_current = datetime.now().date().strftime('%d%m%Y')
     date_partition_old = "".join(date_old_end.split('-')[::-1])
@@ -108,76 +138,84 @@ def create_regra_orgao(spark, options, nm_tipo, pacotes, cldc_dks, tppr_dks, dat
 
     acervo = spark.sql("""
         SELECT
-            tb_data_fim.cod_orgao as orgao_id,
+            tb_data_fim.id_orgao as orgao_id,
             tb_data_fim.acervo_fim,
             tb_data_inicio.acervo_inicio,
             CASE WHEN (acervo_fim - acervo_inicio) = 0 THEN 0
                 ELSE (acervo_fim - acervo_inicio)/acervo_inicio END as variacao
         FROM (
-            SELECT cod_orgao, SUM(acervo) as acervo_inicio
-            FROM {0}.tb_acervo
-            JOIN {0}.atualizacao_pj_pacote ON id_orgao = cod_orgao
-            WHERE dt_partition = '{3}'
-            AND tipo_acervo IN {1}
-            AND cod_pct IN {2}
-            GROUP BY cod_orgao
+            SELECT id_orgao, nvl(SUM(acervo), 0) as acervo_inicio
+            FROM (SELECT * FROM {0}.tb_acervo WHERE dt_partition = '{2}' AND tipo_acervo IN {1}) t
+            RIGHT JOIN ORGAOS_VALIDOS ON id_orgao = cod_orgao
+            GROUP BY id_orgao
             ) tb_data_inicio
-        RIGHT JOIN (
-            SELECT cod_orgao, SUM(acervo) as acervo_fim
-            FROM {0}.tb_acervo
-            JOIN {0}.atualizacao_pj_pacote ON id_orgao = cod_orgao
-            WHERE dt_partition = '{4}'
-            AND tipo_acervo IN {1}
-            AND cod_pct IN {2}
-            GROUP BY cod_orgao
-            ) tb_data_fim ON tb_data_fim.cod_orgao = tb_data_inicio.cod_orgao
-    """.format(schema_exadata_aux, cldc_dks, pacotes, date_partition_old, date_partition_current))
+        JOIN (
+            SELECT id_orgao, nvl(SUM(acervo), 0) as acervo_fim
+            FROM (SELECT * FROM {0}.tb_acervo WHERE dt_partition = '{3}' AND tipo_acervo IN {1}) t
+            RIGHT JOIN ORGAOS_VALIDOS ON id_orgao = cod_orgao
+            GROUP BY id_orgao
+            ) tb_data_fim ON tb_data_fim.id_orgao = tb_data_inicio.id_orgao
+    """.format(schema_exadata_aux, cldc_dks, date_partition_old, date_partition_current))
     nm_table_acervo = "ACERVO_{}_{}".format(nm_tipo, nm_intervalo)
     acervo.createOrReplaceTempView(nm_table_acervo)
 
     # SUM de is_instaurado, ja que os instaurados atuais sao sempre 1
     atuais = spark.sql("""
         SELECT
-            vist_orgi_orga_dk,
-            COUNT(DISTINCT docu_dk) as nr_documentos_distintos_atual,
-            SUM(nr_aberturas_vista) as nr_aberturas_vista_atual,
-            SUM(has_aproveitamento) as nr_aproveitamentos_atual,
-            nvl(SUM(is_instaurado), 0) as nr_instaurados_atual
-        FROM (
+            id_orgao as vist_orgi_orga_dk,
+            nvl(nr_documentos_distintos_atual, 0) as nr_documentos_distintos_atual, 
+            nvl(nr_aberturas_vista_atual, 0) AS nr_aberturas_vista_atual, 
+            nvl(nr_aproveitamentos_atual, 0) AS nr_aproveitamentos_atual,
+            nvl(nr_instaurados_atual, 0) as nr_instaurados_atual
+        FROM ORGAOS_VALIDOS
+        LEFT JOIN (
             SELECT 
                 vist_orgi_orga_dk,
-                docu_dk,
-                COUNT(vist_dk) AS nr_aberturas_vista,
-                MAX(is_aproveitamento) AS has_aproveitamento,
-                MAX(is_instaurado_intervalo) AS is_instaurado
+                COUNT(DISTINCT docu_dk) as nr_documentos_distintos_atual,
+                COUNT(DISTINCT vist_dk) AS nr_aberturas_vista_atual,
+                SUM(is_aproveitamento) AS nr_aproveitamentos_atual
             FROM {0} t
             WHERE is_atual = 1
-            GROUP BY vist_orgi_orga_dk, docu_dk) t
-        GROUP BY vist_orgi_orga_dk
-    """.format(nm_table_vistas))
+            GROUP BY vist_orgi_orga_dk
+            ) A ON A.vist_orgi_orga_dk = id_orgao
+        LEFT JOIN (
+            SELECT
+                docu_orgi_orga_dk_responsavel,
+                nvl(SUM(is_instaurado_intervalo), 0) as nr_instaurados_atual
+            FROM {1}
+            GROUP BY docu_orgi_orga_dk_responsavel
+        ) B ON B.docu_orgi_orga_dk_responsavel = id_orgao
+    """.format(nm_table_vistas, nm_table_documentos))
     nm_table_atuais = "ATUAIS_{}_{}".format(nm_tipo, nm_intervalo)
     atuais.createOrReplaceTempView(nm_table_atuais)
 
     # Count de is_instaurado, pois quando is_atual = 0, n ha is_instaurado = 1
     anteriores = spark.sql("""
-        SELECT
-            vist_orgi_orga_dk,
-            COUNT(DISTINCT docu_dk) as nr_documentos_distintos_anterior,
-            SUM(nr_aberturas_vista) as nr_aberturas_vista_anterior,
-            SUM(has_aproveitamento) as nr_aproveitamentos_anterior,
-            nvl(COUNT(is_instaurado), 0) AS nr_instaurados_anterior
-        FROM (
+        SELECT 
+            id_orgao as vist_orgi_orga_dk,
+            nvl(nr_documentos_distintos_anterior, 0) as nr_documentos_distintos_anterior,
+            nvl(nr_aberturas_vista_anterior, 0) AS nr_aberturas_vista_anterior,
+            nvl(nr_aproveitamentos_anterior, 0) AS nr_aproveitamentos_anterior,
+            nvl(nr_instaurados_anterior, 0) as nr_instaurados_anterior
+        FROM ORGAOS_VALIDOS
+        LEFT JOIN (
             SELECT 
                 vist_orgi_orga_dk,
-                docu_dk,
-                COUNT(vist_dk) AS nr_aberturas_vista,
-                MAX(is_aproveitamento) AS has_aproveitamento,
-                MAX(is_instaurado_intervalo) AS is_instaurado
+                COUNT(DISTINCT docu_dk) as nr_documentos_distintos_anterior,
+                COUNT(DISTINCT vist_dk) AS nr_aberturas_vista_anterior,
+                SUM(is_aproveitamento) AS nr_aproveitamentos_anterior
             FROM {0} t
             WHERE is_atual = 0
-            GROUP BY vist_orgi_orga_dk, docu_dk) t
-        GROUP BY vist_orgi_orga_dk
-    """.format(nm_table_vistas))
+            GROUP BY vist_orgi_orga_dk
+            ) A ON A.vist_orgi_orga_dk = id_orgao
+        LEFT JOIN (
+            SELECT
+                docu_orgi_orga_dk_responsavel,
+                nvl(COUNT(is_instaurado_intervalo), 0) - nvl(SUM(is_instaurado_intervalo), 0) as nr_instaurados_anterior
+            FROM {1}
+            GROUP BY docu_orgi_orga_dk_responsavel
+        ) B ON B.docu_orgi_orga_dk_responsavel = id_orgao
+    """.format(nm_table_vistas, nm_table_documentos))
     nm_table_anteriores = "ANTERIORES_{}_{}".format(nm_tipo, nm_intervalo)
     anteriores.createOrReplaceTempView(nm_table_anteriores)
 
@@ -204,77 +242,118 @@ def create_regra_orgao(spark, options, nm_tipo, pacotes, cldc_dks, tppr_dks, dat
     return nm_table_final
 
 def create_regra_cpf(spark, options, nm_tipo, pacotes, cldc_dks, tppr_dks, date_old_begin,
-                     date_old_end, date_current_begin, nm_intervalo, vistas_table='VISTAS_MAIN_TABLE'):
+                     date_old_end, date_current_begin, nm_intervalo, vistas_table='VISTAS_MAIN_TABLE',
+                     docs_table='dOCUMENTOS_MAIN_TABLE'):
     schema_exadata = options['schema_exadata']
     schema_exadata_aux = options['schema_exadata_aux']
 
-    # LEFT JOIN ja que vistas podem n ter andamento associado ainda
+    orgaos_validos = spark.sql("""
+        SELECT id_orgao
+        FROM {0}.atualizacao_pj_pacote
+        WHERE cod_pct IN {1}
+    """.format(schema_exadata_aux, pacotes))
+    orgaos_validos.createOrReplaceTempView('ORGAOS_VALIDOS')
+
+    orgaos_cpf_validos = spark.sql("""
+        SELECT DISTINCT vist_orgi_orga_dk as id_orgao, pesf_cpf as cpf
+        FROM {0}
+        JOIN ORGAOS_VALIDOS ON id_orgao = vist_orgi_orga_dk
+    """.format(vistas_table))
+    orgaos_cpf_validos.createOrReplaceTempView('ORGAOS_CPF_VALIDOS')
+
     vistas = spark.sql("""
         SELECT 
             docu_dk,
             vist_dk,
             vist_orgi_orga_dk,
             pesf_cpf,
-            CASE 
-                WHEN docu_dt_cadastro >= '{3}' THEN 1 
-                WHEN docu_dt_cadastro >= '{1}' THEN 0
-                ELSE NULL END AS is_instaurado_intervalo, 
             CASE WHEN vist_dt_abertura_vista >= '{2}' THEN 1 ELSE 0 END AS is_atual,
-            CASE WHEN stao_tppr_dk IN {6} AND pcao_dt_cancelamento IS NULL THEN 1 ELSE 0 END AS is_aproveitamento
+            CASE WHEN stao_tppr_dk IN {5} AND pcao_dt_cancelamento IS NULL THEN 1 ELSE 0 END AS is_aproveitamento
         FROM {0}
+        JOIN ORGAOS_VALIDOS ON id_orgao = vist_orgi_orga_dk
         WHERE vist_dt_abertura_vista >= '{1}' AND vist_dt_abertura_vista <= current_timestamp()
         AND NOT (vist_dt_abertura_vista > '{2}' AND vist_dt_abertura_vista < '{3}')
-        AND docu_cldc_dk IN {5}
-        AND cod_pct IN {4}
-    """.format(vistas_table, date_old_begin, date_old_end, date_current_begin, pacotes, cldc_dks, tppr_dks))
-    nm_table_vistas = "VISTAS_CPF_{}_{}".format(nm_tipo, nm_intervalo)
+        AND docu_cldc_dk IN {4}
+        AND pesf_cpf IS NOT NULL
+    """.format(vistas_table, date_old_begin, date_old_end, date_current_begin, cldc_dks, tppr_dks))
+    nm_table_vistas = "VISTAS_{}_{}".format(nm_tipo, nm_intervalo)
     vistas.createOrReplaceTempView(nm_table_vistas)
 
+    documentos = spark.sql("""
+        SELECT
+            docu_dk,
+            docu_orgi_orga_dk_responsavel,
+            CASE 
+                WHEN docu_dt_cadastro >= '{3}' THEN 1 
+                WHEN docu_dt_cadastro >= '{1}' AND docu_dt_cadastro <= '{2}' THEN 0
+                ELSE NULL END AS is_instaurado_intervalo
+        FROM {0}
+        JOIN ORGAOS_VALIDOS ON id_orgao = docu_orgi_orga_dk_responsavel
+        WHERE docu_cldc_dk IN {4}
+    """.format(docs_table, date_old_begin, date_old_end, date_current_begin, cldc_dks))
+    nm_table_documentos = "DOCUMENTOS_{}_{}".format(nm_tipo, nm_intervalo)
+    documentos.createOrReplaceTempView(nm_table_documentos)
+
+    # SUM de is_instaurado, ja que os instaurados atuais sao sempre 1
     atuais = spark.sql("""
         SELECT
-            vist_orgi_orga_dk,
-            pesf_cpf,
-            COUNT(DISTINCT docu_dk) as nr_documentos_distintos_atual,
-            SUM(nr_aberturas_vista) as nr_aberturas_vista_atual,
-            SUM(has_aproveitamento) as nr_aproveitamentos_atual,
-            nvl(SUM(is_instaurado), 0) as nr_instaurados_atual
-        FROM (
+            id_orgao as vist_orgi_orga_dk,
+            cpf as pesf_cpf,
+            nvl(nr_documentos_distintos_atual, 0) as nr_documentos_distintos_atual, 
+            nvl(nr_aberturas_vista_atual, 0) AS nr_aberturas_vista_atual, 
+            nvl(nr_aproveitamentos_atual, 0) AS nr_aproveitamentos_atual,
+            nvl(nr_instaurados_atual, 0) as nr_instaurados_atual
+        FROM ORGAOS_CPF_VALIDOS
+        LEFT JOIN (
             SELECT 
                 vist_orgi_orga_dk,
                 pesf_cpf,
-                docu_dk,
-                COUNT(vist_dk) AS nr_aberturas_vista,
-                MAX(is_aproveitamento) AS has_aproveitamento,
-                MAX(is_instaurado_intervalo) AS is_instaurado
+                COUNT(DISTINCT docu_dk) as nr_documentos_distintos_atual,
+                COUNT(DISTINCT vist_dk) AS nr_aberturas_vista_atual,
+                SUM(is_aproveitamento) AS nr_aproveitamentos_atual
             FROM {0} t
             WHERE is_atual = 1
-            GROUP BY vist_orgi_orga_dk, pesf_cpf, docu_dk) t
-        GROUP BY vist_orgi_orga_dk, pesf_cpf
-    """.format(nm_table_vistas))
-    nm_table_atuais = "ATUAIS_CPF_{}_{}".format(nm_tipo, nm_intervalo)
+            GROUP BY vist_orgi_orga_dk, pesf_cpf
+            ) A ON A.vist_orgi_orga_dk = id_orgao AND A.pesf_cpf = cpf
+        LEFT JOIN (
+            SELECT
+                docu_orgi_orga_dk_responsavel,
+                nvl(SUM(is_instaurado_intervalo), 0) as nr_instaurados_atual
+            FROM {1}
+            GROUP BY docu_orgi_orga_dk_responsavel
+        ) B ON B.docu_orgi_orga_dk_responsavel = id_orgao
+    """.format(nm_table_vistas, nm_table_documentos))
+    nm_table_atuais = "ATUAIS_{}_{}".format(nm_tipo, nm_intervalo)
     atuais.createOrReplaceTempView(nm_table_atuais)
 
     anteriores = spark.sql("""
-        SELECT
-            vist_orgi_orga_dk,
-            pesf_cpf,
-            COUNT(DISTINCT docu_dk) as nr_documentos_distintos_anterior,
-            SUM(nr_aberturas_vista) as nr_aberturas_vista_anterior,
-            SUM(has_aproveitamento) as nr_aproveitamentos_anterior,
-            nvl(COUNT(is_instaurado), 0) as nr_instaurados_anterior
-        FROM (
+        SELECT 
+            id_orgao as vist_orgi_orga_dk,
+            cpf as pesf_cpf,
+            nvl(nr_documentos_distintos_anterior, 0) as nr_documentos_distintos_anterior,
+            nvl(nr_aberturas_vista_anterior, 0) AS nr_aberturas_vista_anterior,
+            nvl(nr_aproveitamentos_anterior, 0) AS nr_aproveitamentos_anterior,
+            nvl(nr_instaurados_anterior, 0) as nr_instaurados_anterior
+        FROM ORGAOS_CPF_VALIDOS
+        LEFT JOIN (
             SELECT 
                 vist_orgi_orga_dk,
                 pesf_cpf,
-                docu_dk,
-                COUNT(vist_dk) AS nr_aberturas_vista,
-                MAX(is_aproveitamento) AS has_aproveitamento,
-                MAX(is_instaurado_intervalo) AS is_instaurado
+                COUNT(DISTINCT docu_dk) as nr_documentos_distintos_anterior,
+                COUNT(DISTINCT vist_dk) AS nr_aberturas_vista_anterior,
+                SUM(is_aproveitamento) AS nr_aproveitamentos_anterior
             FROM {0} t
             WHERE is_atual = 0
-            GROUP BY vist_orgi_orga_dk, pesf_cpf, docu_dk) t
-        GROUP BY vist_orgi_orga_dk, pesf_cpf
-    """.format(nm_table_vistas))
+            GROUP BY vist_orgi_orga_dk, pesf_cpf
+            ) A ON A.vist_orgi_orga_dk = id_orgao AND A.pesf_cpf = cpf
+        LEFT JOIN (
+            SELECT
+                docu_orgi_orga_dk_responsavel,
+                nvl(COUNT(is_instaurado_intervalo), 0) - nvl(SUM(is_instaurado_intervalo), 0) as nr_instaurados_anterior
+            FROM {1}
+            GROUP BY docu_orgi_orga_dk_responsavel
+        ) B ON B.docu_orgi_orga_dk_responsavel = id_orgao
+    """.format(nm_table_vistas, nm_table_documentos))
     nm_table_anteriores = "ANTERIORES_CPF_{}_{}".format(nm_tipo, nm_intervalo)
     anteriores.createOrReplaceTempView(nm_table_anteriores)
 

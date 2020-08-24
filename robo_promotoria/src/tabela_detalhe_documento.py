@@ -35,7 +35,7 @@ def execute_process(options):
             # Ocorre caso mes atual tenha mais dias que anterior
             day -= 1
 
-    main_table = setup_table_cache(spark, options, date_mes_old_begin)
+    main_table, main_table_documentos = setup_table_cache(spark, options, date_mes_old_begin)
 
     # Tabela agregada orgao cpf
     ## Regras PIPs
@@ -47,12 +47,12 @@ def execute_process(options):
                 "6346,6350,6359,6392,6017,6018,6020,7745,6648,6649,6650,6651,6652,6653,6654,"
                 "6038,6039,6040,6041,6042,6043,7815,7816,6620,6257,6258,7878,7877,6367,6368,6369,6370,1208,1030,6252,6253,1201,1202,6254)")
     nm_table_1 = create_regra_cpf(spark, options, nm_tipo, pacotes, cldc_dks, tppr_dks, date_mes_old_begin,
-                                  date_mes_old_end, date_mes_current_begin, nm_intervalo, vistas_table=main_table)
+                                  date_mes_old_end, date_mes_current_begin, nm_intervalo, vistas_table=main_table, docs_table=main_table_documentos)
 
     nm_tipo = 'pip_pics'
     cldc_dks = "(590)"
     nm_table_2 = create_regra_cpf(spark, options, nm_tipo, pacotes, cldc_dks, tppr_dks, date_mes_old_begin,
-                                  date_mes_old_end, date_mes_current_begin, nm_intervalo, vistas_table=main_table)
+                                  date_mes_old_end, date_mes_current_begin, nm_intervalo, vistas_table=main_table, docs_table=main_table_documentos)
 
     table_cpf = spark.sql("""
         SELECT * FROM {0}
@@ -79,12 +79,12 @@ def execute_process(options):
                 "6346,6350,6359,6392,6017,6018,6020,7745,6648,6649,6650,6651,6652,6653,6654,"
                 "6038,6039,6040,6041,6042,6043,7815,7816,6620,6257,6258,7878,7877,6367,6368,6369,6370,1208,1030,6252,6253,1201,1202,6254)")
     nm_table_1 = create_regra_orgao(spark, options, nm_tipo, pacotes, cldc_dks, tppr_dks, date_mes_old_begin,
-                                    date_mes_old_end, date_mes_current_begin, nm_intervalo, vistas_table=main_table)
+                                    date_mes_old_end, date_mes_current_begin, nm_intervalo, vistas_table=main_table, docs_table=main_table_documentos)
 
     nm_tipo = 'pip_pics'
     cldc_dks = "(590)"
     nm_table_2 = create_regra_orgao(spark, options, nm_tipo, pacotes, cldc_dks, tppr_dks, date_mes_old_begin,
-                                    date_mes_old_end, date_mes_current_begin, nm_intervalo, vistas_table=main_table)
+                                    date_mes_old_end, date_mes_current_begin, nm_intervalo, vistas_table=main_table, docs_table=main_table_documentos)
 
     ## Regras Tutelas
     pacotes = "(20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33)"
@@ -92,7 +92,7 @@ def execute_process(options):
     cldc_dks = "(51219, 51220, 51221, 51222, 51223, 392, 395)"
     tppr_dks = "(-1)"
     nm_table_3 = create_regra_orgao(spark, options, nm_tipo, pacotes, cldc_dks, tppr_dks, date_mes_old_begin,
-                                    date_mes_old_end, date_mes_current_begin, nm_intervalo, vistas_table=main_table)
+                                    date_mes_old_end, date_mes_current_begin, nm_intervalo, vistas_table=main_table, docs_table=main_table_documentos)
 
     table_orgao = spark.sql("""
         SELECT * FROM {0}
