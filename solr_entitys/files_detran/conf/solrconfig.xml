@@ -337,8 +337,8 @@
          have some sort of hard autoCommit to limit the log size.
       -->
     <autoCommit> 
-       <maxTime>300000</maxTime> 
-       <openSearcher>true</openSearcher> 
+       <maxTime>600000</maxTime> 
+       <openSearcher>false</openSearcher> 
      </autoCommit>
 
     <!-- softAutoCommit is like autoCommit except it causes a

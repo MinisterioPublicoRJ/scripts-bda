@@ -18,7 +18,7 @@ function process()
         -Dmapreduce.output.fileoutputformat.compress=true \
         -Dmapreduce.map.output.compress=true \
         -Dmapreduce.output.fileoutputformat.compress.codec=org.apache.hadoop.io.compress.GzipCodec \
-        -Dmapreduce.job.maps=1 \
+        -Dmapreduce.job.maps=10 \
         -Dmapreduce.job.reduces=1 \
         -D mapreduce.map.output.key.field.separator=, \
         -D mapred.textoutputformat.separator=, \

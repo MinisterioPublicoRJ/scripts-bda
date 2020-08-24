@@ -15,6 +15,8 @@ def execute_process(options):
             .enableHiveSupport() \
             .getOrCreate()
 
+    spark.conf.set("spark.sql.autoBroadcastJoinThreshold", -1)
+
     schema_exadata = options['schema_exadata']
     schema_exadata_aux = options['schema_exadata_aux']
 

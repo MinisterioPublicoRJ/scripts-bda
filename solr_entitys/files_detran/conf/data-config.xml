@@ -4,7 +4,9 @@
         password="U2FsdGVkX1/8BxblgEjLIQoO3kUjdqCEGnJd56kZlnw=" 
         encryptKeyFile="/var/lib/solr/server/encryptionkey"/>
     <document name="files_detran">
-        <entity name="files_detran_schema" query="SELECT * FROM bases_dev.pcivil_placas ">
+        <entity name="files_detran_schema" query="
+            SELECT uuid, num_camera, placa, lat, lon, datapassagem, velocidade, faixa
+            FROM bases_dev.pcivil_placas ">
         </entity>
     </document>
 </dataConfig>

@@ -52,14 +52,17 @@ def execute_process(args):
 
             if not df.rdd.isEmpty():
 
-                df = spark.read.load(actual_directory, format="csv", multiLine=True,
-			                        sep=args.delimiter, inferSchema=True, header=True)
+                # df = spark.read.load(actual_directory, format="csv", multiLine=True,
+			    #                     sep=args.delimiter, inferSchema=True, header=True)
                 
-                columns = [column_name.replace(" ", "_").replace("\r", "") for column_name in df.columns]
-                
-                df = df.toDF(*columns)
+                df = spark.read.load(actual_directory, format="csv", sep=args.delimiter, 
+                            inferSchema=True, header=True)
 
-                df = reduce(remove_break_lines, df.dtypes, df)
+                #columns = [column_name.replace(" ", "_").replace("\r", "") for column_name in df.columns]
+                
+                #df = df.toDF(*columns)
+
+                #df = reduce(remove_break_lines, df.dtypes, df)
                     
                 table_hive = "{}.{}".format(args.schemaHive, directory)
                 
