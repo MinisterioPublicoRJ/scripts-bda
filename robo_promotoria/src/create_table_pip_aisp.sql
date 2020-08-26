@@ -171,3 +171,282 @@ INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (30069516, 15, "15 BPM DUQUE
 INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (30069516, 21, "21 BPM SAO JOAO DE MERITI", 400754)
 ---EOS---
 INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (30069516, 39, "39 BPM BELFORD ROXO", 400754)
+---EOS---
+
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (300977, 28, "28 BPM VOLTA REDONDA", 400754)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (300987, 11, "11 BPM NOVA FRIBURGO", 400754)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (400731, 8, "8 BPM CAMPOS", 400754)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (400758, 8, "8 BPM CAMPOS", 400754)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (400736, 26, "26 BPM PETROPOLIS", 400754)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (1249804, 32, "32 BPM RIO DAS OSTRAS", 400754)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (5679985, 25, "25 BPM REGIAO DOS LAGOS", 400754)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (6115386, 28, "28 BPM VOLTA REDONDA", 400754)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (7419262, 35, "35 BPM RIO BONITO", 400754)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (7419344, 24, "24 BPM QUEIMADOS", 400754)
+---EOS---
+
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941071, 9, "9 BPM MADUREIRA", 101197)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941061, 9, "9 BPM MADUREIRA", 300814)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941071, 2, "2 BPM ZONA SUL", 101197)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941061, 2, "2 BPM ZONA SUL", 300814)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941071, 19, "19 BPM COPACABANA", 101197)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941061, 19, "19 BPM COPACABANA", 300814)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941071, 4, "4 BPM CENTRO", 101197)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941061, 4, "4 BPM CENTRO", 300814)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941071, 5, "5 BPM CENTRO", 101197)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941061, 5, "5 BPM CENTRO", 300814)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941071, 3, "3 BPM MEIER", 101197)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941061, 3, "3 BPM MEIER", 300814)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941071, 6, "6 BPM TIJUCA", 101197)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941061, 6, "6 BPM TIJUCA", 300814)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941071, 17, "17 BPM ILHA DO GOVERNADOR", 101197)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941061, 17, "17 BPM ILHA DO GOVERNADOR", 300814)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941071, 22, "22 BPM BONSUCESSO", 101197)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941061, 22, "22 BPM BONSUCESSO", 300814)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941071, 16, "16 BPM PENHA", 101197)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941061, 16, "16 BPM PENHA", 300814)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941071, 41, "41 BPM IRAJA", 101197)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941061, 41, "41 BPM IRAJA", 300814)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941071, 23, "23 BPM ZONA SUL", 101197)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941061, 23, "23 BPM ZONA SUL", 300814)
+---EOS---
+
+
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29934401, 31, "31 BPM BARRA DA TIJUCA", 400750)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29934732, 31, "31 BPM BARRA DA TIJUCA", 6571343)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29934401, 18, "18 BPM JACAREPAGUA", 400750)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29934732, 18, "18 BPM JACAREPAGUA", 6571343)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29934401, 14, "14 BPM BANGU", 400750)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29934732, 14, "14 BPM BANGU", 6571343)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29934401, 40, "40 BPM CAMPO GRANDE", 400750)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29934732, 40, "40 BPM CAMPO GRANDE", 6571343)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29934401, 27, "27 BPM SANTA CRUZ", 400750)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29934732, 27, "27 BPM SANTA CRUZ", 6571343)
+---EOS---
+
+
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (30034671, 7, "7 BPM SAO GONCALO", 400770)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (30061329, 12, "12 BPM NITEROI", 300104)
+---EOS---
+
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941322, 20, "20 BPM NOVA IGUACU", 300110)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (30034664, 15, "15 BPM DUQUE DE CAXIAS", 300111)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (30069601, 15, "15 BPM DUQUE DE CAXIAS", 913915)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (30034664, 21, "21 BPM SAO JOAO DE MERITI", 300111)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (30069601, 21, "21 BPM SAO JOAO DE MERITI", 913915)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (30034664, 39, "39 BPM BELFORD ROXO", 300111)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (30069601, 39, "39 BPM BELFORD ROXO", 913915)
+---EOS---
+
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941099, 9, "9 BPM MADUREIRA", 101003)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941099, 2, "2 BPM ZONA SUL", 101003)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941099, 19, "19 BPM COPACABANA", 101003)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941099, 4, "4 BPM CENTRO", 101003)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941099, 5, "5 BPM CENTRO", 101003)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941099, 3, "3 BPM MEIER", 101003)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941099, 6, "6 BPM TIJUCA", 101003)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941099, 17, "17 BPM ILHA DO GOVERNADOR", 101003)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941099, 22, "22 BPM BONSUCESSO", 101003)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941099, 16, "16 BPM PENHA", 101003)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941099, 41, "41 BPM IRAJA", 101003)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941099, 23, "23 BPM ZONA SUL", 101003)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941099, 31, "31 BPM BARRA DA TIJUCA", 101003)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941099, 18, "18 BPM JACAREPAGUA", 101003)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941099, 14, "14 BPM BANGU", 101003)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941099, 40, "40 BPM CAMPO GRANDE", 101003)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941099, 27, "27 BPM SANTA CRUZ", 101003)
+---EOS---
+
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941140, 9, "9 BPM MADUREIRA", 101004)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941140, 2, "2 BPM ZONA SUL", 101004)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941140, 19, "19 BPM COPACABANA", 101004)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941140, 4, "4 BPM CENTRO", 101004)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941140, 5, "5 BPM CENTRO", 101004)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941140, 3, "3 BPM MEIER", 101004)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941140, 6, "6 BPM TIJUCA", 101004)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941140, 17, "17 BPM ILHA DO GOVERNADOR", 101004)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941140, 22, "22 BPM BONSUCESSO", 101004)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941140, 16, "16 BPM PENHA", 101004)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941140, 41, "41 BPM IRAJA", 101004)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941140, 23, "23 BPM ZONA SUL", 101004)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941140, 31, "31 BPM BARRA DA TIJUCA", 101004)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941140, 18, "18 BPM JACAREPAGUA", 101004)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941140, 14, "14 BPM BANGU", 101004)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941140, 40, "40 BPM CAMPO GRANDE", 101004)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941140, 27, "27 BPM SANTA CRUZ", 101004)
+---EOS---
+
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941222, 9, "9 BPM MADUREIRA", 101007)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941222, 2, "2 BPM ZONA SUL", 101007)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941222, 19, "19 BPM COPACABANA", 101007)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941222, 4, "4 BPM CENTRO", 101007)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941222, 5, "5 BPM CENTRO", 101007)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941222, 3, "3 BPM MEIER", 101007)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941222, 6, "6 BPM TIJUCA", 101007)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941222, 17, "17 BPM ILHA DO GOVERNADOR", 101007)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941222, 22, "22 BPM BONSUCESSO", 101007)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941222, 16, "16 BPM PENHA", 101007)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941222, 41, "41 BPM IRAJA", 101007)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941222, 23, "23 BPM ZONA SUL", 101007)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941222, 31, "31 BPM BARRA DA TIJUCA", 101007)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941222, 18, "18 BPM JACAREPAGUA", 101007)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941222, 14, "14 BPM BANGU", 101007)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941222, 40, "40 BPM CAMPO GRANDE", 101007)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941222, 27, "27 BPM SANTA CRUZ", 101007)
+---EOS---
+
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941251, 9, "9 BPM MADUREIRA", 300994)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941251, 2, "2 BPM ZONA SUL", 300994)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941251, 19, "19 BPM COPACABANA", 300994)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941251, 4, "4 BPM CENTRO", 300994)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941251, 5, "5 BPM CENTRO", 300994)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941251, 3, "3 BPM MEIER", 300994)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941251, 6, "6 BPM TIJUCA", 300994)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941251, 17, "17 BPM ILHA DO GOVERNADOR", 300994)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941251, 22, "22 BPM BONSUCESSO", 300994)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941251, 16, "16 BPM PENHA", 300994)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941251, 41, "41 BPM IRAJA", 300994)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941251, 23, "23 BPM ZONA SUL", 300994)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941251, 31, "31 BPM BARRA DA TIJUCA", 300994)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941251, 18, "18 BPM JACAREPAGUA", 300994)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941251, 14, "14 BPM BANGU", 300994)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941251, 40, "40 BPM CAMPO GRANDE", 300994)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941251, 27, "27 BPM SANTA CRUZ", 300994)
+---EOS---
+
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941368, 7, "7 BPM SAO GONCALO", 300984)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (29941368, 7, "7 BPM SAO GONCALO", 300984)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (30061803, 12, "12 BPM NITEROI", 6569371)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (30061803, 12, "12 BPM NITEROI", 6569371)
+---EOS---
+
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (30070783, 15, "15 BPM DUQUE DE CAXIAS", 300112)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (30070806, 15, "15 BPM DUQUE DE CAXIAS", 400753)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (30070783, 21, "21 BPM SAO JOAO DE MERITI", 300112)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (30070806, 21, "21 BPM SAO JOAO DE MERITI", 400753)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (30070783, 39, "39 BPM BELFORD ROXO", 300112)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (30070806, 39, "39 BPM BELFORD ROXO", 400753)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (30070783, 20, "20 BPM NOVA IGUACU", 300112)
+---EOS---
+INSERT INTO {schema_exadata_aux}.tb_pip_aisp VALUES (30070806, 20, "20 BPM NOVA IGUACU", 400753)
