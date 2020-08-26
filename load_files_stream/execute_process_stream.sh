@@ -1,7 +1,7 @@
 spark-submit --master yarn --deploy-mode cluster \
     --num-executors 2 \
     --executor-memory 1g \
-    --driver-memory 1G \
+    --driver-memory 1g \
     --conf spark.executor.memoryOverhead=2g \
     --conf spark.yarn.maxAppAttempts=8 \
     --conf spark.yarn.am.attemptFailuresValidityInterval=1h \

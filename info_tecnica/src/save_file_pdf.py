@@ -1,23 +1,31 @@
 import os
 os.environ['PYTHON_EGG_CACHE'] = "/tmp"
 from hdfs import InsecureClient
-import happybase
+from happybase import Connection as HBaseConnection
 from base import spark
 import argparse
-
 
 
 """ 
     Connection to hbase
 """
+def get_connection(server):
+    connection = HBaseConnection(
+            server,
+            timeout=300000,
+            transport="framed",
+            protocol="compact",
+        )
+    return connection
+
+""" 
+    Get table hbase
+"""
 def get_table(table_name, server):
     try:
-        connection = happybase.Connection(server, timeout=300000)
-        return connection.table(table_name)
+        return get_connection(server).table(table_name)
     except:
-        connection = happybase.Connection(server, timeout=300000)
-        return connection.table(table_name)
-
+        return get_connection(server).table(table_name)
 
 """
     Method to save byte files extrated to HDFS
@@ -37,10 +45,11 @@ def execute_process(args):
     passwd_oracle = args.jdbcPassword
 
     dir_files_pdf = args.dirFilesPdf
-    server = args.hdfsServer
+    server_hdfs = args.hdfsServer
     user_name_hdfs = args.hdfsUser
 
-    server_hdfs = 'http://%s:50070' % server
+    server = args.hbaseServer
+    
     table_oracle = "GATE.GATE_INFO_TECNICA"
 
     row = get_table('file_info_tecnica', server).row('row1')
@@ -75,6 +84,7 @@ if __name__ == "__main__":
     parser.add_argument('-u','--jdbcUser', metavar='jdbcUser', type=str, help='')
     parser.add_argument('-p','--jdbcPassword', metavar='jdbcPassword', type=str, help='')
     parser.add_argument('-dfp','--dirFilesPdf', metavar='dirFilesPdf', type=str, help='')
+    parser.add_argument('-hbs','--hbaseServer', metavar='hbaseServer', type=str, help='')
     parser.add_argument('-hs','--hdfsServer', metavar='hdfsServer', type=str, help='')
     parser.add_argument('-hu','--hdfsUser', metavar='hdfsUser', type=str, help='')
     args = parser.parse_args()

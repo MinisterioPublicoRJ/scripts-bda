@@ -14,16 +14,18 @@ function usage()
 function process()
 {
     echo "Compactando os arquivos..."
-    hadoop jar /opt/cloudera/parcels/CDH-5.14.2-1.cdh5.14.2.p0.3/lib/hadoop-mapreduce/hadoop-streaming-2.6.0-cdh5.14.2.jar \
+    hadoop jar /opt/cloudera/parcels/CDH-6.2.1-1.cdh6.2.1.p0.1580995/jars/hadoop-streaming-3.0.0-cdh6.2.1.jar \
         -Dmapreduce.output.fileoutputformat.compress=true \
         -Dmapreduce.map.output.compress=true \
         -Dmapreduce.output.fileoutputformat.compress.codec=org.apache.hadoop.io.compress.GzipCodec \
+        -Dmapreduce.job.maps=10 \
         -Dmapreduce.job.reduces=1 \
-        -Dmapreduce.input.fileinputformat.split.minsize=2000000000 \
-        -D stream.map.output.field.separator=, \
-        -D mapreduce.output.textoutputformat.separator=, \
+        -D mapreduce.map.output.key.field.separator=, \
+        -D mapred.textoutputformat.separator=, \
+        -D stream.reduce.output.field.separator=, \
         -mapper "grep -v $header_line" \
-        -reducer /bin/cat \
+        -reducer "reducer.sh $header_line" \
+        -file reducer.sh \
         -input $input_path \
         -output $output_path
 
