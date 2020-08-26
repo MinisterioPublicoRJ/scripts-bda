@@ -41,7 +41,7 @@ def execute_process(options):
 
     # Tabela agregada orgao cpf
     ## Regras PIPs
-    pacotes = "(200)"
+    pacotes = "(200, 201, 202, 203, 204, 205, 206, 207, 208, 209)"
     nm_intervalo = 'mes'
     nm_tipo = 'pip_inqueritos'
     cldc_dks = "(3, 494)"
@@ -73,7 +73,7 @@ def execute_process(options):
 
     # Tabela agregada orgao
     ## Regras PIPs
-    pacotes = "(200)"
+    pacotes = "(200, 201, 202, 203, 204, 205, 206, 207, 208, 209)"
     nm_intervalo = 'mes'
     nm_tipo = 'pip_inqueritos'
     cldc_dks = "(3, 494)"

@@ -81,7 +81,7 @@ def execute_process(options):
         AND docu_tpst_dk != 11
         AND pers_dt_fim IS NULL OR pers_dt_fim > current_timestamp()
         UNION ALL
-        SELECT representante_dk, PS.pess_nm_pessoa, tppe_descricao, pip_codigo, docu_dk, docu_nr_mp, docu_dt_cadastro, docu_cldc_dk, docu_fsdc_dk, docu_tx_etiqueta
+        SELECT representante_dk, PS.pess_nm_pessoa, tppe_descricao, pip_codigo_antigo as pip_codigo, docu_dk, docu_nr_mp, docu_dt_cadastro, docu_cldc_dk, docu_fsdc_dk, docu_tx_etiqueta
         FROM {0}.mcpr_personagem
         JOIN {0}.mcpr_tp_personagem ON tppe_dk = pers_tppe_dk
         JOIN {1}.tb_pip_investigados_representantes R ON pers_pess_dk = R.pess_dk
