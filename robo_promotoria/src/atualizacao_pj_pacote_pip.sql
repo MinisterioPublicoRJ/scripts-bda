@@ -6,30 +6,31 @@ pip_codigo as id_orgao,
 orgi_nm_orgao_abrev as orgao_codamp,
 orgi_nm_orgao as orgi_nm_orgao
 FROM (
-    SELECT 29934303 AS pip_codigo
-    UNION SELECT 29934337
-    UNION SELECT 29926583
-    UNION SELECT 29926616
-    UNION SELECT 29926805
-    UNION SELECT 29927047
-    UNION SELECT 29933374
-    UNION SELECT 29933418
-    UNION SELECT 29933469
-    UNION SELECT 29933470
-    UNION SELECT 29933490
-    UNION SELECT 29933502
-    UNION SELECT 29933521
-    UNION SELECT 29933590
-    UNION SELECT 29933830
-    UNION SELECT 29933850
-    UNION SELECT 29933955
-    UNION SELECT 29933967
-    UNION SELECT 29933988
-    UNION SELECT 29934004
-    UNION SELECT 29934012
-    UNION SELECT 29934277
-    UNION SELECT 29934363
-    UNION SELECT 29934376
+    SELECT stack(24
+    , 29934303
+    , 29934337
+    , 29926583
+    , 29926616
+    , 29926805
+    , 29927047
+    , 29933374
+    , 29933418
+    , 29933469
+    , 29933470
+    , 29933490
+    , 29933502
+    , 29933521
+    , 29933590
+    , 29933830
+    , 29933850
+    , 29933955
+    , 29933967
+    , 29933988
+    , 29934004
+    , 29934012
+    , 29934277
+    , 29934363
+    , 29934376) AS (pip_codigo)
     ) t
 JOIN {schema_exadata}.orgi_orgao ON orgi_dk = pip_codigo
 ---EOS---
@@ -42,11 +43,12 @@ pip_codigo as id_orgao,
 orgi_nm_orgao_abrev as orgao_codamp,
 orgi_nm_orgao as orgi_nm_orgao
 FROM (
-    SELECT 30061694 AS pip_codigo
-    UNION SELECT 30061723
-    UNION SELECT 30061624
-    UNION SELECT 30034384
-    UNION SELECT 30061094
+    SELECT stack(5
+    , 30061694
+    , 30061723
+    , 30061624
+    , 30034384
+    , 30061094) AS (pip_codigo)
     ) t
 JOIN {schema_exadata}.orgi_orgao ON orgi_dk = pip_codigo
 ---EOS---
@@ -59,15 +61,16 @@ pip_codigo as id_orgao,
 orgi_nm_orgao_abrev as orgao_codamp,
 orgi_nm_orgao as orgi_nm_orgao
 FROM (
-    SELECT 30069669 AS pip_codigo
-    UNION SELECT 30069693
-    UNION SELECT 30069732
-    UNION SELECT 30070041
-    UNION SELECT 30069167
-    UNION SELECT 30069433
-    UNION SELECT 30069453
-    UNION SELECT 30069490
-    UNION SELECT 30069516
+    SELECT stack(9
+    , 30069669
+    , 30069693
+    , 30069732
+    , 30070041
+    , 30069167
+    , 30069433
+    , 30069453
+    , 30069490
+    , 30069516) AS (pip_codigo)
     ) t
 JOIN {schema_exadata}.orgi_orgao ON orgi_dk = pip_codigo
 ---EOS---
@@ -80,16 +83,17 @@ pip_codigo as id_orgao,
 orgi_nm_orgao_abrev as orgao_codamp,
 orgi_nm_orgao as orgi_nm_orgao
 FROM (
-    SELECT 300977 AS pip_codigo
-    UNION SELECT 300987
-    UNION SELECT 400731
-    UNION SELECT 400758
-    UNION SELECT 400736
-    UNION SELECT 1249804
-    UNION SELECT 5679985
-    UNION SELECT 6115386
-    UNION SELECT 7419262
-    UNION SELECT 7419344
+    SELECT stack(10
+    , 300977
+    , 300987
+    , 400731
+    , 400758
+    , 400736
+    , 1249804
+    , 5679985
+    , 6115386
+    , 7419262
+    , 7419344) AS (pip_codigo)
     ) t
 JOIN {schema_exadata}.orgi_orgao ON orgi_dk = pip_codigo
 ---EOS---
@@ -102,10 +106,11 @@ pip_codigo as id_orgao,
 orgi_nm_orgao_abrev as orgao_codamp,
 orgi_nm_orgao as orgi_nm_orgao
 FROM (
-    SELECT 29941071 AS pip_codigo
-    UNION SELECT 29941061
-    UNION SELECT 29934401
-    UNION SELECT 29934732
+    SELECT stack(4
+    , 29941071
+    , 29941061
+    , 29934401
+    , 29934732) AS (pip_codigo)
     ) t
 JOIN {schema_exadata}.orgi_orgao ON orgi_dk = pip_codigo
 ---EOS---
@@ -118,8 +123,9 @@ pip_codigo as id_orgao,
 orgi_nm_orgao_abrev as orgao_codamp,
 orgi_nm_orgao as orgi_nm_orgao
 FROM (
-    SELECT 30034671 AS pip_codigo
-    UNION SELECT 30061329
+    SELECT stack(2
+    , 30034671
+    , 30061329) AS (pip_codigo)
     ) t
 JOIN {schema_exadata}.orgi_orgao ON orgi_dk = pip_codigo
 ---EOS---
@@ -132,9 +138,10 @@ pip_codigo as id_orgao,
 orgi_nm_orgao_abrev as orgao_codamp,
 orgi_nm_orgao as orgi_nm_orgao
 FROM (
-    SELECT 29941322 AS pip_codigo
-    UNION SELECT 30034664
-    UNION SELECT 30069601
+    SELECT stack(3
+    , 29941322
+    , 30034664
+    , 30069601) AS (pip_codigo)
     ) t
 JOIN {schema_exadata}.orgi_orgao ON orgi_dk = pip_codigo
 ---EOS---
@@ -147,10 +154,11 @@ pip_codigo as id_orgao,
 orgi_nm_orgao_abrev as orgao_codamp,
 orgi_nm_orgao as orgi_nm_orgao
 FROM (
-    SELECT 29941099 AS pip_codigo
-    UNION SELECT 29941140
-    UNION SELECT 29941222
-    UNION SELECT 29941251
+    SELECT stack(4
+    , 29941099
+    , 29941140
+    , 29941222
+    , 29941251) AS (pip_codigo)
     ) t
 JOIN {schema_exadata}.orgi_orgao ON orgi_dk = pip_codigo
 ---EOS---
@@ -163,8 +171,9 @@ pip_codigo as id_orgao,
 orgi_nm_orgao_abrev as orgao_codamp,
 orgi_nm_orgao as orgi_nm_orgao
 FROM (
-    SELECT 29941368 AS pip_codigo
-    UNION SELECT 30061803
+    SELECT stack(2
+    , 29941368
+    , 30061803) AS (pip_codigo)
     ) t
 JOIN {schema_exadata}.orgi_orgao ON orgi_dk = pip_codigo
 ---EOS---
@@ -177,7 +186,8 @@ pip_codigo as id_orgao,
 orgi_nm_orgao_abrev as orgao_codamp,
 orgi_nm_orgao as orgi_nm_orgao
 FROM (
-    SELECT 30070783 AS pip_codigo
-    UNION SELECT 30070806
+    SELECT stack(2
+    , 30070783
+    , 30070806) AS (pip_codigo)
     ) t
 JOIN {schema_exadata}.orgi_orgao ON orgi_dk = pip_codigo
