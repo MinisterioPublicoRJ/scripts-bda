@@ -19,7 +19,6 @@ from models import (
 from queries import (
     get_predict_data,
     set_module_and_client,
-    get_max_dk,
     update_atividade_sindicancia,
     update_motivo_declarado
 )
@@ -169,18 +168,13 @@ conn.jconn.setAutoCommit(False)
 
 set_module_and_client(curs, 'DUNANT IA')
 
-max_atsd_dk = get_max_dk(curs,
-                         table_name='SILD.SILD_ATIVIDADE_SINDICANCIA',
-                         column_name='ATSD_DK')
-
 # Some applications of the model should not update the database tables
 if UPDATE_TABLES:
     print('Writing results to tables...')
     for labels, snca_dk in zip(y, df[ID_COLUMN].values):
-        max_atsd_dk += 1
         update_motivo_declarado(curs, snca_dk, labels)
         update_atividade_sindicancia(
-            curs, max_atsd_dk, snca_dk, ROBOT_NAME, ROBOT_NUMBER)
+            curs, snca_dk, ROBOT_NAME, ROBOT_NUMBER)
 
     conn.commit()
 else:

@@ -193,7 +193,7 @@ ATIV_SINDICANCIA_QUERY = """
     INSERT INTO SILD.SILD_ATIVIDADE_SINDICANCIA
     (ATSD_DK, ATSD_SNCA_DK, ATSD_TPSN_DK, ATSD_DT_REGISTRO,
     ATSD_DS_MOTIVO_ATIVIDADE, ATSD_NM_RESP_CTRL, ATSD_CPF_RESP_CTRL)
-    VALUES (?, ?, 23, SYSDATE, 'CLASSIFICACAO FEITA PELO ROBO', ?, ?)
+    VALUES (SILD_SQ_ATSD_DK.nextval, ?, 23, SYSDATE, 'CLASSIFICACAO FEITA PELO ROBO', ?, ?)
 """
 
 DELETE_MOT_DECLARADO_QUERY = """
@@ -346,6 +346,8 @@ def set_module_and_client(cursor, client_name):
     cursor.execute(SET_CLIENT_QUERY, (client_name,))
 
 
+# Costumava ser usada para pegar o max_dk da tabela de atividade de sindicancia
+# Esse uso foi substituido pelo uso de uma sequence do banco de dados
 def get_max_dk(cursor, table_name, column_name):
     """Get the max value for a given column in the table.
 
@@ -361,7 +363,7 @@ def get_max_dk(cursor, table_name, column_name):
     return int(cursor.fetchall()[0][0])
 
 
-def update_atividade_sindicancia(cursor, ativ_dk, snca_dk,
+def update_atividade_sindicancia(cursor, snca_dk,
                                  user_name, user_number):
     """Updates the data in the ATIVIDADE_SINDICANCIA table.
 
@@ -373,7 +375,7 @@ def update_atividade_sindicancia(cursor, ativ_dk, snca_dk,
         user_number: The number of the user making the update.
     """
     cursor.execute(ATIV_SINDICANCIA_QUERY,
-                   (int(ativ_dk), int(snca_dk), user_name, user_number))
+                   (int(snca_dk), user_name, user_number))
 
 
 def update_motivo_declarado(cursor, snca_dk, labels):
