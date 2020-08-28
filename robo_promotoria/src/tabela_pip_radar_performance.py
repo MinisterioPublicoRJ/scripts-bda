@@ -199,7 +199,7 @@ def execute_process(options):
 
     metricas = spark.sql(
         """
-        SELECT orgao_id, nm_orgao,
+        SELECT orgao_id, nm_orgao, cod_pct,
 	    CONCAT_WS(', ', collect_list(aisp_codigo)) as aisp_codigo,
 	    CONCAT_WS(', ', collect_list(aisp_nome)) as aisp_nome,
             MAX(nr_denuncias) as nr_denuncias,
@@ -207,19 +207,19 @@ def execute_process(options):
             MAX(nr_acordos_n_persecucao) as nr_acordos_n_persecucao,
             MAX(nr_arquivamentos) as nr_arquivamentos,
             MAX(nr_baixa_dp) as nr_aberturas_vista,
-	    MAX(MAX(nr_denuncias)) OVER () AS max_denuncias,
-	    MAX(MAX(nr_cautelares)) OVER() as max_cautelares,
-            MAX(MAX(nr_acordos_n_persecucao)) OVER() as max_acordos,
-            MAX(MAX(nr_arquivamentos)) OVER() as max_arquivamentos,
-            MAX(MAX(nr_baixa_dp)) OVER() as max_vistas,
-            PERCENTILE(MAX(nr_denuncias), 0.5) OVER() as med_denuncias,
-            PERCENTILE(MAX(nr_cautelares), 0.5) OVER() as med_cautelares,
-            PERCENTILE(MAX(nr_acordos_n_persecucao), 0.5) OVER() as med_acordos,
-            PERCENTILE(MAX(nr_arquivamentos), 0.5) OVER() as med_arquivamentos,
-            PERCENTILE(MAX(nr_baixa_dp), 0.5) OVER() as med_vistas
+	        MAX(MAX(nr_denuncias)) OVER (PARTITION BY cod_pct) AS max_denuncias,
+	        MAX(MAX(nr_cautelares)) OVER(PARTITION BY cod_pct) as max_cautelares,
+            MAX(MAX(nr_acordos_n_persecucao)) OVER(PARTITION BY cod_pct) as max_acordos,
+            MAX(MAX(nr_arquivamentos)) OVER(PARTITION BY cod_pct) as max_arquivamentos,
+            MAX(MAX(nr_baixa_dp)) OVER(PARTITION BY cod_pct) as max_vistas,
+            PERCENTILE(MAX(nr_denuncias), 0.5) OVER(PARTITION BY cod_pct) as med_denuncias,
+            PERCENTILE(MAX(nr_cautelares), 0.5) OVER(PARTITION BY cod_pct) as med_cautelares,
+            PERCENTILE(MAX(nr_acordos_n_persecucao), 0.5) OVER(PARTITION BY cod_pct) as med_acordos,
+            PERCENTILE(MAX(nr_arquivamentos), 0.5) OVER(PARTITION BY cod_pct) as med_arquivamentos,
+            PERCENTILE(MAX(nr_baixa_dp), 0.5) OVER(PARTITION BY cod_pct) as med_vistas
         FROM (
             SELECT
-                p.pip_codigo as orgao_id, O.orgi_nm_orgao as nm_orgao,
+                p.pip_codigo as orgao_id, O.orgi_nm_orgao as nm_orgao, PCT.cod_pct,
                 p.aisp_codigo as aisp_codigo,
                 p.aisp_nome as aisp_nome,
                 nvl(nr_denuncias, 0) as nr_denuncias,
@@ -229,57 +229,17 @@ def execute_process(options):
                 nvl(nr_baixa_dp, 0) as nr_baixa_dp
             FROM (SELECT DISTINCT pip_codigo, aisp_codigo, aisp_nome FROM TABELA_PIP_AISP) p
             JOIN {0}.orgi_orgao O ON orgi_dk = p.pip_codigo
+            LEFT JOIN {1}.atualizacao_pj_pacote PCT ON p.pip_codigo = PCT.id_orgao
             LEFT JOIN NR_DENUNCIAS A ON p.pip_codigo = A.orgao_id
             LEFT JOIN NR_CAUTELARES B ON p.pip_codigo= B.orgao_id
             LEFT JOIN NR_ACORDOS C ON p.pip_codigo = C.orgao_id
             LEFT JOIN NR_ARQUIVAMENTOS D ON p.pip_codigo = D.orgao_id
             LEFT JOIN NR_BAIXA_DP E ON p.pip_codigo = E.orgao_id) t
-	    GROUP BY orgao_id, nm_orgao
+	    GROUP BY orgao_id, nm_orgao, cod_pct
     """.format(schema_exadata, schema_exadata_aux))
     metricas.createOrReplaceTempView("metricas")
-
     spark.catalog.cacheTable("metricas")
 
-    orgao_max_den = (
-        metricas.where(col("nr_denuncias") == col("max_denuncias"))
-        .select(["orgao_id", "nm_orgao"])
-	.groupBy("orgao_id")
-	.agg(
-	    concat_ws(", ", collect_list("nm_orgao")).alias("nm_max_denuncias")
-	)
-    ).collect()[0][1]
-    orgao_max_cau = (
-        metricas.where(col("nr_cautelares") == col("max_cautelares"))
-        .select(["orgao_id", "nm_orgao"])
-	.groupBy("orgao_id")
-	.agg(
-	    concat_ws(", ", collect_list("nm_orgao")).alias("nm_max_cautelares")
-	)
-    ).collect()[0][1]
-    orgao_max_aco = (
-        metricas.where(col("nr_acordos_n_persecucao") == col("max_acordos"))
-        .select(["orgao_id", "nm_orgao"])
-	.groupBy("orgao_id")
-	.agg(
-	    concat_ws(", ", collect_list("nm_orgao")).alias("nm_max_acordos")
-	)
-    ).collect()[0][1]
-    orgao_max_arq = (
-        metricas.where(col("nr_arquivamentos") == col("max_arquivamentos"))
-        .select(["orgao_id", "nm_orgao"])
-	.groupBy("orgao_id")
-	.agg(
-	    concat_ws(", ", collect_list("nm_orgao")).alias("nm_max_arquivamentos")
-	)
-    ).collect()[0][1]
-    orgao_max_abe = (
-        metricas.where(col("nr_aberturas_vista") == col("max_vistas"))
-        .select(["orgao_id", "nm_orgao"])
-	.groupBy("orgao_id")
-	.agg(
-	    concat_ws(", ", collect_list("nm_orgao")).alias("nm_max_vistas")
-	)
-    ).collect()[0][1]
     stats = spark.sql(
             """
             SELECT mt.aisp_codigo,
@@ -318,14 +278,20 @@ def execute_process(options):
                       / med_arquivamentos as var_med_arquivamentos,
                    (nr_aberturas_vista - med_vistas)
                        / med_vistas as var_med_aberturas_vista,
-                   current_timestamp() as dt_calculo
+                   current_timestamp() as dt_calculo,
+                   nm_max_denuncias,
+                   nm_max_cautelares,
+                   nm_max_acordos,
+                   nm_max_arquivamentos,
+                   nm_max_aberturas,
+                   mt.cod_pct
             FROM metricas mt
-    """)\
-	.withColumn("nm_max_denuncias", lit(orgao_max_den))\
-	.withColumn("nm_max_cautelares", lit(orgao_max_cau))\
-	.withColumn("nm_max_acordos", lit(orgao_max_aco))\
-	.withColumn("nm_max_arquivamentos", lit(orgao_max_arq))\
-	.withColumn("nm_max_aberturas", lit(orgao_max_abe))
+            JOIN (SELECT cod_pct, MAX(nm_orgao) AS nm_max_denuncias FROM metricas WHERE nr_denuncias = max_denuncias GROUP BY cod_pct) NMD ON NMD.cod_pct = mt.cod_pct
+            JOIN (SELECT cod_pct, MAX(nm_orgao) AS nm_max_cautelares FROM metricas WHERE nr_cautelares = max_cautelares GROUP BY cod_pct) NMC ON NMC.cod_pct = mt.cod_pct
+            JOIN (SELECT cod_pct, MAX(nm_orgao) AS nm_max_acordos FROM metricas WHERE nr_acordos_n_persecucao = max_acordos GROUP BY cod_pct) NMA ON NMA.cod_pct = mt.cod_pct
+            JOIN (SELECT cod_pct, MAX(nm_orgao) AS nm_max_arquivamentos FROM metricas WHERE nr_arquivamentos = max_arquivamentos GROUP BY cod_pct) NMAR ON NMAR.cod_pct = mt.cod_pct
+            JOIN (SELECT cod_pct, MAX(nm_orgao) AS nm_max_aberturas FROM metricas WHERE nr_aberturas_vista = max_vistas GROUP BY cod_pct) NMAV ON NMAV.cod_pct = mt.cod_pct
+    """)
 
     table_name = "{0}.{1}".format(schema_exadata_aux, output_table_name)
     stats.write.mode("overwrite").saveAsTable(
