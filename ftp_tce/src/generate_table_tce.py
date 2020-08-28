@@ -58,9 +58,9 @@ def execute_process(args):
                 df = spark.read.load(actual_directory, format="csv", sep=args.delimiter, 
                             inferSchema=True, header=True)
 
-                #columns = [column_name.replace(" ", "_").replace("\r", "") for column_name in df.columns]
+                columns = [column_name.replace(" ", "_").replace("\r", "") for column_name in df.columns]
                 
-                #df = df.toDF(*columns)
+                df = df.toDF(*columns)
 
                 #df = reduce(remove_break_lines, df.dtypes, df)
                     
