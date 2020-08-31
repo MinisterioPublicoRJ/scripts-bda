@@ -1211,6 +1211,7 @@ params = {
         {
             "table_jdbc": "RH.CARGOS",
             "pk_table_jdbc": "CDCARGO",
+            "no_lower_upper_bound": "true",
             "update_date_table_jdbc": "",
             "table_hive": "rh_cargos"
         },
