@@ -1,15 +1,31 @@
 import argparse
-
+import params_table
 import pyspark
+#import unicodedata
+import unidecode
 from hdfs import InsecureClient
 from pyspark.sql.functions import year, col, regexp_replace
 from utils import _update_impala_table, send_log, ERROR, SUCCESS, SUCCESS_MESSAGE, ERROR_MESSAGE
 
 
+def trait_columns_name(value):
+    value = value.replace(" ", "_").replace("\r", "")
+    u = unicode(value, "utf-8")
+    return unidecode.unidecode(u)
+
 def remove_break_lines(df, (col_name, dtype)):
     
     df = df.withColumn(col_name, regexp_replace(col(col_name),'\r','').cast(dtype))
 
+    return df
+
+def check_type(df, (col_name, dtype)):
+    
+    if 'decimal' == dtype:
+        df = df.withColumn(col_name, regexp_replace(col(col_name),'^,','')) \
+            .withColumn(col_name, regexp_replace(col(col_name),',','.').cast('decimal(10,2)'))
+    else:
+        df = df.withColumn(col_name, col(col_name).cast(dtype))
     return df
 
 def export_to_postgres(df, args, tablePostgres):
@@ -55,12 +71,17 @@ def execute_process(args):
                 # df = spark.read.load(actual_directory, format="csv", multiLine=True,
 			    #                     sep=args.delimiter, inferSchema=True, header=True)
                 
-                df = spark.read.load(actual_directory, format="csv", sep=args.delimiter, 
-                            inferSchema=True, header=True)
+                columns_types = params_table.table_columns_type[directory]
 
-                columns = [column_name.replace(" ", "_").replace("\r", "") for column_name in df.columns]
+                df = spark.read.option("quote", "\"") \
+                    .option("escape", "\"") \
+                    .load(actual_directory, format="csv", sep=args.delimiter, header=True)
+
+                columns = [trait_columns_name(column_name) for column_name in df.columns]
                 
                 df = df.toDF(*columns)
+                
+                df = reduce(check_type, columns_types, df)
 
                 #df = reduce(remove_break_lines, df.dtypes, df)
                     
