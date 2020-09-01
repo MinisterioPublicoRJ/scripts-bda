@@ -4,3 +4,4 @@ thrift==0.9.3
 hdfs
 kazoo
 pysolr
+unidecode
