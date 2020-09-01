@@ -14,12 +14,12 @@ def execute_process(args):
 
     full_file_name_path = '{}{}'.format(full_path, end_file_name)
     with open('{}{}'.format(full_path, file_name), 'rb') as read:
-        with open(full_file_name_path, 'wb') as writer:
+        with open(full_file_name_path, 'wb') as file_write:
             reader = csv.reader(read, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
             for row in reader:
-                data = ';'.join(row)
-                data = data.replace("\n", " ").replace("\r", " ") + "\n"
-                writer.write(data)
+                new_row = [data.replace("\n", " ").replace("\r", " ") for data in row]
+                wr = csv.writer(file_write, delimiter=';')
+                wr.writerow(new_row)
 
     client = InsecureClient(args.webHdfs, args.userWebHdfs)
     client.upload(args.hdfsPath + directory, full_file_name_path, n_threads=5, overwrite=True)

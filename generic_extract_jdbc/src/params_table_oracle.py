@@ -1211,6 +1211,7 @@ params = {
         {
             "table_jdbc": "RH.CARGOS",
             "pk_table_jdbc": "CDCARGO",
+            "no_lower_upper_bound": "true",
             "update_date_table_jdbc": "",
             "table_hive": "rh_cargos"
         },
@@ -1224,6 +1225,7 @@ params = {
             "table_jdbc": "RH.FERIAS",
             "pk_table_jdbc": "CDMATRICULA",
             "update_date_table_jdbc": "",
+            "no_lower_upper_bound": "true",
             "table_hive": "rh_ferias"
         },
         {
@@ -1502,12 +1504,14 @@ params = {
         {
             "table_jdbc": "MMPS.MMPS_VW_RH_FOTO_FUNC",
             "pk_table_jdbc": "VTFU_CDMATRICULA",
+            "no_lower_upper_bound": "true",
             "update_date_table_jdbc": "",
             "table_hive": "mmps_vw_rh_foto_func"
         },
         {
             "table_jdbc": "MMPS.MMPS_ADM_RH_MOV_PROM",
             "pk_table_jdbc": "MMPM_MATRICULA",
+            "no_lower_upper_bound": "true",
             "update_date_table_jdbc": "",
             "table_hive": "mmps_adm_rh_mov_prom"
         },
@@ -1520,12 +1524,14 @@ params = {
         {
             "table_jdbc": "MMPS.MMPS_ADM_RH_MOV_SERV",
             "pk_table_jdbc": "MMSV_MATRICULA",
+            "no_lower_upper_bound": "true",
             "update_date_table_jdbc": "",
             "table_hive": "mmps_adm_rh_mov_serv"
         },
         {
             "table_jdbc": "MMPS.MMPS_ADM_RH_MOV_PROC",
             "pk_table_jdbc": "MMPC_MATRICULA",
+            "no_lower_upper_bound": "true",
             "update_date_table_jdbc": "",
             "table_hive": "mmps_adm_rh_mov_proc"
         }
