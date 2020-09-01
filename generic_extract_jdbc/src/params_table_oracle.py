@@ -1225,6 +1225,7 @@ params = {
             "table_jdbc": "RH.FERIAS",
             "pk_table_jdbc": "CDMATRICULA",
             "update_date_table_jdbc": "",
+            "no_lower_upper_bound": "true",
             "table_hive": "rh_ferias"
         },
         {
