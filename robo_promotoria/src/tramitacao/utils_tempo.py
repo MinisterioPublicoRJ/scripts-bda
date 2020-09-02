@@ -1,4 +1,4 @@
-def execute_process(spark, options, cldc_dk_lista, tppr_dk_lista, pacote_lista, nome_regra):
+def execute_process(spark, options, cldc_dk_lista, tppr_dk_lista, pacote_lista, nome_regra, tempo_minimo=1):
     classes = cldc_dk_lista
     andamentos = tppr_dk_lista
     pacotes = pacote_lista
@@ -20,14 +20,15 @@ def execute_process(spark, options, cldc_dk_lista, tppr_dk_lista, pacote_lista, 
             and ap.cod_pct IN {pacotes}
             AND docu_tpst_dk != 11
             AND pcao_dt_cancelamento IS NULL
-            AND pcao_dt_andamento > docu_dt_cadastro
+            AND datediff(pcao_dt_andamento, docu_dt_cadastro) >= {tempo_minimo}
     GROUP BY d.docu_dk, ap.id_orgao, tempo_tramitacao, dt_finalizacao, ap.cod_pct
     """.format(
         schema=options["schema_exadata"],
         schema_aux=options["schema_exadata_aux"],
         classes=classes,
         andamentos=andamentos,
-        pacotes=pacotes
+        pacotes=pacotes,
+        tempo_minimo=tempo_minimo
     )).createOrReplaceTempView("tramitacao_{}".format(nome_regra_slug))
     spark.catalog.cacheTable("tramitacao_{}".format(nome_regra_slug))
 
