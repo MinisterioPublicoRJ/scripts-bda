@@ -70,10 +70,10 @@ def execute_process(options):
             ON cod_pct = cod_atribuicao
             AND classe_documento = docu_cldc_dk
         JOIN {0}.mcpr_classe_docto_mp ON cldc_dk = docu_cldc_dk
-        WHERE PCAO_DT_ANDAMENTO >= '{2}'
-        AND pcao_dt_cancelamento IS NULL
+        WHERE pcao_dt_cancelamento IS NULL
         AND docu_tpst_dk != 11
-        """.format(schema_exadata, schema_exadata_aux, dt_inicio)
+        AND docu_fsdc_dk = 1
+        """.format(schema_exadata, schema_exadata_aux)
     ).createOrReplaceTempView('DOCU_TOTAIS')
 
     spark.sql(
