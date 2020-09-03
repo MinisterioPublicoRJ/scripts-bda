@@ -95,11 +95,11 @@ def execute_process(options):
     documentos_investigados = spark.sql("""
         WITH tb_coautores AS (
             SELECT A.docu_nr_mp, A.representante_dk,
-                group_concat(pesf_nm_pessoa_fisica) as coautores
+                concat_ws(', ', collect_list(C.pess_nm_pessoa)) as coautores
             FROM documentos_pips A
-            LEFT JOIN documentos_pips B ON A.docu_nr_mp = B.docu_nr_mp AND A.representante_dk != B.representante_dk
-            LEFT JOIN {0}.mcpr_pessoa_fisica ON pesf_pess_dk = B.representante_dk
-            GROUP BY A.docu_nr_mp, A.representante_dk 
+            JOIN documentos_pips B ON A.docu_nr_mp = B.docu_nr_mp AND A.representante_dk != B.representante_dk
+            JOIN {0}.mcpr_pessoa C ON C.pess_dk = B.representante_dk
+            GROUP BY A.docu_nr_mp, A.representante_dk
         ),
         ultimos_andamentos AS (
             SELECT docu_nr_mp, pcao_dt_andamento, tppr_descricao, row_number() over (partition by docu_dk order by pcao_dt_andamento desc) as nr_and
@@ -109,12 +109,12 @@ def execute_process(options):
             LEFT JOIN exadata_dev.mcpr_sub_andamento ON stao_pcao_dk = pcao_dk
             LEFT JOIN exadata_dev.mcpr_tp_andamento ON stao_tppr_dk = tppr_dk
         )
-        SELECT D.representante_dk, coautores, tppe_descricao, pip_codigo, docu_nr_mp, docu_dt_cadastro, cldc_ds_classe, orgi_nm_orgao, docu_tx_etiqueta, assuntos, fsdc_ds_fase, pcao_dt_andamento, tppr_descricao
+        SELECT D.representante_dk, coautores, tppe_descricao, pip_codigo, D.docu_nr_mp, docu_dt_cadastro, cldc_ds_classe, orgi_nm_orgao, docu_tx_etiqueta, assuntos, fsdc_ds_fase, pcao_dt_andamento as dt_ultimo_andamento, tppr_descricao as desc_ultimo_andamento
         FROM documentos_pips D
         LEFT JOIN tb_coautores CA ON CA.docu_nr_mp = D.docu_nr_mp AND CA.representante_dk = D.representante_dk
         LEFT JOIN (SELECT * FROM ultimos_andamentos WHERE nr_and = 1) UA ON UA.docu_nr_mp = D.docu_nr_mp
         JOIN {0}.orgi_orgao ON orgi_dk = pip_codigo
-        JOIN {0}.mcpr_classe_docto_mp ON cldc_dk = docu_cldc_dk
+        LEFT JOIN {0}.mcpr_classe_docto_mp ON cldc_dk = docu_cldc_dk
         LEFT JOIN assuntos TASSU ON asdo_docu_dk = docu_dk
         JOIN {0}.mcpr_fases_documento ON docu_fsdc_dk = fsdc_dk
     """.format(schema_exadata, schema_exadata_aux))
