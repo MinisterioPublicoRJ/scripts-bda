@@ -73,6 +73,7 @@ def execute_process(options):
         WHERE PCAO_DT_ANDAMENTO >= '{2}'
         AND pcao_dt_cancelamento IS NULL
         AND docu_tpst_dk != 11
+        AND docu_fsdc_dk = 1
         """.format(schema_exadata, schema_exadata_aux, dt_inicio)
     ).createOrReplaceTempView('DOCU_TOTAIS')
 
