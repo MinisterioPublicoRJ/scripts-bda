@@ -1,5 +1,6 @@
 #-*-coding:utf-8-*-
 import argparse
+from datetime import datetime
 
 import pyspark
 
@@ -39,8 +40,19 @@ def execute_process(options):
     schema_exadata = options["schema_exadata"]
     schema_exadata_aux = options["schema_exadata_aux"]
 
-    days_past_start = options["days_past_start"]
-    days_past_end = options["days_past_end"]
+    # days_past_start = options["days_past_start"]
+    # Estabelece dia 01/03/2020 como ponto zero de início.
+    # Caso intervalo de 545 dias (ano e meio) passe dessa data, ele força o início nela.
+    nb = (datetime.now() - datetime(2020, 3, 1)).days
+    days_past_start = min(nb, 545)
+    # days_past_end = options["days_past_end"]
+    # Estabelece dia 01/03/2021 como ponto zero de fim.
+    # Antes de chegar a esse dia, usa-se a data atual para o fim do intervalo.
+    # Ao passar de 01/03/2021, o final do intervalo será nela.
+    # Depois de 180 dias, o final do intervalo passa a se mover novamente.
+    nb = (datetime.now() - datetime(2021, 3, 1)).days
+    days_past_end = min(max(nb, 0), 180
+
     spark.sql(
         """
         SELECT
@@ -55,10 +67,6 @@ def execute_process(options):
         FROM {0}.mcpr_documento
         JOIN {0}.mcpr_vista ON vist_docu_dk = docu_dk
         JOIN (
-            SELECT pip_codigo_antigo as codigo, pip_codigo
-            from {1}.tb_pip_aisp
-            GROUP BY pip_codigo_antigo, pip_codigo
-            UNION all
             SELECT pip_codigo as codigo, pip_codigo
             from {1}.tb_pip_aisp
             GROUP BY pip_codigo
