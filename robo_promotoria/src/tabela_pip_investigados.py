@@ -109,7 +109,7 @@ def execute_process(options):
             LEFT JOIN exadata_dev.mcpr_sub_andamento ON stao_pcao_dk = pcao_dk
             LEFT JOIN exadata_dev.mcpr_tp_andamento ON stao_tppr_dk = tppr_dk
         )
-        SELECT D.representante_dk, coautores, tppe_descricao, pip_codigo, D.docu_nr_mp, docu_dt_cadastro, cldc_ds_classe, orgi_nm_orgao, docu_tx_etiqueta, assuntos, fsdc_ds_fase, pcao_dt_andamento as dt_ultimo_andamento, tppr_descricao as desc_ultimo_andamento
+        SELECT D.representante_dk, coautores, tppe_descricao, pip_codigo, D.docu_nr_mp, docu_dt_cadastro, cldc_ds_classe, orgi_nm_orgao, docu_tx_etiqueta, assuntos, fsdc_ds_fase, pcao_dt_andamento as dt_ultimo_andamento, tppr_descricao as desc_ultimo_andamento, D.pess_dk
         FROM documentos_pips D
         LEFT JOIN tb_coautores CA ON CA.docu_nr_mp = D.docu_nr_mp AND CA.representante_dk = D.representante_dk
         LEFT JOIN (SELECT * FROM ultimos_andamentos WHERE nr_and = 1) UA ON UA.docu_nr_mp = D.docu_nr_mp
