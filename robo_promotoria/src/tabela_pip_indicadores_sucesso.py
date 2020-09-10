@@ -51,7 +51,7 @@ def execute_process(options):
     # Ao passar de 01/03/2021, o final do intervalo será nela.
     # Depois de 180 dias, o final do intervalo passa a se mover novamente.
     nb = (datetime.now() - datetime(2021, 3, 1)).days
-    days_past_end = min(max(nb, 0), 180
+    days_past_end = min(max(nb, 0), 180)
 
     spark.sql(
         """
