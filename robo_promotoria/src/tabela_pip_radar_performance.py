@@ -74,7 +74,7 @@ def execute_process(options):
             "VISTAS_FILTRADAS_SEM_ANDAMENTO"
     )
 
-    documento_andamentos = spark.sql(
+    spark.sql(
         """
         SELECT
             FSA.*,
@@ -101,10 +101,7 @@ def execute_process(options):
                 ACORDO=ACORDO,
                 ANDAMENTOS_IMPORTANTES=ANDAMENTOS_IMPORTANTES
             )
-    )
-    documento_andamentos.createOrReplaceTempView(
-            "ANDAMENTOS_IMPORTANTES"
-    )
+    ).createOrReplaceTempView("ANDAMENTOS_IMPORTANTES")
 
     spark.sql(
         """
@@ -148,95 +145,17 @@ def execute_process(options):
         """
     ).createOrReplaceTempView("CONTAGENS")
 
-    # NR_ACORDOS = spark.sql(
-    #     """
-    #     SELECT
-    #         pip_codigo as orgao_id,
-    #         COUNT(docu_dk) as nr_acordos_n_persecucao
-    #     FROM ANDAMENTOS_IMPORTANTES
-    #     WHERE stao_tppr_dk IN {ACORDO}
-    #     GROUP BY pip_codigo
-    # """.format(
-    #         schema_exadata,
-    #         ACORDO=ACORDO,
-    #     )
-    # )
-    # NR_ACORDOS.createOrReplaceTempView("NR_ACORDOS")
-
-    # NR_ARQUIVAMENTOS = spark.sql(
-    #     """
-    #     SELECT
-    #         pip_codigo as orgao_id,
-    #         COUNT(docu_dk) as nr_arquivamentos
-    #     FROM ANDAMENTOS_IMPORTANTES
-    #     WHERE stao_tppr_dk IN {ARQUIVAMENTO}
-    #     GROUP BY pip_codigo
-    # """.format(
-    #         schema_exadata,
-    #         ARQUIVAMENTO=ARQUIVAMENTO
-    #     )
-    # )
-    # NR_ARQUIVAMENTOS.createOrReplaceTempView("NR_ARQUIVAMENTOS")
-
-    # # Numero de medidas cautelares
-    # NR_CAUTELARES = spark.sql(
-    #     """
-    #     SELECT
-    #         pip_codigo as orgao_id,
-    #         COUNT(docu_dk) as nr_cautelares
-    #     FROM ANDAMENTOS_IMPORTANTES
-    #     WHERE stao_tppr_dk IN {CAUTELAR}
-    #     GROUP BY pip_codigo
-    # """.format(
-    #         schema_exadata,
-    #         CAUTELAR=CAUTELAR
-    #     )
-    # )
-    # NR_CAUTELARES.createOrReplaceTempView("NR_CAUTELARES")
-
-    # # Numero de denuncias
-    # NR_DENUNCIAS = spark.sql(
-    #     """
-    #     SELECT
-    #         pip_codigo as orgao_id,
-    #         COUNT(docu_dk) as nr_denuncias
-    #     FROM ANDAMENTOS_IMPORTANTES
-    #     WHERE stao_tppr_dk IN {DENUNCIA}
-    #     GROUP BY pip_codigo
-    # """.format(
-    #         schema_exadata,
-    #         DENUNCIA=DENUNCIA
-    #     )
-    # )
-    # NR_DENUNCIAS.createOrReplaceTempView("NR_DENUNCIAS")
-
    # A baixa a DP vai ser o numero de vistas abertas subtraída do
    # total de ANDAMENTOS IMPORTANTES desambiguados(sem repetição de andameto por mesma vista)
-    spark.sql(
-        """
-        SELECT TA.* FROM ANDAMENTOS_IMPORTANTES TA
-        JOIN (
-            SELECT pip_codigo, docu_dk, MAX(pcao_dt_andamento) AS ultimo_andamento,
-            MAX(peso_prioridade) as maxima_prioridade
-            FROM ANDAMENTOS_IMPORTANTES GROUP BY pip_codigo, docu_dk) SUB_TA
-        ON TA.pip_codigo = SUB_TA.pip_codigo AND TA.docu_dk = SUB_TA.docu_dk
-        AND TA.pcao_dt_andamento = SUB_TA.ultimo_andamento
-        AND TA.peso_prioridade = SUB_TA.maxima_prioridade
-        AND stao_tppr_dk IN {FINALIZACOES}
-        """.format(
-            FINALIZACOES=DENUNCIA+ARQUIVAMENTO+ACORDO+CAUTELAR
-        )
-    ).createOrReplaceTempView("FILTRADOS_IMPORTANTES_DESAMBIGUADOS")
-
     spark.sql("""
 	SELECT VA.pip_codigo as orgao_id,
 	COUNT(DISTINCT VA.vist_dk) as nr_baixa_dp
         FROM VISTAS_FILTRADAS_SEM_ANDAMENTO VA
-        LEFT JOIN FILTRADOS_IMPORTANTES_DESAMBIGUADOS FID ON VA.vist_dk = FID.vist_dk
+        LEFT JOIN (SELECT * FROM ANDAMENTOS_IMPORTANTES WHERE stao_tppr_dk IN {FINALIZACOES}) FID ON VA.vist_dk = FID.vist_dk
         WHERE stao_tppr_dk IS NULL -- vista sem ANDAMENTOS_IMPORTANTES
         AND VA.vist_dt_abertura_vista >= cast(date_sub(current_timestamp(), {0}) as timestamp)
 	GROUP BY VA.pip_codigo
-    """.format(days_ago)).createOrReplaceTempView("NR_BAIXA_DP")
+    """.format(days_ago, FINALIZACOES=ANDAMENTOS_IMPORTANTES+CANCELAMENTOS)).createOrReplaceTempView("NR_BAIXA_DP")
 
     metricas = spark.sql(
         """
