@@ -7,8 +7,6 @@ from datetime import datetime, timedelta
 import pyspark
 import argparse
 
-from utils import _update_impala_table
-
 
 def name_similarity(name_left, name_right):
     if not name_left or not name_right:
@@ -40,6 +38,7 @@ def execute_process(options):
     personagens_cutoff = options['personagens_cutoff']
     nb_past_days = options['nb_past_days']
     LIMIAR_SIMILARIDADE = options["limiar_similaridade"]
+    table_name = options['table_name']
 
     dt_inicio = datetime.now() - timedelta(nb_past_days)
 
@@ -181,7 +180,7 @@ def execute_process(options):
         """
     )
 
-    table_name = "{}.tb_lista_processos".format(schema_exadata_aux)
+    table_name = "{}.{}".format(schema_exadata_aux, table_name)
 
     lista_processos.write.mode("overwrite").saveAsTable("temp_table_lista_processos")
     temp_table = spark.table("temp_table_lista_processos")
@@ -189,7 +188,6 @@ def execute_process(options):
     temp_table.write.mode("overwrite").saveAsTable(table_name)
     spark.sql("drop table temp_table_lista_processos")
 
-    _update_impala_table(table_name, options['impala_host'], options['impala_port'])
 
 if __name__ == "__main__":
 
@@ -201,6 +199,7 @@ if __name__ == "__main__":
     parser.add_argument('-c','--personagensCutoff', metavar='personagensCutoff', type=int, default=2, help='')
     parser.add_argument('-p','--nbPastDays', metavar='nbPastDays', type=int, default=7, help='')
     parser.add_argument('-l','--limiarSimilaridade', metavar='limiarSimilaridade', type=float, default=0.85, help='')
+    parser.add_argument('-t','--tableName', metavar='tableName', type=str, help='')
     
     args = parser.parse_args()
 
@@ -212,6 +211,7 @@ if __name__ == "__main__":
                     'personagens_cutoff' : args.personagensCutoff,
                     'nb_past_days': args.nbPastDays,
                     'limiar_similaridade': args.limiarSimilaridade,
+                    'table_name' : args.tableName,
                 }
 
     execute_process(options)

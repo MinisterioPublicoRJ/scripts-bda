@@ -1,6 +1,5 @@
 import pyspark
 from pyspark.sql.functions import unix_timestamp, from_unixtime, current_timestamp, lit, date_format
-from utils import _update_impala_table
 import argparse
 
 
@@ -21,6 +20,7 @@ def execute_process(options):
 
     schema_exadata = options['schema_exadata']
     schema_exadata_aux = options['schema_exadata_aux']
+    table_name = options['table_name']
 
     table = spark.sql("""
             SELECT 
@@ -47,14 +47,12 @@ def execute_process(options):
 
     is_exists_table_acervo = check_table_exists(spark, schema_exadata_aux, "tb_acervo")
 
-    table_name = "{}.tb_acervo".format(schema_exadata_aux)
+    table_name = "{}.{}".format(schema_exadata_aux, table_name)
 
     if is_exists_table_acervo:
         table.coalesce(1).write.mode("overwrite").insertInto(table_name, overwrite=True)
     else:
         table.write.partitionBy("dt_partition").mode("overwrite").saveAsTable(table_name)
-
-    _update_impala_table(table_name, options['impala_host'], options['impala_port'])
 
 
 if __name__ == "__main__":
@@ -64,13 +62,15 @@ if __name__ == "__main__":
     parser.add_argument('-a','--schemaExadataAux', metavar='schemaExadataAux', type=str, help='')
     parser.add_argument('-i','--impalaHost', metavar='impalaHost', type=str, help='')
     parser.add_argument('-o','--impalaPort', metavar='impalaPort', type=str, help='')
+    parser.add_argument('-t','--tableName', metavar='tableName', type=str, help='')
     args = parser.parse_args()
 
     options = {
                     'schema_exadata': args.schemaExadata, 
                     'schema_exadata_aux': args.schemaExadataAux,
                     'impala_host' : args.impalaHost,
-                    'impala_port' : args.impalaPort
+                    'impala_port' : args.impalaPort,
+                    'table_name' : args.tableName,
                 }
 
     execute_process(options)

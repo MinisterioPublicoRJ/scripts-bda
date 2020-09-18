@@ -1,6 +1,5 @@
 import pyspark
 
-from utils import _update_impala_table
 import argparse
 
 from tramitacao.tutela_acoes import execute_process as acoes_process_2
@@ -45,6 +44,13 @@ if __name__ == "__main__":
         type=str,
         help=''
     )
+    parser.add_argument(
+        '-t',
+        '--tableName',
+        metavar='tableName',
+        type=str,
+        help=''
+    )
     args = parser.parse_args()
 
     options = {
@@ -52,6 +58,7 @@ if __name__ == "__main__":
         'schema_exadata_aux': args.schemaExadataAux,
         'impala_host': args.impalaHost,
         'impala_port': args.impalaPort,
+        'table_name': args.tableName,
     }
 
     # Regras
@@ -93,8 +100,9 @@ if __name__ == "__main__":
         """.format(nm_table_1, nm_table_2, "tutela_final_acoes_tempo_2", nm_table_3)
     )
 
-    table_name = "{}.tb_tempo_tramitacao_integrado".format(
-        options["schema_exadata_aux"]
+    table_name = options['table_name']
+    table_name = "{}.{}".format(
+        options["schema_exadata_aux"], table_name
     )
 
     tramitacao_final.write.mode("overwrite").saveAsTable("temp_table_tempo_tramitacao_integrado")
@@ -102,5 +110,3 @@ if __name__ == "__main__":
 
     temp_table.write.mode("overwrite").saveAsTable(table_name)
     spark.sql("drop table temp_table_tempo_tramitacao_integrado")
-
-    _update_impala_table(table_name, options['impala_host'], options['impala_port'])

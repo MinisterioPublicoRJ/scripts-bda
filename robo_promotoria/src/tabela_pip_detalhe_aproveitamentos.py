@@ -1,6 +1,5 @@
 import pyspark
 from pyspark.sql.functions import unix_timestamp, from_unixtime, current_timestamp, lit, date_format
-from utils import _update_impala_table
 import argparse
 
 
@@ -360,8 +359,6 @@ def execute_process(options):
 
     temp_table.write.mode("overwrite").saveAsTable(table_name)
     spark.sql("drop table temp_table_{0}".format(output_table_name))
-
-    _update_impala_table(table_name, options['impala_host'], options['impala_port'])
 
 
 if __name__ == "__main__":

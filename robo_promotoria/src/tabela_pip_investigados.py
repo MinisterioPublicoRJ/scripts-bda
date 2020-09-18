@@ -2,7 +2,6 @@ from datetime import datetime, timedelta
 import os
 
 import pyspark
-from utils import _update_impala_table
 from happybase import Connection as HBaseConnection
 import argparse
 
@@ -119,12 +118,12 @@ def execute_process(options):
         JOIN {0}.mcpr_fases_documento ON docu_fsdc_dk = fsdc_dk
     """.format(schema_exadata, schema_exadata_aux))
 
-    table_name = "{}.tb_pip_investigados_procedimentos".format(schema_exadata_aux)
+    table_name_procedimentos = options['table_name_procedimentos']
+    table_name = "{}.{}".format(schema_exadata_aux, table_name_procedimentos)
     documentos_investigados.write.mode("overwrite").saveAsTable("temp_table_pip_investigados_procedimentos")
     temp_table = spark.table("temp_table_pip_investigados_procedimentos")
     temp_table.write.mode("overwrite").saveAsTable(table_name)
     spark.sql("drop table temp_table_pip_investigados_procedimentos")
-    _update_impala_table(table_name, options['impala_host'], options['impala_port'])
 
     spark.catalog.clearCache()
 
@@ -162,16 +161,17 @@ def execute_process(options):
         JOIN {0}.mcpr_pessoa ON pess_dk = t.representante_dk
     """.format(schema_exadata, schema_exadata_aux))
 
-    table_name = "{}.tb_pip_investigados".format(schema_exadata_aux)
+    table_name_investigados = options['table_name_investigados']
+    table_name = "{}.{}".format(schema_exadata_aux, table_name_investigados)
     table.write.mode("overwrite").saveAsTable("temp_table_pip_investigados")
     temp_table = spark.table("temp_table_pip_investigados")
     temp_table.write.mode("overwrite").saveAsTable(table_name)
     spark.sql("drop table temp_table_pip_investigados")
-    _update_impala_table(table_name, options['impala_host'], options['impala_port'])
 
 
     # Investigados que aparecem em documentos novos reiniciam flags no HBase
-    is_exists_dt_checked = check_table_exists(spark, schema_exadata_aux, "dt_checked_investigados")
+    table_name_dt_checked = options['table_name_dt_checked']
+    is_exists_dt_checked = check_table_exists(spark, schema_exadata_aux, table_name_dt_checked)
     current_time = datetime.now()
 
     if not is_exists_dt_checked:
@@ -216,9 +216,8 @@ def execute_process(options):
         SELECT '{0}' as dt_ultima_verificacao
     """.format(str(current_time)))
 
-    table_name = "{}.dt_checked_investigados".format(schema_exadata_aux)
+    table_name = "{}.{}".format(schema_exadata_aux, table_name_dt_checked)
     tb_ultima_verificacao.write.mode("overwrite").saveAsTable(table_name)
-    _update_impala_table(table_name, options['impala_host'], options['impala_port'])
 
 
 if __name__ == "__main__":
@@ -230,6 +229,9 @@ if __name__ == "__main__":
     parser.add_argument('-i','--impalaHost', metavar='impalaHost', type=str, help='')
     parser.add_argument('-o','--impalaPort', metavar='impalaPort', type=str, help='')
     parser.add_argument('-sb','--schemaHbase', metavar='schemaHbase', type=str, help='')
+    parser.add_argument('-t1','--tableNameProcedimentos', metavar='tableNameProcedimentos', type=str, help='')
+    parser.add_argument('-t2','--tableNameInvestigados', metavar='tableNameInvestigados', type=str, help='')
+    parser.add_argument('-t3','--tableNameDtChecked', metavar='tableNameDtChecked', type=str, help='')
     args = parser.parse_args()
 
     options = {
@@ -237,7 +239,10 @@ if __name__ == "__main__":
                     'schema_exadata_aux': args.schemaExadataAux,
                     'impala_host' : args.impalaHost,
                     'impala_port' : args.impalaPort,
-                    'schema_hbase' : args.schemaHbase
+                    'schema_hbase' : args.schemaHbase,
+                    'table_name_procedimentos' : args.tableNameProcedimentos,
+                    'table_name_investigados' : args.tableNameInvestigados,
+                    'table_name_dt_checked' : args.tableNameDtChecked,
                 }
 
     execute_process(options)
