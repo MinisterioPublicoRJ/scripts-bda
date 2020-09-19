@@ -2,7 +2,6 @@
 import pyspark
 from pyspark.sql import Window
 from pyspark.sql.functions import max, col, count, concat_ws, collect_list, lit
-from utils import _update_impala_table
 import argparse
 
 
@@ -302,9 +301,6 @@ def execute_process(options):
     temp_table.write.mode("overwrite").saveAsTable(table_name)
     spark.sql("drop table temp_table_{0}".format(output_table_name))
 
-    _update_impala_table(
-        table_name, options["impala_host"], options["impala_port"]
-    )
     spark.catalog.clearCache()
 
 
@@ -353,7 +349,7 @@ if __name__ == "__main__":
         "impala_host": args.impalaHost,
         "impala_port": args.impalaPort,
         "days_ago": args.daysAgo,
-	"table_name": args.tableName
+	    "table_name": args.tableName,
     }
 
     execute_process(options)

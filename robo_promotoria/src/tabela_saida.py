@@ -1,6 +1,5 @@
 import pyspark
 from pyspark.sql.functions import unix_timestamp, from_unixtime, current_timestamp, lit, date_format
-from utils import _update_impala_table
 import argparse
 
 
@@ -42,15 +41,14 @@ def execute_process(options):
         GROUP BY t2.id_orgao, cod_pct) t
     """.format(schema_exadata, schema_exadata_aux))
 
-    table_name = "{}.tb_saida".format(schema_exadata_aux)
+    table_name = options['table_name']
+    table_name = "{}.{}".format(schema_exadata_aux, table_name)
 
     table.write.mode("overwrite").saveAsTable("temp_table_saida")
     temp_table = spark.table("temp_table_saida")
 
     temp_table.write.mode("overwrite").saveAsTable(table_name)
     spark.sql("drop table temp_table_saida")
-
-    _update_impala_table(table_name, options['impala_host'], options['impala_port'])
 
 
 if __name__ == "__main__":
@@ -60,13 +58,15 @@ if __name__ == "__main__":
     parser.add_argument('-a','--schemaExadataAux', metavar='schemaExadataAux', type=str, help='')
     parser.add_argument('-i','--impalaHost', metavar='impalaHost', type=str, help='')
     parser.add_argument('-o','--impalaPort', metavar='impalaPort', type=str, help='')
+    parser.add_argument('-t','--tableName', metavar='tableName', type=str, help='')
     args = parser.parse_args()
 
     options = {
                     'schema_exadata': args.schemaExadata, 
                     'schema_exadata_aux': args.schemaExadataAux,
                     'impala_host' : args.impalaHost,
-                    'impala_port' : args.impalaPort
+                    'impala_port' : args.impalaPort,
+                    'table_name' : args.tableName,
                 }
 
     execute_process(options)
