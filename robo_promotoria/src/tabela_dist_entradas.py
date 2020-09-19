@@ -9,8 +9,6 @@ from pyspark.sql.functions import (
     date_format
 )
 
-from utils import _update_impala_table
-
 
 def execute_process(options):
 
@@ -22,6 +20,7 @@ def execute_process(options):
 
     schema_exadata = options['schema_exadata']
     schema_exadata_aux = options['schema_exadata_aux']
+    table_name = options['table_name']
 
     nb_past_days = options['past_days']
 
@@ -101,7 +100,7 @@ def execute_process(options):
     )
 
 
-    table_name = "{}.tb_dist_entradas".format(schema_exadata_aux)
+    table_name = "{}.{}".format(schema_exadata_aux, table_name)
 
     estatisticas.write.mode("overwrite").saveAsTable("temp_table_dist_entrada")
     temp_table = spark.table("temp_table_dist_entrada")
@@ -109,7 +108,6 @@ def execute_process(options):
     temp_table.write.mode("overwrite").saveAsTable(table_name)
     spark.sql("drop table temp_table_dist_entrada")
 
-    _update_impala_table(table_name, options['impala_host'], options['impala_port'])
 
 if __name__ == "__main__":
 
@@ -119,6 +117,7 @@ if __name__ == "__main__":
     parser.add_argument('-i','--impalaHost', metavar='impalaHost', type=str, help='')
     parser.add_argument('-o','--impalaPort', metavar='impalaPort', type=str, help='')
     parser.add_argument('-p','--pastDays', metavar='pastDays', type=int, default=60, help='')
+    parser.add_argument('-t','--tableName', metavar='tableName', type=str, help='')
     
     args = parser.parse_args()
 
@@ -127,7 +126,8 @@ if __name__ == "__main__":
                     'schema_exadata_aux': args.schemaExadataAux,
                     'impala_host' : args.impalaHost,
                     'impala_port' : args.impalaPort,
-                    'past_days' : args.pastDays
+                    'past_days' : args.pastDays,
+                    'table_name' : args.tableName,
                 }
 
     execute_process(options)

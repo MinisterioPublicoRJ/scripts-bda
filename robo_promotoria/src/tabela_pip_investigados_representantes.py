@@ -3,7 +3,6 @@ import re
 import unicodedata
 
 import pyspark
-from utils import _update_impala_table
 import argparse
 
 
@@ -178,12 +177,12 @@ def execute_process(options):
         JOIN REPR_1 B ON A.representante_dk = B.pess_dk
     """)
 
-    table_name = "{}.tb_pip_investigados_representantes".format(schema_exadata_aux)
+    table_name = options['table_name']
+    table_name = "{}.{}".format(schema_exadata_aux, table_name)
     pessoas_representativas_2.write.mode("overwrite").saveAsTable("temp_table_pip_investigados_representantes")
     temp_table = spark.table("temp_table_pip_investigados_representantes")
     temp_table.write.mode("overwrite").saveAsTable(table_name)
     spark.sql("drop table temp_table_pip_investigados_representantes")
-    _update_impala_table(table_name, options['impala_host'], options['impala_port'])
 
     spark.catalog.clearCache()
 
@@ -196,6 +195,7 @@ if __name__ == "__main__":
     parser.add_argument('-i','--impalaHost', metavar='impalaHost', type=str, help='')
     parser.add_argument('-o','--impalaPort', metavar='impalaPort', type=str, help='')
     parser.add_argument('-l','--limiarSimilaridade', metavar='limiarSimilaridade', type=float, default=0.85, help='')
+    parser.add_argument('-t','--tableName', metavar='tableName', type=str, help='')
     args = parser.parse_args()
 
     options = {
@@ -204,6 +204,7 @@ if __name__ == "__main__":
                     'impala_host' : args.impalaHost,
                     'impala_port' : args.impalaPort,
                     'limiar_similaridade': args.limiarSimilaridade,
+                    "table_name": args.tableName,
                 }
 
     execute_process(options)

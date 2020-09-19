@@ -2,7 +2,6 @@ from datetime import datetime, timedelta
 import os
 
 import pyspark
-from utils import _update_impala_table
 from happybase import Connection as HBaseConnection
 import argparse
 
@@ -70,23 +69,21 @@ def execute_process(options):
     assuntos.createOrReplaceTempView('assuntos')
 
     documentos_pips = spark.sql("""
-        SELECT representante_dk, PS.pess_nm_pessoa, tppe_descricao, pip_codigo, docu_dk, docu_nr_mp, docu_dt_cadastro, docu_cldc_dk, docu_fsdc_dk, docu_tx_etiqueta
+        SELECT representante_dk, R.pess_dk, tppe_descricao, pip_codigo, docu_dk, docu_nr_mp, docu_dt_cadastro, docu_cldc_dk, docu_fsdc_dk, docu_tx_etiqueta
         FROM {0}.mcpr_personagem
         JOIN {0}.mcpr_tp_personagem ON tppe_dk = pers_tppe_dk
         JOIN {1}.tb_pip_investigados_representantes R ON pers_pess_dk = R.pess_dk
         JOIN {0}.mcpr_documento ON docu_dk = pers_docu_dk
-        JOIN {0}.mcpr_pessoa PS ON PS.pess_dk = R.pess_dk 
         JOIN lista_pips P ON pip_codigo = docu_orgi_orga_dk_responsavel
         WHERE pers_tppe_dk IN (290, 7, 21, 317, 20, 14, 32, 345, 40, 5)
         AND docu_tpst_dk != 11
         AND pers_dt_fim IS NULL OR pers_dt_fim > current_timestamp()
         UNION ALL
-        SELECT representante_dk, PS.pess_nm_pessoa, tppe_descricao, pip_codigo_antigo as pip_codigo, docu_dk, docu_nr_mp, docu_dt_cadastro, docu_cldc_dk, docu_fsdc_dk, docu_tx_etiqueta
+        SELECT representante_dk, R.pess_dk, tppe_descricao, pip_codigo_antigo as pip_codigo, docu_dk, docu_nr_mp, docu_dt_cadastro, docu_cldc_dk, docu_fsdc_dk, docu_tx_etiqueta
         FROM {0}.mcpr_personagem
         JOIN {0}.mcpr_tp_personagem ON tppe_dk = pers_tppe_dk
         JOIN {1}.tb_pip_investigados_representantes R ON pers_pess_dk = R.pess_dk
         JOIN {0}.mcpr_documento ON docu_dk = pers_docu_dk
-        JOIN {0}.mcpr_pessoa PS ON PS.pess_dk = R.pess_dk
         JOIN lista_pips P ON pip_codigo_antigo = docu_orgi_orga_dk_responsavel
         WHERE pers_tppe_dk IN (290, 7, 21, 317, 20, 14, 32, 345, 40, 5)
         AND docu_tpst_dk != 11
@@ -95,20 +92,38 @@ def execute_process(options):
     documentos_pips.createOrReplaceTempView('documentos_pips')
 
     documentos_investigados = spark.sql("""
-        SELECT D.representante_dk, pess_nm_pessoa, tppe_descricao, pip_codigo, docu_nr_mp, docu_dt_cadastro, cldc_ds_classe, orgi_nm_orgao, docu_tx_etiqueta, assuntos, fsdc_ds_fase
+        WITH tb_coautores AS (
+            SELECT A.docu_nr_mp, A.representante_dk,
+                concat_ws(', ', collect_list(C.pess_nm_pessoa)) as coautores
+            FROM documentos_pips A
+            JOIN documentos_pips B ON A.docu_nr_mp = B.docu_nr_mp AND A.representante_dk != B.representante_dk
+            JOIN {0}.mcpr_pessoa C ON C.pess_dk = B.representante_dk
+            GROUP BY A.docu_nr_mp, A.representante_dk
+        ),
+        ultimos_andamentos AS (
+            SELECT docu_nr_mp, pcao_dt_andamento, tppr_descricao, row_number() over (partition by docu_dk order by pcao_dt_andamento desc) as nr_and
+            FROM (SELECT DISTINCT docu_nr_mp, docu_dk FROM documentos_pips) p
+            LEFT JOIN exadata_dev.mcpr_vista ON vist_docu_dk = docu_dk
+            LEFT JOIN exadata_dev.mcpr_andamento ON pcao_vist_dk = vist_dk
+            LEFT JOIN exadata_dev.mcpr_sub_andamento ON stao_pcao_dk = pcao_dk
+            LEFT JOIN exadata_dev.mcpr_tp_andamento ON stao_tppr_dk = tppr_dk
+        )
+        SELECT D.representante_dk, coautores, tppe_descricao, pip_codigo, D.docu_nr_mp, docu_dt_cadastro, cldc_ds_classe, orgi_nm_orgao, docu_tx_etiqueta, assuntos, fsdc_ds_fase, pcao_dt_andamento as dt_ultimo_andamento, tppr_descricao as desc_ultimo_andamento, D.pess_dk
         FROM documentos_pips D
+        LEFT JOIN tb_coautores CA ON CA.docu_nr_mp = D.docu_nr_mp AND CA.representante_dk = D.representante_dk
+        LEFT JOIN (SELECT * FROM ultimos_andamentos WHERE nr_and = 1) UA ON UA.docu_nr_mp = D.docu_nr_mp
         JOIN {0}.orgi_orgao ON orgi_dk = pip_codigo
-        JOIN {0}.mcpr_classe_docto_mp ON cldc_dk = docu_cldc_dk
+        LEFT JOIN {0}.mcpr_classe_docto_mp ON cldc_dk = docu_cldc_dk
         LEFT JOIN assuntos TASSU ON asdo_docu_dk = docu_dk
         JOIN {0}.mcpr_fases_documento ON docu_fsdc_dk = fsdc_dk
     """.format(schema_exadata, schema_exadata_aux))
 
-    table_name = "{}.tb_pip_investigados_procedimentos".format(schema_exadata_aux)
+    table_name_procedimentos = options['table_name_procedimentos']
+    table_name = "{}.{}".format(schema_exadata_aux, table_name_procedimentos)
     documentos_investigados.write.mode("overwrite").saveAsTable("temp_table_pip_investigados_procedimentos")
     temp_table = spark.table("temp_table_pip_investigados_procedimentos")
     temp_table.write.mode("overwrite").saveAsTable(table_name)
     spark.sql("drop table temp_table_pip_investigados_procedimentos")
-    _update_impala_table(table_name, options['impala_host'], options['impala_port'])
 
     spark.catalog.clearCache()
 
@@ -119,7 +134,7 @@ def execute_process(options):
             FROM (
                 SELECT representante_dk, COUNT(1) as nr_investigacoes
                 FROM {1}.tb_pip_investigados_procedimentos
-                JOIN {0}.mcpr_pessoa P ON pess_dk = representante_dk
+                JOIN {0}.mcpr_pessoa P ON P.pess_dk = representante_dk
                 WHERE P.pess_nm_pessoa NOT REGEXP 'IDENTIFICADO|IGNORAD[OA]|P.BLICO|JUSTI.A P.BLICA'
                 GROUP BY representante_dk
             ) c
@@ -146,16 +161,17 @@ def execute_process(options):
         JOIN {0}.mcpr_pessoa ON pess_dk = t.representante_dk
     """.format(schema_exadata, schema_exadata_aux))
 
-    table_name = "{}.tb_pip_investigados".format(schema_exadata_aux)
+    table_name_investigados = options['table_name_investigados']
+    table_name = "{}.{}".format(schema_exadata_aux, table_name_investigados)
     table.write.mode("overwrite").saveAsTable("temp_table_pip_investigados")
     temp_table = spark.table("temp_table_pip_investigados")
     temp_table.write.mode("overwrite").saveAsTable(table_name)
     spark.sql("drop table temp_table_pip_investigados")
-    _update_impala_table(table_name, options['impala_host'], options['impala_port'])
 
 
     # Investigados que aparecem em documentos novos reiniciam flags no HBase
-    is_exists_dt_checked = check_table_exists(spark, schema_exadata_aux, "dt_checked_investigados")
+    table_name_dt_checked = options['table_name_dt_checked']
+    is_exists_dt_checked = check_table_exists(spark, schema_exadata_aux, table_name_dt_checked)
     current_time = datetime.now()
 
     if not is_exists_dt_checked:
@@ -200,9 +216,8 @@ def execute_process(options):
         SELECT '{0}' as dt_ultima_verificacao
     """.format(str(current_time)))
 
-    table_name = "{}.dt_checked_investigados".format(schema_exadata_aux)
+    table_name = "{}.{}".format(schema_exadata_aux, table_name_dt_checked)
     tb_ultima_verificacao.write.mode("overwrite").saveAsTable(table_name)
-    _update_impala_table(table_name, options['impala_host'], options['impala_port'])
 
 
 if __name__ == "__main__":
@@ -214,6 +229,9 @@ if __name__ == "__main__":
     parser.add_argument('-i','--impalaHost', metavar='impalaHost', type=str, help='')
     parser.add_argument('-o','--impalaPort', metavar='impalaPort', type=str, help='')
     parser.add_argument('-sb','--schemaHbase', metavar='schemaHbase', type=str, help='')
+    parser.add_argument('-t1','--tableNameProcedimentos', metavar='tableNameProcedimentos', type=str, help='')
+    parser.add_argument('-t2','--tableNameInvestigados', metavar='tableNameInvestigados', type=str, help='')
+    parser.add_argument('-t3','--tableNameDtChecked', metavar='tableNameDtChecked', type=str, help='')
     args = parser.parse_args()
 
     options = {
@@ -221,7 +239,10 @@ if __name__ == "__main__":
                     'schema_exadata_aux': args.schemaExadataAux,
                     'impala_host' : args.impalaHost,
                     'impala_port' : args.impalaPort,
-                    'schema_hbase' : args.schemaHbase
+                    'schema_hbase' : args.schemaHbase,
+                    'table_name_procedimentos' : args.tableNameProcedimentos,
+                    'table_name_investigados' : args.tableNameInvestigados,
+                    'table_name_dt_checked' : args.tableNameDtChecked,
                 }
 
     execute_process(options)

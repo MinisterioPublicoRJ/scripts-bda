@@ -1,7 +1,11 @@
 #!/bin/sh
 export PYTHONIOENCODING=utf8
 
+OUTPUT_TABLE_NAME="tb_distribuicao"
+
 spark-submit --master yarn --deploy-mode cluster \
+    --keytab mpmapas.keytab \
+    --principal mpmapas \
     --queue root.robopromotoria \
     --num-executors 3 \
     --executor-cores 1 \
@@ -14,4 +18,19 @@ spark-submit --master yarn --deploy-mode cluster \
     --conf spark.locality.wait=0 \
     --conf spark.shuffle.io.numConnectionsPerPeer=3 \
     --conf "spark.executor.extraJavaOptions=-XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=35" \
-    --py-files src/utils.py,packages/*.whl,packages/*.egg,packages/*.zip src/tabela_distribuicao.py $@
+    --py-files src/utils.py,packages/*.whl,packages/*.egg,packages/*.zip src/tabela_distribuicao.py $@ -t ${OUTPUT_TABLE_NAME}
+
+while [ $# -gt 0 ]; do
+
+   if [[ $1 == *"-"* ]]; then
+        param="${1/-/}"
+        declare $param="$2"
+        # echo $1 $2 // Optional to see the parameter:value result
+   fi
+
+  shift
+done
+
+kinit -kt mpmapas.keytab mpmapas
+impala-shell -q "INVALIDATE METADATA ${a}.${OUTPUT_TABLE_NAME}"
+kdestroy

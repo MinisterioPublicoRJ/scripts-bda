@@ -4,8 +4,6 @@ from datetime import datetime
 
 import pyspark
 
-from utils import _update_impala_table
-
 
 def execute_process(options):
 
@@ -247,9 +245,6 @@ def execute_process(options):
     temp_table.write.mode("overwrite").saveAsTable(table_name)
     spark.sql("drop table temp_table_{0}".format(output_table_name))
 
-    _update_impala_table(
-        table_name, options["impala_host"], options["impala_port"]
-    )
     spark.catalog.clearCache()
 
 

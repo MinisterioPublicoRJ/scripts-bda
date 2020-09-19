@@ -3,7 +3,6 @@ from datetime import timedelta, date
 
 import pyspark
 
-from utils import _update_impala_table
 from detalhe_documento.utils_detalhes import create_regra_orgao, create_regra_cpf, setup_table_cache
 
 
@@ -19,6 +18,8 @@ def execute_process(options):
 
     schema_exadata = options['schema_exadata']
     schema_exadata_aux = options['schema_exadata_aux']
+    table_name_orgao = options['table_name_orgao']
+    table_name_cpf = options['table_name_cpf']
 
     # Calcula datas para o mes corrente e mes anterior ate a mesma data (ou mais proxima)
     date_today = date.today()
@@ -62,13 +63,11 @@ def execute_process(options):
         SELECT * FROM {1}
     """.format(nm_table_1, nm_table_2))
 
-    table_name = "{}.tb_detalhe_documentos_orgao_cpf".format(schema_exadata_aux)
+    table_name = "{}.{}".format(schema_exadata_aux, table_name_cpf)
     table_cpf.write.mode("overwrite").saveAsTable("temp_table_detalhe_documentos_orgao_cpf")
     temp_table = spark.table("temp_table_detalhe_documentos_orgao_cpf")
     temp_table.write.mode("overwrite").saveAsTable(table_name)
     spark.sql("drop table temp_table_detalhe_documentos_orgao_cpf")
-
-    _update_impala_table(table_name, options['impala_host'], options['impala_port'])
 
 
     # Tabela agregada orgao
@@ -104,13 +103,12 @@ def execute_process(options):
         SELECT * FROM {2}
     """.format(nm_table_1, nm_table_2, nm_table_3))
 
-    table_name = "{}.tb_detalhe_documentos_orgao".format(schema_exadata_aux)
+    table_name = "{}.{}".format(schema_exadata_aux, table_name_orgao)
     table_orgao.write.mode("overwrite").saveAsTable("temp_table_detalhe_documentos_orgao")
     temp_table = spark.table("temp_table_detalhe_documentos_orgao")
     temp_table.write.mode("overwrite").saveAsTable(table_name)
     spark.sql("drop table temp_table_detalhe_documentos_orgao")
 
-    _update_impala_table(table_name, options['impala_host'], options['impala_port'])
     spark.catalog.clearCache()
 
 
@@ -121,13 +119,17 @@ if __name__ == "__main__":
     parser.add_argument('-a','--schemaExadataAux', metavar='schemaExadataAux', type=str, help='')
     parser.add_argument('-i','--impalaHost', metavar='impalaHost', type=str, help='')
     parser.add_argument('-o','--impalaPort', metavar='impalaPort', type=str, help='')
+    parser.add_argument('-t1','--tableNameOrgao', metavar='tableNameOrgao', type=str, help='')
+    parser.add_argument('-t2','--tableNameCPF', metavar='tableNameCPF', type=str, help='')
     args = parser.parse_args()
 
     options = {
                     'schema_exadata': args.schemaExadata, 
                     'schema_exadata_aux': args.schemaExadataAux,
                     'impala_host' : args.impalaHost,
-                    'impala_port' : args.impalaPort
+                    'impala_port' : args.impalaPort,
+                    'table_name_orgao' : args.tableNameOrgao,
+                    'table_name_cpf' : args.tableNameCPF,
                 }
 
     execute_process(options)

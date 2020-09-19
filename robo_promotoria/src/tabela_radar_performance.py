@@ -4,8 +4,6 @@ import pyspark
 from pyspark.sql import Window
 from pyspark.sql.functions import max, col, count, concat_ws, collect_list, when
 
-from utils import _update_impala_table
-
 
 def execute_process(options):
     spark = (
@@ -281,8 +279,10 @@ def execute_process(options):
         .join(orgao_max_acoes, col("cod_pct") == col("acoes_cod_pct"))
         .drop("acoes_cod_pct")
     )
-    table_name = "{}.tb_radar_performance".format(
-        options["schema_exadata_aux"]
+
+    table_name = options['table_name']
+    table_name = "{}.{}".format(
+        options["schema_exadata_aux"], table_name
     )
 
     stats.write.mode("overwrite").saveAsTable("temp_table_radar_performance")
@@ -290,10 +290,6 @@ def execute_process(options):
 
     temp_table.write.mode("overwrite").saveAsTable(table_name)
     spark.sql("drop table temp_table_radar_performance")
-
-    _update_impala_table(
-        table_name, options['impala_host'], options['impala_port']
-    )
 
 
 if __name__ == "__main__":
@@ -329,6 +325,13 @@ if __name__ == "__main__":
         type=str,
         help=''
     )
+    parser.add_argument(
+        '-t',
+        '--tableName',
+        metavar='tableName',
+        type=str,
+        help=''
+    )
     args = parser.parse_args()
 
     options = {
@@ -337,6 +340,7 @@ if __name__ == "__main__":
         'impala_host': args.impalaHost,
         'impala_port': args.impalaPort,
         'days_ago': 180,
+        "table_name": args.tableName,
     }
 
     execute_process(options)
