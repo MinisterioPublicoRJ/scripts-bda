@@ -139,7 +139,7 @@ def load_all_data(table, options):
                 .saveAsTable(table_hive)
 
         print('Update impala table %s' % table_hive)
-        _update_impala_table(table_hive, options)
+        # _update_impala_table(table_hive, options)
 
         #spark.sql("ANALYZE TABLE {} COMPUTE STATISTICS".format(table_hive))
 
@@ -258,7 +258,7 @@ def load_part_data(table, options):
                     .saveAsTable(table_hive)
 
                 print('Update impala table %s' % table_hive)
-                _update_impala_table(table_hive, options)
+                # _update_impala_table(table_hive, options)
 
             spark.catalog.clearCache()
 
