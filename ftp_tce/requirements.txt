@@ -1,7 +1,9 @@
 argparse
 impyla==0.15.0
 thrift==0.9.3
-hdfs
+hdfs[kerberos]
 kazoo
 pysolr
 unidecode
+requests-kerberos
+kerberos
