@@ -1,5 +1,8 @@
+import sys
+sys.path.insert(1,'packages/')
+
 import argparse
-from hdfs import InsecureClient
+from hdfs.ext.kerberos import KerberosClient
 import csv
 
 
@@ -21,7 +24,7 @@ def execute_process(args):
                 wr = csv.writer(file_write, delimiter=';')
                 wr.writerow(new_row)
 
-    client = InsecureClient(args.webHdfs, args.userWebHdfs)
+    client = KerberosClient(args.webHdfs)
     client.upload(args.hdfsPath + directory, full_file_name_path, n_threads=5, overwrite=True)
 
 

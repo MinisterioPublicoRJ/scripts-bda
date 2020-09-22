@@ -14,4 +14,5 @@ spark-submit --master yarn --deploy-mode cluster \
     --conf spark.shuffle.io.maxRetries=5 \
     --conf spark.shuffle.io.retryWait=15s \
     --conf "spark.executor.extraJavaOptions=-XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=35" \
+    --keytab "/home/mpmapas/keytab/mpmapas.keytab" \
     --py-files src/*.py,packages/*.whl,packages/*.egg,packages/*.zip src/generate_table_tce.py $@

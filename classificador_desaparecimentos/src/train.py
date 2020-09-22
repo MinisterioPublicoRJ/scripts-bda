@@ -7,7 +7,7 @@ from datetime import datetime
 from decouple import config
 from sklearn.preprocessing import MultiLabelBinarizer
 from sklearn.feature_extraction.text import TfidfVectorizer
-from hdfs import InsecureClient
+from hdfs.ext.kerberos import KerberosClient
 
 from utils import (
     clean_text,
@@ -47,7 +47,7 @@ MIN_DF = 1
 
 print('Running train script:')
 print('Querying database...')
-client = InsecureClient(HDFS_URL, user=HDFS_USER)
+client = KerberosClient(HDFS_URL)
 
 conn = jdbc.connect("oracle.jdbc.driver.OracleDriver",
                     URL_ORACLE_SERVER,

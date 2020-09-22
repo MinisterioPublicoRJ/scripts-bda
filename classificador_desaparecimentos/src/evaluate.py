@@ -7,7 +7,7 @@ import jaydebeapi as jdbc
 import pandas as pd
 import gspread
 from decouple import config
-from hdfs import InsecureClient
+from hdfs.ext.kerberos import KerberosClient
 from oauth2client.service_account import ServiceAccountCredentials
 from gspread_dataframe import set_with_dataframe
 from unidecode import unidecode
@@ -40,7 +40,7 @@ FORMATTED_HDFS_PATH = "/".join(HDFS_MODEL_DIR.split('/')[5:])
 
 print('Running Evaluate script:')
 print('Connecting to HDFS and Oracle database...')
-client = InsecureClient(HDFS_URL, HDFS_USER)
+client = KerberosClient(HDFS_URL)
 
 conn = jdbc.connect("oracle.jdbc.driver.OracleDriver",
                     URL_ORACLE_SERVER,
