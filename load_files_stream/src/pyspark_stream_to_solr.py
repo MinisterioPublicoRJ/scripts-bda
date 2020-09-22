@@ -2,11 +2,16 @@ from __future__ import print_function
 import pyspark
 from pyspark import SparkContext, SparkConf
 from pyspark.streaming import StreamingContext
+import os
+os.environ['PYTHON_EGG_CACHE'] = '/tmp'
+os.environ['PYTHON_EGG_DIR']='/tmp'
 from decouple import config
 import hashlib
 import datetime
 import sys
 import pysolr
+from requests_kerberos import HTTPKerberosAuth, REQUIRED 
+kerberos_auth = HTTPKerberosAuth(mutual_authentication=REQUIRED, sanitize_mutual_error_response=False)
 import argparse
 
 # zookeeper_server = config('ZOOKEEPER_SERVER')
@@ -26,7 +31,7 @@ def format_date(dt):
 
 def connect_to_solr(zookeeper_server):
     zookeeper = pysolr.ZooKeeper(zookeeper_server)
-    return pysolr.SolrCloud(zookeeper, "files_detran", timeout=300)
+    return pysolr.SolrCloud(zookeeper, "files_detran", timeout=300, auth=kerberos_auth)
 
 def send_data_to_solr(row, zookeeper):
     solr = connect_to_solr(zookeeper)

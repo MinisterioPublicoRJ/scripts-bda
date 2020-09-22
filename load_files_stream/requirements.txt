@@ -2,3 +2,5 @@ python-decouple
 pysolr
 kazoo
 argparse
+requests-kerberos
+kerberos

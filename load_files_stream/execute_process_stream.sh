@@ -10,6 +10,10 @@ spark-submit --master yarn --deploy-mode cluster \
     --conf spark.task.maxFailures=20 \
     --conf spark.speculation=true \
     --conf spark.hadoop.fs.hdfs.impl.disable.cache=true \
+    --conf spark.executorEnv.PYTHON_EGG_CACHE="/tmp" \
+    --conf spark.executorEnv.PYTHON_EGG_DIR="/tmp" \
+    --conf spark.driverEnv.PYTHON_EGG_CACHE="/tmp" \
+    --conf spark.driverEnv.PYTHON_EGG_DIR="/tmp" \
     --queue root.stream \
     --py-files packages/*.whl,packages/*.egg src/pyspark_stream_to_solr.py \
         -f kopp -p /user/mpmapas/staging/detranbarreirasplacas/ \

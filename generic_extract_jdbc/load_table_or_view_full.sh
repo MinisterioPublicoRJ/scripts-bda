@@ -23,6 +23,4 @@ spark-submit --master yarn --deploy-mode cluster \
     --py-files src/*.py,packages/*.egg,packages/*.whl,packages/*.zip\
     src/generic_load_table.py $@
 
-kinit -kt mpmapas.keytab mpmapas
 impala-shell -q "INVALIDATE METADATA"
-kdestroy
