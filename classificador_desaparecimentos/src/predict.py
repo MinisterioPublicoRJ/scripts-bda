@@ -7,7 +7,7 @@ import pandas as pd
 import jaydebeapi as jdbc
 from datetime import datetime
 from decouple import config
-from hdfs import InsecureClient
+from hdfs.ext.kerberos import KerberosClient
 
 from utils import (
     clean_text,
@@ -88,7 +88,7 @@ RULES = {
 print('Running predict script:\n')
 
 print('Connecting to HDFS and to database...')
-client = InsecureClient(HDFS_URL, user=HDFS_USER)
+client = KerberosClient(HDFS_URL)
 
 conn = jdbc.connect("oracle.jdbc.driver.OracleDriver",
                     URL_ORACLE_SERVER,
