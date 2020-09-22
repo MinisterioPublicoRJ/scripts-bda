@@ -32,6 +32,4 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-kinit -kt mpmapas.keytab mpmapas
 impala-shell -q "INVALIDATE METADATA ${a}.${OUTPUT_TABLE_NAME}"
-kdestroy
