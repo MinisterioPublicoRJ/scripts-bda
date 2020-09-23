@@ -4,7 +4,7 @@ export PYTHONIOENCODING=utf8
 OUTPUT_TABLE_NAME="tb_pip_investigados_representantes"
 
 spark-submit --master yarn --deploy-mode cluster \
-    --keytab mpmapas.keytab \
+    --keytab "/home/mpmapas/keytab/mpmapas.keytab" \
     --principal mpmapas \
     --queue root.robopromotoria \
     --num-executors 12 \
