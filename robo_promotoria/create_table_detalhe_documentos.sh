@@ -5,7 +5,7 @@ OUTPUT_TABLE_NAME_ORGAO="tb_detalhe_documentos_orgao"
 OUTPUT_TABLE_NAME_CPF="tb_detalhe_documentos_orgao_cpf"
 
 spark-submit --master yarn --deploy-mode cluster \
-    --keytab mpmapas.keytab \
+    --keytab "/home/mpmapas/keytab/mpmapas.keytab" \
     --principal mpmapas \
     --queue root.robopromotoria \
     --num-executors 12 \

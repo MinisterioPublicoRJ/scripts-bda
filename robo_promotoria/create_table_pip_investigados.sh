@@ -6,7 +6,7 @@ OUTPUT_TABLE_NAME_INVESTIGADOS="tb_pip_investigados"
 OUTPUT_TABLE_DATE_CHECKED="dt_checked_investigados"
 
 spark-submit --master yarn --deploy-mode cluster \
-    --keytab mpmapas.keytab \
+    --keytab "/home/mpmapas/keytab/mpmapas.keytab" \
     --principal mpmapas \
     --queue root.robopromotoria \
     --num-executors 12 \
