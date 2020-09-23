@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 import os
 
 import pyspark
-from happybase import Connection as HBaseConnection
+from happybase_kerberos_patch import KerberosConnection
 import argparse
 
 
@@ -190,10 +190,10 @@ def execute_process(options):
             GROUP BY pip_codigo
         """.format(schema_exadata_aux)).collect()
 
-    conn = HBaseConnection(
+    conn = KerberosConnection(
             'bda1node05.pgj.rj.gov.br',
             timeout=3000,
-            transport="framed",
+            use_kerberos=True,
             protocol="compact",
         )
     #conn = Connection('bda1node05.pgj.rj.gov.br')
@@ -222,6 +222,7 @@ def execute_process(options):
 
 if __name__ == "__main__":
     os.environ['PYTHON_EGG_CACHE'] = "/tmp"
+    os.environ['PYTHON_EGG_DIR']='/tmp'
 
     parser = argparse.ArgumentParser(description="Create table tabela pip_investigados")
     parser.add_argument('-e','--schemaExadata', metavar='schemaExadata', type=str, help='')

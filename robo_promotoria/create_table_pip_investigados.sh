@@ -8,6 +8,10 @@ OUTPUT_TABLE_DATE_CHECKED="dt_checked_investigados"
 spark-submit --master yarn --deploy-mode cluster \
     --keytab "/home/mpmapas/keytab/mpmapas.keytab" \
     --principal mpmapas \
+    --conf spark.executorEnv.PYTHON_EGG_CACHE="/tmp" \
+    --conf spark.executorEnv.PYTHON_EGG_DIR="/tmp" \
+    --conf spark.driverEnv.PYTHON_EGG_CACHE="/tmp" \
+    --conf spark.driverEnv.PYTHON_EGG_DIR="/tmp" \
     --queue root.robopromotoria \
     --num-executors 12 \
     --driver-memory 6g \
@@ -21,7 +25,7 @@ spark-submit --master yarn --deploy-mode cluster \
     --conf spark.locality.wait=0 \
     --conf spark.shuffle.io.numConnectionsPerPeer=3 \
     --conf "spark.executor.extraJavaOptions=-XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=35" \
-    --py-files src/utils.py,packages/*.whl,packages/*.egg,packages/*.zip \
+    --py-files src/utils.py,packages/*.whl,packages/*.egg,packages/*.zip,packages/*.py \
     src/tabela_pip_investigados.py $@ -t1 ${OUTPUT_TABLE_NAME_PROCEDIMENTOS} -t2 ${OUTPUT_TABLE_NAME_INVESTIGADOS} -t3 ${OUTPUT_TABLE_DATE_CHECKED}
 
 while [ $# -gt 0 ]; do
