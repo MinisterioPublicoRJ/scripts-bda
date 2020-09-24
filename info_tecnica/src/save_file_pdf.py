@@ -1,7 +1,9 @@
 import os
-os.environ['PYTHON_EGG_CACHE'] = "/tmp"
-from hdfs import InsecureClient
-from happybase import Connection as HBaseConnection
+os.environ['PYTHON_EGG_CACHE'] = '/tmp'
+os.environ['PYTHON_EGG_DIR']='/tmp'
+from hdfs.ext.kerberos import KerberosClient
+#from happybase import Connection as HBaseConnection
+from happybase_kerberos_patch import KerberosConnection
 from base import spark
 import argparse
 
@@ -10,11 +12,11 @@ import argparse
     Connection to hbase
 """
 def get_connection(server):
-    connection = HBaseConnection(
-            server,
-            timeout=300000,
-            transport="framed",
-            protocol="compact",
+    connection = KerberosConnection(
+            server, 
+            protocol='compact', 
+            use_kerberos=True, 
+            timeout=300000
         )
     return connection
 
@@ -34,7 +36,7 @@ def save_file_hdfs(rdd, dir_files_pdf, server_hdfs, user_name_hdfs):
     n_file_id = int(rdd[0])
     n_info_tec = rdd[1].replace("/", "-")
     n_file = rdd[2]
-    hdfsclient = InsecureClient(server_hdfs, user=user_name_hdfs) 
+    hdfsclient = KerberosClient(server_hdfs)
     hdfsclient.write(os.path.join(dir_files_pdf, '{}_{}.pdf'.format(n_file_id, n_info_tec)), n_file, overwrite=True)
     return rdd
 

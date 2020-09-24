@@ -2,6 +2,8 @@
 export PYTHONIOENCODING=utf8
 
 spark-submit --master yarn --deploy-mode cluster \
+    --keytab "/home/mpmapas/keytab/mpmapas.keytab" \
+    --principal mpmapas \
     --queue root.mpmapas \
     --num-executors 3 \
     --driver-memory 3g \

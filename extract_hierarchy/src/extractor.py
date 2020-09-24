@@ -92,7 +92,7 @@ def execute_process(options):
     create_hierarchical_table(spark, assuntos, table_name, 'NOME', descendants=False)
     print('assuntos gravados')
 
-    _update_impala_table(table_name, options['impala_host'], options['impala_port'])
+    #_update_impala_table(table_name, options['impala_host'], options['impala_port'])
 
 
 if __name__ == "__main__":

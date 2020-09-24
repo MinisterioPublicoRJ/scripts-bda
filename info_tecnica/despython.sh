@@ -10,7 +10,7 @@ else
     cd $name_zip
     if [[ $? != 0 ]]; then
         cd src
+	zip -r "$name_zip.zip" *
+	mv "$name_zip.zip" ../../
     fi
-    zip -r "$name_zip.zip" *
-    mv "$name_zip.zip" ../../
 fi
