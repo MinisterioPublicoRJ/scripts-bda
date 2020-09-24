@@ -3,4 +3,5 @@ impyla==0.15.0
 thrift==0.9.3
 happybase==1.2.0
 thriftpy2==0.4.8
+pure_sasl==0.6.2
 git+https://github.com/MinisterioPublicoRJ/happybase-kerberos-patch.git@0.1.4

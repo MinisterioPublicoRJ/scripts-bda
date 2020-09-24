@@ -8,10 +8,6 @@ OUTPUT_TABLE_DATE_CHECKED="dt_checked_investigados"
 spark-submit --master yarn --deploy-mode cluster \
     --keytab "/home/mpmapas/keytab/mpmapas.keytab" \
     --principal mpmapas \
-    --conf spark.executorEnv.PYTHON_EGG_CACHE="/tmp" \
-    --conf spark.executorEnv.PYTHON_EGG_DIR="/tmp" \
-    --conf spark.driverEnv.PYTHON_EGG_CACHE="/tmp" \
-    --conf spark.driverEnv.PYTHON_EGG_DIR="/tmp" \
     --queue root.robopromotoria \
     --num-executors 12 \
     --driver-memory 6g \

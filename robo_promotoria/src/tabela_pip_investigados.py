@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta
 import os
+os.environ['PYTHON_EGG_CACHE'] = "/tmp"
+os.environ['PYTHON_EGG_DIR']='/tmp'
 
 import pyspark
 from happybase_kerberos_patch import KerberosConnection
@@ -221,8 +223,6 @@ def execute_process(options):
 
 
 if __name__ == "__main__":
-    os.environ['PYTHON_EGG_CACHE'] = "/tmp"
-    os.environ['PYTHON_EGG_DIR']='/tmp'
 
     parser = argparse.ArgumentParser(description="Create table tabela pip_investigados")
     parser.add_argument('-e','--schemaExadata', metavar='schemaExadata', type=str, help='')
