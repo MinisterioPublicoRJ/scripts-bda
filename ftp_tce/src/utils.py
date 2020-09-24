@@ -5,6 +5,8 @@ import json
 import os
 import sys
 import pysolr
+from requests_kerberos import HTTPKerberosAuth, REQUIRED 
+kerberos_auth = HTTPKerberosAuth(mutual_authentication=REQUIRED, sanitize_mutual_error_response=False)
 
 ERROR = "ERROR"
 SUCCESS = "SUCCESS"
@@ -14,7 +16,7 @@ ERROR_MESSAGE = "Erro em {}: {}"
 def connect_to_solr(zookeeper_server):
     print(zookeeper_server)
     zookeeper = pysolr.ZooKeeper(zookeeper_server)
-    return pysolr.SolrCloud(zookeeper, "log_files", timeout=300)
+    return pysolr.SolrCloud(zookeeper, "log_files", timeout=300, auth=kerberos_auth)
 
 def send_data_to_solr(data, solr_server):
     solr = connect_to_solr(solr_server)

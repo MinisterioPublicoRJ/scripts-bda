@@ -1,9 +1,12 @@
+import os
+os.environ['PYTHON_EGG_CACHE'] = '/tmp'
+os.environ['PYTHON_EGG_DIR']='/tmp'
 import argparse
 import params_table
 import pyspark
 #import unicodedata
 import unidecode
-from hdfs import InsecureClient
+from hdfs.ext.kerberos import KerberosClient
 from pyspark.sql.functions import year, col, regexp_replace
 from utils import _update_impala_table, send_log, ERROR, SUCCESS, SUCCESS_MESSAGE, ERROR_MESSAGE
 
@@ -54,7 +57,7 @@ def execute_process(args):
         .enableHiveSupport() \
         .getOrCreate()
 
-    client = InsecureClient(args.webHdfs, args.userWebHdfs)
+    client = KerberosClient(args.webHdfs)
 
     hdfs_files = client.list(args.pathDirectoryBase)
 
@@ -91,7 +94,7 @@ def execute_process(args):
 
                 df.write.mode("overwrite").format("parquet").saveAsTable(table_hive)
 
-                _update_impala_table(table_hive, args.impalaHost, args.impalaPort)
+                #_update_impala_table(table_hive, args.impalaHost, args.impalaPort)
 
                 export_to_postgres(df, args, table_postgres)
 
