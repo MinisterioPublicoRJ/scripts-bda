@@ -23,18 +23,3 @@ spark-submit --master yarn --deploy-mode cluster \
     --conf "spark.executor.extraJavaOptions=-XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=35" \
     --py-files src/utils.py,packages/*.whl,packages/*.egg,packages/*.zip,packages/*.py \
     src/tabela_pip_investigados.py $@ -t1 ${OUTPUT_TABLE_NAME_PROCEDIMENTOS} -t2 ${OUTPUT_TABLE_NAME_INVESTIGADOS} -t3 ${OUTPUT_TABLE_DATE_CHECKED}
-
-while [ $# -gt 0 ]; do
-
-   if [[ $1 == *"-"* ]]; then
-        param="${1/-/}"
-        declare $param="$2"
-        # echo $1 $2 // Optional to see the parameter:value result
-   fi
-
-  shift
-done
-
-impala-shell -q "INVALIDATE METADATA ${a}.${OUTPUT_TABLE_NAME_PROCEDIMENTOS}"
-impala-shell -q "INVALIDATE METADATA ${a}.${OUTPUT_TABLE_NAME_INVESTIGADOS}"
-impala-shell -q "INVALIDATE METADATA ${a}.${OUTPUT_TABLE_DATE_CHECKED}"

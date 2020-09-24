@@ -21,16 +21,3 @@ spark-submit --master yarn --deploy-mode cluster \
     --conf "spark.executor.extraJavaOptions=-XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=35" \
     --py-files src/utils.py,src/files_detalhe_documentos.zip,packages/*.whl,packages/*.egg,packages/*.zip \
     src/tabela_detalhe_documento.py $@ -t1 ${OUTPUT_TABLE_NAME_ORGAO} -t2 ${OUTPUT_TABLE_NAME_CPF}
-
-while [ $# -gt 0 ]; do
-
-   if [[ $1 == *"-"* ]]; then
-        param="${1/-/}"
-        declare $param="$2"
-   fi
-
-  shift
-done
-
-impala-shell -q "INVALIDATE METADATA ${a}.${OUTPUT_TABLE_NAME_ORGAO}"
-impala-shell -q "INVALIDATE METADATA ${a}.${OUTPUT_TABLE_NAME_CPF}"
