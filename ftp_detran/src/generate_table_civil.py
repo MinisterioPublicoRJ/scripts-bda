@@ -24,7 +24,7 @@ def execute_process(args):
 
     table_detran.write.partitionBy('year').format("hive").mode("overwrite").saveAsTable(table_name)
 
-    _update_impala_table(table_name, args.impalaHost, args.impalaPort)
+    #_update_impala_table(table_name, args.impalaHost, args.impalaPort)
 
 
 if __name__ == "__main__":
