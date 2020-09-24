@@ -1,8 +1,6 @@
 <dataConfig>
-    <dataSource driver="org.apache.hive.jdbc.HiveDriver" url="jdbc:hive2://192.168.8.6:10000/bases" 
-	user="mpmapas"
-        password="U2FsdGVkX1/8BxblgEjLIQoO3kUjdqCEGnJd56kZlnw=" 
-        encryptKeyFile="/var/lib/solr/server/encryptionkey"/>
+    <dataSource driver="org.apache.hive.jdbc.HiveDriver" 
+    url="jdbc:hive2://192.168.8.6:10000/bases;principal=hive/bda1node06.pgj.rj.gov.br@BDA.LOCAL" />
     <document name="files_detran">
         <entity name="files_detran_schema" query="
             SELECT uuid, num_camera, placa, lat, lon, datapassagem, velocidade, faixa
