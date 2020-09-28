@@ -30,8 +30,8 @@ def execute_process(options):
             JOIN {1}.tb_regra_negocio_saida on cod_atribuicao = F.cod_pct and D.stao_tppr_dk = tp_andamento
             WHERE C.pcao_dt_cancelamento IS NULL
             AND A.docu_tpst_dk != 11
-	    AND C.year_month >= cast(date_format(date_sub(current_timestamp(), 60), 'yyyyMM') as INT)
-            AND C.pcao_dt_andamento >= date_sub(current_timestamp(), 60)
+	    AND C.year_month >= cast(date_format(date_sub(current_timestamp(), 180), 'yyyyMM') as INT)
+            AND C.pcao_dt_andamento >= date_sub(current_timestamp(), 180)
             ) t1
         RIGHT JOIN (
                 select * 
