@@ -54,7 +54,7 @@ def execute_process(options):
         JOIN PIP_CODIGOS P ON pip_codigo = docu_orgi_orga_dk_responsavel
         WHERE pers_tppe_dk IN (290, 7, 21, 317, 20, 14, 32, 345, 40, 5)
         AND docu_tpst_dk != 11
-    """.format(schema_exadata, schema_exadata_aux))
+    """.format(schema_exadata))
     PERS_DOCS_PIPS.createOrReplaceTempView('PERS_DOCS_PIPS')
     spark.catalog.cacheTable('PERS_DOCS_PIPS')
 
@@ -64,7 +64,7 @@ def execute_process(options):
         FROM PERS_DOCS_PIPS
         JOIN {0}.mcpr_pessoa_fisica ON pers_pess_dk = pesf_pess_dk
         WHERE pesf_nm_pessoa_fisica NOT REGEXP 'P.BLICO|JUSTI.A P.BLICA'
-    """.format(schema_exadata, schema_exadata_aux))
+    """.format(schema_exadata))
     investigados_fisicos_pip_total.createOrReplaceTempView("INVESTIGADOS_FISICOS_PIP_TOTAL")
     spark.catalog.cacheTable('INVESTIGADOS_FISICOS_PIP_TOTAL')
 
@@ -73,7 +73,7 @@ def execute_process(options):
         FROM PERS_DOCS_PIPS
         JOIN {0}.mcpr_pessoa_juridica ON pers_pess_dk = pesj_pess_dk
         WHERE pesj_nm_pessoa_juridica NOT REGEXP 'P.BLICO|JUSTI.A P.BLICA'
-    """.format(schema_exadata, schema_exadata_aux))
+    """.format(schema_exadata))
     investigados_juridicos_pip_total.createOrReplaceTempView("INVESTIGADOS_JURIDICOS_PIP_TOTAL")
     spark.catalog.cacheTable('INVESTIGADOS_JURIDICOS_PIP_TOTAL')
 
@@ -204,10 +204,19 @@ def execute_process(options):
 
     # Se 1 e representante de 2, e 2 e representante de 3, entao 1 deve ser representante de 3
     pessoas_representativas_2 = spark.sql("""
-        SELECT A.pess_dk, B.representante_dk
+        SELECT A.pess_dk, B.representante_dk,
+        pesf_nm_pessoa_fisica as pess_pesf_nm_pessoa_fisica,
+        pesf_nm_mae as pess_pesf_nm_mae,
+        pesf_cpf as pess_pesf_cpf,
+        pesf_nr_rg as pess_pesf_nr_rg,
+        pesf_dt_nasc as pess_pesf_dt_nasc,
+        pesj_nm_pessoa_juridica as pess_pesj_nm_pessoa_juridica,
+        pesj_cnpj as pess_pesj_cnpj
         FROM REPR_1 A
         JOIN REPR_1 B ON A.representante_dk = B.pess_dk
-    """)
+        LEFT JOIN {0}.mcpr_pessoa_fisica ON A.pess_dk = pesf_pess_dk
+        LEFT JOIN {0}.mcpr_pessoa_juridica ON A.pess_dk = pesj_pess_dk
+    """.format(schema_exadata))
 
     table_name = options['table_name']
     table_name = "{}.{}".format(schema_exadata_aux, table_name)
