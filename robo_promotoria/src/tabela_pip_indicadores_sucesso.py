@@ -207,7 +207,7 @@ def execute_process(options):
     AND (vist_dt_fechamento_vista > cast(date_sub(current_timestamp(), 30) as timestamp)
     OR vist_dt_fechamento_vista IS NULL)
     GROUP BY pip_codigo
-    """.format(FINALIZACOES=DENUNCIA+ARQUIVAMENTO+ACORDO)
+    """.format(FINALIZACOES=DENUNCIA+ACORDO)
     ).createOrReplaceTempView("RESOLUCOES")
 
 
