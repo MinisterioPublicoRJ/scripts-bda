@@ -141,7 +141,7 @@ def load_all_data(table, options):
         print('Update impala table %s' % table_hive)
         # _update_impala_table(table_hive, options)
 
-        #spark.sql("ANALYZE TABLE {} COMPUTE STATISTICS".format(table_hive))
+        spark.sql("ANALYZE TABLE {} COMPUTE STATISTICS".format(table_hive))
 
 
 def load_part_data(table, options):
