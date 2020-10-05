@@ -7,7 +7,8 @@ import pyspark
 import unidecode
 from hdfs.ext.kerberos import KerberosClient
 from pyspark.sql.functions import year, col, regexp_replace
-from generic_utils import execute_compute_stats, send_log, ERROR, SUCCESS, SUCCESS_MESSAGE, ERROR_MESSAGE
+from generic_utils import execute_compute_stats
+from solr_log import send_log, ERROR, SUCCESS, SUCCESS_MESSAGE, ERROR_MESSAGE
 
 
 def trait_columns_name(value):
