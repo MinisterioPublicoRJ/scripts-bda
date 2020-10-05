@@ -6,3 +6,4 @@ happybase==1.2.0
 thriftpy2==0.4.8
 pure-sasl
 git+https://github.com/MinisterioPublicoRJ/happybase-kerberos-patch.git#egg=happybase_kerberos_patch
+pysolr

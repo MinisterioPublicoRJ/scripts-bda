@@ -3,7 +3,8 @@ impyla==0.15.0
 thrift==0.9.3
 hdfs[kerberos]
 kazoo
-pysolr
 unidecode
+pysolr
 requests-kerberos
 kerberos
+

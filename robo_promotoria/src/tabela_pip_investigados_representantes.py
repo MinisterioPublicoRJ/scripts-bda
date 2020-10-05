@@ -1,9 +1,10 @@
 import difflib
 import re
 import unicodedata
-
 import pyspark
 import argparse
+
+from generic_utils import execute_compute_stats
 
 
 def clean_name(value):
@@ -224,6 +225,8 @@ def execute_process(options):
     temp_table = spark.table("temp_table_pip_investigados_representantes")
     temp_table.write.mode("overwrite").saveAsTable(table_name)
     spark.sql("drop table temp_table_pip_investigados_representantes")
+
+    execute_compute_stats(table_name)
 
     spark.catalog.clearCache()
 

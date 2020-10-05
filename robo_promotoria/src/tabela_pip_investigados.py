@@ -1,11 +1,12 @@
-from datetime import datetime, timedelta
 import os
-os.environ['PYTHON_EGG_CACHE'] = "/tmp"
-os.environ['PYTHON_EGG_DIR']='/tmp'
-
 import pyspark
-from happybase_kerberos_patch import KerberosConnection
 import argparse
+
+from datetime import datetime, timedelta
+from happybase_kerberos_patch import KerberosConnection
+
+from generic_utils import execute_compute_stats
+
 
 
 def check_table_exists(spark, schema, table_name):
@@ -127,6 +128,8 @@ def execute_process(options):
     temp_table.write.mode("overwrite").saveAsTable(table_name)
     spark.sql("drop table temp_table_pip_investigados_procedimentos")
 
+    execute_compute_stats(table_name)
+
     spark.catalog.clearCache()
 
     table = spark.sql("""
@@ -169,6 +172,8 @@ def execute_process(options):
     temp_table = spark.table("temp_table_pip_investigados")
     temp_table.write.mode("overwrite").saveAsTable(table_name)
     spark.sql("drop table temp_table_pip_investigados")
+
+    execute_compute_stats(table_name)
 
 
     # Investigados que aparecem em documentos novos reiniciam flags no HBase
@@ -220,6 +225,8 @@ def execute_process(options):
 
     table_name = "{}.{}".format(schema_exadata_aux, table_name_dt_checked)
     tb_ultima_verificacao.write.mode("overwrite").saveAsTable(table_name)
+
+    execute_compute_stats(table_name)
 
 
 if __name__ == "__main__":

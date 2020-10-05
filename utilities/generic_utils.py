@@ -1,11 +1,15 @@
-from impala.dbapi import connect as impala_connect
-import datetime
-import requests
-import json
 import os
 import sys
+import json
+import time
 import pysolr
+import datetime
+import requests
+import subprocess
+
 from requests_kerberos import HTTPKerberosAuth, REQUIRED 
+from impala.dbapi import connect as impala_connect
+
 kerberos_auth = HTTPKerberosAuth(mutual_authentication=REQUIRED, sanitize_mutual_error_response=False)
 
 ERROR = "ERROR"
@@ -23,7 +27,6 @@ def send_data_to_solr(data, solr_server):
     solr.add(data, overwrite=True)
 
 def send_log(message, module, levelname, solr_server):
-    #time_stamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S").replace(" ", "T") + "Z"
     time_stamp = datetime.datetime.now().isoformat()+'Z'
     date_now = datetime.datetime.now().strftime("%Y-%m-%d")
 
@@ -37,20 +40,15 @@ def send_log(message, module, levelname, solr_server):
             }]
     send_data_to_solr(data, solr_server)
 
-def _update_impala_table(table, impalaHost, impalaPort):
-    """
-    Method for update table in Impala
+def execute_compute_stats(table_name):
 
-    Parameters
-    ----------
-    table: string
-        table name from hive
+    time.sleep(7)
+    
+    process = subprocess.Popen(
+        ['impala-shell', '-q', 'COMPUTE STATS {}'.format(table_name)],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-    """
-    with impala_connect(
-            host=impalaHost,
-            port=impalaPort
-    ) as conn:
-        impala_cursor = conn.cursor()
-        impala_cursor.execute("""
-            INVALIDATE METADATA {table} """.format(table=table))
+    out, err = process.communicate()
+
+    if not out:
+        raise Exception(err)

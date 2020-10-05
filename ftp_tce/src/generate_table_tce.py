@@ -1,6 +1,5 @@
 import os
-os.environ['PYTHON_EGG_CACHE'] = '/tmp'
-os.environ['PYTHON_EGG_DIR']='/tmp'
+
 import argparse
 import params_table
 import pyspark
@@ -8,7 +7,7 @@ import pyspark
 import unidecode
 from hdfs.ext.kerberos import KerberosClient
 from pyspark.sql.functions import year, col, regexp_replace
-from utils import _update_impala_table, send_log, ERROR, SUCCESS, SUCCESS_MESSAGE, ERROR_MESSAGE
+from generic_utils import execute_compute_stats, send_log, ERROR, SUCCESS, SUCCESS_MESSAGE, ERROR_MESSAGE
 
 
 def trait_columns_name(value):
@@ -94,7 +93,9 @@ def execute_process(args):
 
                 df.write.mode("overwrite").format("parquet").saveAsTable(table_hive)
 
-                #_update_impala_table(table_hive, args.impalaHost, args.impalaPort)
+                spark.sql("ANALYZE TABLE {} COMPUTE STATISTICS".format(table_hive))
+                
+                execute_compute_stats(table_hive)
 
                 export_to_postgres(df, args, table_postgres)
 

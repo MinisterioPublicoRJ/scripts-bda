@@ -1,7 +1,7 @@
 #!/bin/sh
 export PYTHONIOENCODING=utf8
 
-spark-submit --master yarn --deploy-mode cluster \
+spark-submit \
     --principal mpmapas \
     --keytab "/home/mpmapas/keytab/mpmapas.keytab" \
     --jars /opt/cloudera/parcels/CDH-5.14.2-1.cdh5.14.2.p0.3/jars/ojdbc6.jar,/opt/cloudera/parcels/CDH-5.14.2-1.cdh5.14.2.p0.3/jars/postgresql-9.0-801.jdbc4.jar \
@@ -14,9 +14,9 @@ spark-submit --master yarn --deploy-mode cluster \
     --conf spark.network.timeout=900 \
     --conf spark.shuffle.io.maxRetries=5 \
     --conf spark.shuffle.io.retryWait=15s \
-    --conf spark.executorEnv.PYTHON_EGG_CACHE="/tmp" \
+    --conf spark.yarn.appMasterEnv.PYTHON_EGG_CACHE="/tmp" \
+    --conf spark.yarn.appMasterEnv.PYTHON_EGG_DIR="/tmp" \
     --conf spark.executorEnv.PYTHON_EGG_DIR="/tmp" \
-    --conf spark.driverEnv.PYTHON_EGG_CACHE="/tmp" \
-    --conf spark.driverEnv.PYTHON_EGG_DIR="/tmp" \
+    --conf spark.executorEnv.PYTHON_EGG_CACHE="/tmp" \
     --conf "spark.executor.extraJavaOptions=-XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=35" \
-    --py-files src/*.py,packages/*.whl,packages/*.egg,packages/*.zip src/generate_table_tce.py $@
+    --py-files ../utilities/*.py,src/*.py,packages/*.whl,packages/*.egg,packages/*.zip src/generate_table_tce.py $@

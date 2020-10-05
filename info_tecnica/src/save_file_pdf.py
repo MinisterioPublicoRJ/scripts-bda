@@ -1,12 +1,9 @@
 import os
-os.environ['PYTHON_EGG_CACHE'] = '/tmp'
-os.environ['PYTHON_EGG_DIR']='/tmp'
-from hdfs.ext.kerberos import KerberosClient
-#from happybase import Connection as HBaseConnection
-from happybase_kerberos_patch import KerberosConnection
-from base import spark
 import argparse
 
+from hdfs.ext.kerberos import KerberosClient
+from base import spark_session
+from happybase_kerberos_patch import KerberosConnection
 
 """ 
     Connection to hbase
@@ -41,6 +38,8 @@ def save_file_hdfs(rdd, dir_files_pdf, server_hdfs, user_name_hdfs):
     return rdd
 
 def execute_process(args):
+
+    spark = spark_session("info_tecnica")
 
     url_oracle_server = args.jdbcServer
     user_oracle = args.jdbcUser

@@ -1,8 +1,10 @@
+import os
+
 import pyspark
-from utils import _update_impala_table
-from pyspark.sql.functions import year
 import argparse
 
+from pyspark.sql.functions import year
+from generic_utils import execute_compute_stats
 
 def execute_process(args):
 
@@ -24,8 +26,7 @@ def execute_process(args):
 
     table_detran.write.partitionBy('year').format("hive").mode("overwrite").saveAsTable(table_name)
 
-    #_update_impala_table(table_name, args.impalaHost, args.impalaPort)
-
+    execute_compute_stats(table_name)
 
 if __name__ == "__main__":
 

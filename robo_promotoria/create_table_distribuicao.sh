@@ -17,5 +17,9 @@ spark-submit --master yarn --deploy-mode cluster \
     --conf spark.shuffle.io.retryWait=15s \
     --conf spark.locality.wait=0 \
     --conf spark.shuffle.io.numConnectionsPerPeer=3 \
+    --conf spark.yarn.appMasterEnv.PYTHON_EGG_CACHE="/tmp" \
+    --conf spark.yarn.appMasterEnv.PYTHON_EGG_DIR="/tmp" \
+    --conf spark.executorEnv.PYTHON_EGG_DIR="/tmp" \
+    --conf spark.executorEnv.PYTHON_EGG_CACHE="/tmp" \
     --conf "spark.executor.extraJavaOptions=-XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=35" \
-    --py-files src/utils.py,packages/*.whl,packages/*.egg,packages/*.zip src/tabela_distribuicao.py $@ -t ${OUTPUT_TABLE_NAME}
+    --py-files ../utilities/*.py,packages/*.whl,packages/*.egg,packages/*.zip src/tabela_distribuicao.py $@ -t ${OUTPUT_TABLE_NAME}
