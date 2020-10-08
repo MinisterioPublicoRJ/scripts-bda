@@ -4,6 +4,7 @@ import argparse
 
 from tramitacao.tutela_acoes import execute_process as acoes_process_2
 from tramitacao.utils_tempo import execute_process as processa_regra
+from generic_utils import execute_compute_stats
 
 
 if __name__ == "__main__":
@@ -110,3 +111,5 @@ if __name__ == "__main__":
 
     temp_table.write.mode("overwrite").saveAsTable(table_name)
     spark.sql("drop table temp_table_tempo_tramitacao_integrado")
+
+    execute_compute_stats(table_name)

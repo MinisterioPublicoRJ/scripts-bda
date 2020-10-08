@@ -1,10 +1,11 @@
 #-*-coding:utf-8-*-
+import argparse
+import pyspark
+
 from pyspark.sql.types import IntegerType
 from pyspark.sql.functions import *
-from utils import _update_impala_table
-import argparse
 
-import pyspark
+from generic_utils import execute_compute_stats
 
 
 def get_descendants(line, table):
@@ -33,6 +34,8 @@ def create_hierarchical_table(spark, dataframe, table_name):
 
     table_df = spark.createDataFrame(dataframe)
     table_df.coalesce(20).write.format('parquet').saveAsTable(table_name, mode='overwrite')
+
+    execute_compute_stats(table_name)
 
 def execute_process(options):
 
@@ -74,8 +77,6 @@ def execute_process(options):
     table_name = "{}.mmps_classe_docto".format(schema_exadata_aux)
     create_hierarchical_table(spark, classes, table_name)
     print('classes gravados')
-
-    #_update_impala_table(table_name, options['impala_host'], options['impala_port'])
 
 
 if __name__ == "__main__":

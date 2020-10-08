@@ -1,4 +1,2 @@
 hdfs
 argparse
-impyla==0.15.0
-thrift==0.9.3

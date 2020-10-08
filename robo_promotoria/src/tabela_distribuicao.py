@@ -1,14 +1,14 @@
-import pyspark
-from datetime import datetime
 import argparse
+import pyspark
 
+from datetime import datetime
 from pyspark.sql.functions import (
     unix_timestamp,
     from_unixtime,
     current_timestamp,
     date_format
 )
-
+from generic_utils import execute_compute_stats
 
 def execute_process(options):
 
@@ -71,6 +71,8 @@ def execute_process(options):
     temp_table.write.mode("overwrite").saveAsTable(table_name)
     spark.sql("drop table temp_table_distribuicao")
 
+    execute_compute_stats(table_name)
+    
 
 if __name__ == "__main__":
 

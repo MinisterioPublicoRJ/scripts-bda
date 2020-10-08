@@ -13,10 +13,10 @@ spark-submit --master yarn --deploy-mode cluster \
     --conf spark.debug.maxToStringFields=2000 \
     --conf spark.network.timeout=900 \
     --conf spark.hadoop.hive.mapred.supports.subdirectories=true \
-    --conf spark.executorEnv.PYTHON_EGG_CACHE="/tmp" \
+    --conf spark.yarn.appMasterEnv.PYTHON_EGG_CACHE="/tmp" \
+    --conf spark.yarn.appMasterEnv.PYTHON_EGG_DIR="/tmp" \
     --conf spark.executorEnv.PYTHON_EGG_DIR="/tmp" \
-    --conf spark.driverEnv.PYTHON_EGG_CACHE="/tmp" \
-    --conf spark.driverEnv.PYTHON_EGG_DIR="/tmp" \
+    --conf spark.executorEnv.PYTHON_EGG_CACHE="/tmp" \
     --conf "spark.executor.extraJavaOptions=-XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=35" \
-    --py-files src/timer.py,src/base.py,packages/*.whl,packages/*.egg,packages/*.zip \
+    --py-files ../utilities/*.py,packages/*.whl,packages/*.egg,packages/*.zip \
     src/save_file_pdf.py $@

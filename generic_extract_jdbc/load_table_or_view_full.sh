@@ -19,8 +19,10 @@ spark-submit --master yarn --deploy-mode cluster \
     --conf spark.shuffle.io.numConnectionsPerPeer=4 \
     --conf spark.shuffle.io.maxRetries=5 \
     --conf spark.shuffle.io.retryWait=15s \
+    --conf spark.yarn.appMasterEnv.PYTHON_EGG_CACHE="/tmp" \
+    --conf spark.yarn.appMasterEnv.PYTHON_EGG_DIR="/tmp" \
+    --conf spark.executorEnv.PYTHON_EGG_DIR="/tmp" \
+    --conf spark.executorEnv.PYTHON_EGG_CACHE="/tmp" \
     --conf "spark.executor.extraJavaOptions=-XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=35" \
-    --py-files src/*.py,packages/*.egg,packages/*.whl,packages/*.zip\
+    --py-files ../utilities/*.py,src/*.py,packages/*.egg,packages/*.whl,packages/*.zip\
     src/generic_load_table.py $@
-
-impala-shell -q "INVALIDATE METADATA"
