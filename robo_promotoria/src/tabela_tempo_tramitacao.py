@@ -1,7 +1,6 @@
 import pyspark
 
 import argparse
-import subprocess
 
 from tramitacao.tutela_acoes import execute_process as acoes_process_2
 from tramitacao.utils_tempo import execute_process as processa_regra
