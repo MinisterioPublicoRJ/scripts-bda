@@ -21,6 +21,8 @@ def execute_process(options):
             .appName("criar_tabela_pip_investigados") \
             .enableHiveSupport() \
             .getOrCreate()
+    # Para evitar problemas de memoria causados por broadcast
+    spark.conf.set("spark.sql.autoBroadcastJoinThreshold", -1)
 
     schema_exadata = options['schema_exadata']
     schema_exadata_aux = options['schema_exadata_aux']
@@ -81,10 +83,10 @@ def execute_process(options):
         ultimos_andamentos AS (
             SELECT docu_nr_mp, pcao_dt_andamento, tppr_descricao, row_number() over (partition by docu_dk order by pcao_dt_andamento desc) as nr_and
             FROM (SELECT DISTINCT docu_nr_mp, docu_dk FROM documentos_pips) p
-            LEFT JOIN exadata_dev.mcpr_vista ON vist_docu_dk = docu_dk
-            LEFT JOIN exadata_dev.mcpr_andamento ON pcao_vist_dk = vist_dk
-            LEFT JOIN exadata_dev.mcpr_sub_andamento ON stao_pcao_dk = pcao_dk
-            LEFT JOIN exadata_dev.mcpr_tp_andamento ON stao_tppr_dk = tppr_dk
+            LEFT JOIN {0}.mcpr_vista ON vist_docu_dk = docu_dk
+            LEFT JOIN {0}.mcpr_andamento ON pcao_vist_dk = vist_dk
+            LEFT JOIN {0}.mcpr_sub_andamento ON stao_pcao_dk = pcao_dk
+            LEFT JOIN {0}.mcpr_tp_andamento ON stao_tppr_dk = tppr_dk
         )
         SELECT D.representante_dk, coautores, tppe_descricao, pip_codigo, D.docu_nr_mp, docu_dt_cadastro, cldc_ds_classe, orgi_nm_orgao, docu_tx_etiqueta, assuntos, fsdc_ds_fase, pcao_dt_andamento as dt_ultimo_andamento, tppr_descricao as desc_ultimo_andamento, D.pess_dk, status_personagem
         FROM documentos_pips D
