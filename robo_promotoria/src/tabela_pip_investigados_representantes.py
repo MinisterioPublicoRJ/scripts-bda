@@ -52,7 +52,7 @@ def execute_process(options):
         FROM {0}.mcpr_personagem
         JOIN {0}.mcpr_documento ON docu_dk = pers_docu_dk
         JOIN PIP_CODIGOS P ON pip_codigo = docu_orgi_orga_dk_responsavel
-        WHERE pers_tppe_dk IN (290, 7, 21, 317, 20, 14, 32, 345, 40, 5)
+        WHERE pers_tppe_dk IN (290, 7, 21, 317, 20, 14, 32, 345, 40, 5, 24)
         AND docu_tpst_dk != 11
     """.format(schema_exadata))
     PERS_DOCS_PIPS.createOrReplaceTempView('PERS_DOCS_PIPS')
@@ -69,6 +69,7 @@ def execute_process(options):
         FROM PERS_DOCS_PIPS
         JOIN {0}.mcpr_pessoa_fisica ON pers_pess_dk = pesf_pess_dk
         WHERE pesf_nm_pessoa_fisica NOT REGEXP 'P.BLICO|JUSTI.A P.BLICA'
+        AND pesf_nm_pessoa_fisica != 'MP'
     """.format(schema_exadata))
     investigados_fisicos_pip_total.createOrReplaceTempView("INVESTIGADOS_FISICOS_PIP_TOTAL")
     spark.catalog.cacheTable('INVESTIGADOS_FISICOS_PIP_TOTAL')
@@ -80,6 +81,7 @@ def execute_process(options):
         FROM PERS_DOCS_PIPS
         JOIN {0}.mcpr_pessoa_juridica ON pers_pess_dk = pesj_pess_dk
         WHERE pesj_nm_pessoa_juridica NOT REGEXP 'P.BLICO|JUSTI.A P.BLICA'
+        AND pesj_nm_pessoa_juridica != 'MP'
     """.format(schema_exadata))
     investigados_juridicos_pip_total.createOrReplaceTempView("INVESTIGADOS_JURIDICOS_PIP_TOTAL")
     spark.catalog.cacheTable('INVESTIGADOS_JURIDICOS_PIP_TOTAL')
