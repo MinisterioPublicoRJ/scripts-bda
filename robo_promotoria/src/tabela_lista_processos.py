@@ -84,7 +84,7 @@ def execute_process(options):
                 LEAD(pess_nm_pessoa) OVER (PARTITION BY docu_nr_mp ORDER BY pess_nm_pessoa) proximo_nome
             FROM DOCU_TOTAIS
             JOIN {0}.mcpr_personagem ON pers_docu_dk = docu_dk
-            AND pers_tppe_dk IN (290, 7, 21, 317, 20, 14, 32, 345, 40, 5)
+            AND pers_tppe_dk IN (290, 7, 21, 317, 20, 14, 32, 345, 40, 5, 24)
             JOIN {0}.mcpr_pessoa ON pers_pess_dk = pess_dk
             JOIN {0}.mcpr_tp_personagem ON pers_tppe_dk = tppe_dk
             AND (
