@@ -60,7 +60,8 @@ def execute_process(options):
 
     documentos_pips = spark.sql("""
         SELECT representante_dk, R.pess_dk, tppe_descricao, pip_codigo, docu_dk, docu_nr_mp, docu_dt_cadastro, docu_cldc_dk, docu_fsdc_dk, docu_tx_etiqueta,
-            CASE WHEN pers_dt_fim <= current_timestamp() THEN 'Data Fim Atingida' ELSE 'Ativo' END AS status_personagem
+            pers_dt_fim < current_timestamp() AS status_personagem
+            --CASE WHEN pers_dt_fim <= current_timestamp() THEN 'Data Fim Atingida' ELSE 'Ativo' END AS status_personagem
         FROM {0}.mcpr_personagem
         JOIN {0}.mcpr_tp_personagem ON tppe_dk = pers_tppe_dk
         JOIN {1}.tb_pip_investigados_representantes R ON pers_pess_dk = R.pess_dk
@@ -73,28 +74,33 @@ def execute_process(options):
 
     documentos_investigados = spark.sql("""
         WITH tb_coautores AS (
-            SELECT A.docu_nr_mp, A.representante_dk,
+            SELECT A.docu_dk, A.representante_dk,
                 concat_ws(', ', collect_list(C.pess_nm_pessoa)) as coautores
             FROM documentos_pips A
-            JOIN documentos_pips B ON A.docu_nr_mp = B.docu_nr_mp AND A.representante_dk != B.representante_dk
+            JOIN documentos_pips B ON A.docu_dk = B.docu_dk AND A.representante_dk != B.representante_dk
             JOIN {0}.mcpr_pessoa C ON C.pess_dk = B.representante_dk
-            GROUP BY A.docu_nr_mp, A.representante_dk
+            GROUP BY A.docu_dk, A.representante_dk
         ),
         ultimos_andamentos AS (
+<<<<<<< Updated upstream
             SELECT docu_nr_mp, pcao_dt_andamento, tppr_descricao, row_number() over (partition by docu_dk order by pcao_dt_andamento desc) as nr_and
             FROM (SELECT DISTINCT docu_nr_mp, docu_dk FROM documentos_pips) p
+=======
+            SELECT docu_dk, pcao_dt_andamento, tppr_descricao, row_number() over (partition by docu_dk order by pcao_dt_andamento desc) as nr_and
+            FROM (SELECT DISTINCT docu_dk FROM documentos_pips) p
+>>>>>>> Stashed changes
             LEFT JOIN {0}.mcpr_vista ON vist_docu_dk = docu_dk
             LEFT JOIN {0}.mcpr_andamento ON pcao_vist_dk = vist_dk
             LEFT JOIN {0}.mcpr_sub_andamento ON stao_pcao_dk = pcao_dk
             LEFT JOIN {0}.mcpr_tp_andamento ON stao_tppr_dk = tppr_dk
         )
-        SELECT D.representante_dk, coautores, tppe_descricao, pip_codigo, D.docu_nr_mp, docu_dt_cadastro, cldc_ds_classe, orgi_nm_orgao, docu_tx_etiqueta, assuntos, fsdc_ds_fase, pcao_dt_andamento as dt_ultimo_andamento, tppr_descricao as desc_ultimo_andamento, D.pess_dk, status_personagem
+        SELECT D.representante_dk, coautores, tppe_descricao, pip_codigo, D.docu_dk, D.docu_nr_mp, docu_dt_cadastro, cldc_ds_classe, orgi_nm_orgao, docu_tx_etiqueta, assuntos, fsdc_ds_fase, pcao_dt_andamento as dt_ultimo_andamento, tppr_descricao as desc_ultimo_andamento, D.pess_dk, status_personagem
         FROM documentos_pips D
-        LEFT JOIN tb_coautores CA ON CA.docu_nr_mp = D.docu_nr_mp AND CA.representante_dk = D.representante_dk
-        LEFT JOIN (SELECT * FROM ultimos_andamentos WHERE nr_and = 1) UA ON UA.docu_nr_mp = D.docu_nr_mp
+        LEFT JOIN tb_coautores CA ON CA.docu_dk = D.docu_dk AND CA.representante_dk = D.representante_dk
+        LEFT JOIN (SELECT * FROM ultimos_andamentos WHERE nr_and = 1) UA ON UA.docu_dk = D.docu_dk
         JOIN {0}.orgi_orgao ON orgi_dk = pip_codigo
         LEFT JOIN {0}.mcpr_classe_docto_mp ON cldc_dk = docu_cldc_dk
-        LEFT JOIN assuntos TASSU ON asdo_docu_dk = docu_dk
+        LEFT JOIN assuntos TASSU ON asdo_docu_dk = D.docu_dk
         LEFT JOIN {0}.mcpr_fases_documento ON docu_fsdc_dk = fsdc_dk
     """.format(schema_exadata, schema_exadata_aux))
 
