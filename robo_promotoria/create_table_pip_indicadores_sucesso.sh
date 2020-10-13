@@ -20,5 +20,9 @@ spark-submit --master yarn --deploy-mode cluster \
     --conf spark.shuffle.io.numConnectionsPerPeer=3 \
     --conf spark.shuffle.io.maxRetries=5 \
     --conf spark.shuffle.io.retryWait=15s \
+    --conf spark.yarn.appMasterEnv.PYTHON_EGG_CACHE="/tmp" \
+    --conf spark.yarn.appMasterEnv.PYTHON_EGG_DIR="/tmp" \
+    --conf spark.executorEnv.PYTHON_EGG_DIR="/tmp" \
+    --conf spark.executorEnv.PYTHON_EGG_CACHE="/tmp" \
     --conf "spark.executor.extraJavaOptions=-XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=35" \
-    --py-files src/utils.py,packages/*.whl,packages/*.egg,packages/*.zip src/tabela_pip_indicadores_sucesso.py $@ -t ${OUTPUT_TABLE_NAME}
+    --py-files ../utilities/*.py,packages/*.whl,packages/*.egg,packages/*.zip src/tabela_pip_indicadores_sucesso.py $@ -t ${OUTPUT_TABLE_NAME}

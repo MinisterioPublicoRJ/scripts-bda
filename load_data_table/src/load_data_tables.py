@@ -1,8 +1,10 @@
-import pyspark
-from pyspark.sql.functions import unix_timestamp, from_unixtime, current_timestamp, lit, date_format
-from utils import _update_impala_table
 import argparse
+import pyspark
+import subprocess
 import params_table
+
+from generic_utils import execute_compute_stats
+from pyspark.sql.functions import unix_timestamp, from_unixtime, current_timestamp, lit, date_format
 
 
 def execute_process(options):
@@ -30,7 +32,7 @@ def execute_process(options):
         else:
             table_df.write.mode("overwrite").saveAsTable(table_to)
 
-        _update_impala_table(table_to, options['impala_host'], options['impala_port'])
+        execute_compute_stats(table_to)
 
 
 if __name__ == "__main__":

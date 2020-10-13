@@ -21,5 +21,9 @@ spark-submit --master yarn --deploy-mode cluster \
     --conf spark.reducer.maxReqsInFlight=1 \
     --conf spark.shuffle.io.maxRetries=10 \
     --conf spark.shuffle.io.retryWait=60s \
+    --conf spark.yarn.appMasterEnv.PYTHON_EGG_CACHE="/tmp" \
+    --conf spark.yarn.appMasterEnv.PYTHON_EGG_DIR="/tmp" \
+    --conf spark.executorEnv.PYTHON_EGG_DIR="/tmp" \
+    --conf spark.executorEnv.PYTHON_EGG_CACHE="/tmp" \
     --conf "spark.executor.extraJavaOptions=-XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=35" \
-    --py-files src/utils.py,packages/*.whl,packages/*.egg,packages/*.zip src/tabela_dist_entradas.py $@ -t ${OUTPUT_TABLE_NAME}
+    --py-files ../utilities/*.py,packages/*.whl,packages/*.egg,packages/*.zip src/tabela_dist_entradas.py $@ -t ${OUTPUT_TABLE_NAME}
