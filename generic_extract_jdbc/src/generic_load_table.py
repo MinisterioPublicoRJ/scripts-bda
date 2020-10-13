@@ -1,6 +1,5 @@
 from base import spark_session
 import argparse
-from impala.dbapi import connect as impala_connect
 import ast
 import params_table_promotron
 import params_table_oraupsert
