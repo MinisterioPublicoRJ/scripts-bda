@@ -1,7 +1,8 @@
-import pyspark
-from pyspark.sql.functions import unix_timestamp, from_unixtime, current_timestamp, lit, date_format
 import argparse
+import pyspark
 
+from pyspark.sql.functions import unix_timestamp, from_unixtime, current_timestamp, lit, date_format
+from generic_utils import execute_compute_stats
 
 def check_table_exists(spark, schema, table_name):
     spark.sql("use %s" % schema)
@@ -45,7 +46,7 @@ def execute_process(options):
             .withColumn("dt_partition", date_format(current_timestamp(), "ddMMyyyy"))
 
 
-    is_exists_table_acervo = check_table_exists(spark, schema_exadata_aux, "tb_acervo")
+    is_exists_table_acervo = check_table_exists(spark, schema_exadata_aux, table_name)
 
     table_name = "{}.{}".format(schema_exadata_aux, table_name)
 
@@ -53,6 +54,8 @@ def execute_process(options):
         table.coalesce(1).write.mode("overwrite").insertInto(table_name, overwrite=True)
     else:
         table.write.partitionBy("dt_partition").mode("overwrite").saveAsTable(table_name)
+
+    execute_compute_stats(table_name)
 
 
 if __name__ == "__main__":

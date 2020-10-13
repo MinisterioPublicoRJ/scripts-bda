@@ -1,9 +1,10 @@
 import argparse
-from datetime import timedelta, date
-
 import pyspark
 
+from datetime import timedelta, date
+
 from detalhe_documento.utils_detalhes import create_regra_orgao, create_regra_cpf, setup_table_cache
+from generic_utils import execute_compute_stats
 
 
 def execute_process(options):
@@ -69,6 +70,8 @@ def execute_process(options):
     temp_table.write.mode("overwrite").saveAsTable(table_name)
     spark.sql("drop table temp_table_detalhe_documentos_orgao_cpf")
 
+    execute_compute_stats(table_name)
+
 
     # Tabela agregada orgao
     ## Regras PIPs
@@ -108,6 +111,8 @@ def execute_process(options):
     temp_table = spark.table("temp_table_detalhe_documentos_orgao")
     temp_table.write.mode("overwrite").saveAsTable(table_name)
     spark.sql("drop table temp_table_detalhe_documentos_orgao")
+
+    execute_compute_stats(table_name)
 
     spark.catalog.clearCache()
 

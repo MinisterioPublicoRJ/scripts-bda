@@ -9,4 +9,4 @@ spark-submit --master yarn --deploy-mode cluster \
     --conf spark.debug.maxToStringFields=2000 \
     --conf spark.executor.memoryOverhead=4096 \
     --conf spark.network.timeout=300 \
-    --py-files src/*.py,packages/*.whl,packages/*.egg,packages/*.zip src/load_data_tables.py $@
+    --py-files ../utilities/*.py,src/*.py,packages/*.whl,packages/*.egg,packages/*.zip src/load_data_tables.py $@

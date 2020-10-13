@@ -16,6 +16,10 @@ spark-submit \
     --conf spark.speculation.quantile=0.5 \
     --conf spark.shuffle.io.maxRetries=5 \
     --conf spark.shuffle.io.retryWait=15s \
+    --conf spark.yarn.appMasterEnv.PYTHON_EGG_CACHE="/tmp" \
+    --conf spark.yarn.appMasterEnv.PYTHON_EGG_DIR="/tmp" \
+    --conf spark.executorEnv.PYTHON_EGG_DIR="/tmp" \
+    --conf spark.executorEnv.PYTHON_EGG_CACHE="/tmp" \
     --conf "spark.executor.extraJavaOptions=-XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=35 -XX:G1HeapRegionSize=16M" \
-    --py-files src/*.py,packages/*.whl,packages/*.egg,packages/*.zip \
+    --py-files ../utilities/*.py,src/*.py,packages/*.whl,packages/*.egg,packages/*.zip \
     src/generic_load_table.py $@

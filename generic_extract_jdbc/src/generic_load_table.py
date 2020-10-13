@@ -1,6 +1,5 @@
-from base import spark
+from base import spark_session
 import argparse
-from impala.dbapi import connect as impala_connect
 import ast
 import params_table_promotron
 import params_table_oraupsert
@@ -8,6 +7,7 @@ import params_table_oracle
 import params_table_postgre
 import params_table_oracle_views
 from pyspark.sql.functions import base64, col, date_format
+from generic_utils import execute_compute_stats
 
 
 dic_params = {
@@ -17,6 +17,8 @@ dic_params = {
                 "ORACLE_VIEWS": params_table_oracle_views.params, 
                 "POSTGRE" : params_table_postgre.params
             }
+
+spark = spark_session("GENERIC_LOAD_TABLE")            
 
 def get_total_record(table):
     if table.get('no_lower_upper_bound'):
@@ -138,10 +140,10 @@ def load_all_data(table, options):
                 .mode('overwrite') \
                 .saveAsTable(table_hive)
 
-        print('Update impala table %s' % table_hive)
-        # _update_impala_table(table_hive, options)
-
         spark.sql("ANALYZE TABLE {} COMPUTE STATISTICS".format(table_hive))
+        
+        print('Update impala table %s' % table_hive)
+        execute_compute_stats(table_hive)
 
 
 def load_part_data(table, options):
@@ -258,30 +260,9 @@ def load_part_data(table, options):
                     .saveAsTable(table_hive)
 
                 print('Update impala table %s' % table_hive)
-                # _update_impala_table(table_hive, options)
+                execute_compute_stats(table_hive)
 
             spark.catalog.clearCache()
-
-
-def _update_impala_table(table, options):
-    """
-    Method for update table in Impala
-
-    Parameters
-    ----------
-    table: string
-        table name from hive
-
-    """
-    with impala_connect(
-            host=options['impala_host'],
-            port=int(options['impala_port'])
-    ) as conn:
-        impala_cursor = conn.cursor()
-        impala_cursor.execute("""
-            INVALIDATE METADATA {table} """.format(table=table))
-        impala_cursor.execute("""
-            COMPUTE STATS {table} """.format(table=table))
 
 def transform_col_binary(data_frame):
     """

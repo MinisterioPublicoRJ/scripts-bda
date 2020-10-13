@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*- 
+import argparse
 import pyspark
+
 from pyspark.sql import Window
 from pyspark.sql.functions import max, col, count, concat_ws, collect_list, lit
-import argparse
 
+from generic_utils import execute_compute_stats
 
 def execute_process(options):
 
@@ -259,6 +261,8 @@ def execute_process(options):
     spark.sql("drop table temp_table_{0}".format(output_table_name))
 
     spark.catalog.clearCache()
+
+    execute_compute_stats(table_name)
 
 
 if __name__ == "__main__":

@@ -1,8 +1,8 @@
 #-*-coding:utf-8-*-
 import argparse
-from datetime import datetime
-
 import pyspark
+from datetime import datetime
+from generic_utils import execute_compute_stats
 
 
 def execute_process(options):
@@ -245,8 +245,9 @@ def execute_process(options):
     temp_table.write.mode("overwrite").saveAsTable(table_name)
     spark.sql("drop table temp_table_{0}".format(output_table_name))
 
-    spark.catalog.clearCache()
+    execute_compute_stats(table_name)
 
+    spark.catalog.clearCache()
 
 if __name__ == "__main__":
 
