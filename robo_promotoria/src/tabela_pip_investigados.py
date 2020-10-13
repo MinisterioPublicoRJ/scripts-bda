@@ -149,7 +149,7 @@ def execute_process(options):
     spark.sql("drop table temp_table_pip_investigados")
 
 
-    Investigados que aparecem em documentos novos reiniciam flags no HBase
+    # Investigados que aparecem em documentos novos reiniciam flags no HBase
     table_name_dt_checked = options['table_name_dt_checked']
     is_exists_dt_checked = check_table_exists(spark, schema_exadata_aux, table_name_dt_checked)
     current_time = datetime.now()
