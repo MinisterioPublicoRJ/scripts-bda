@@ -159,7 +159,7 @@ def execute_process(options):
             P.personagens,
             A.pcao_dt_andamento as dt_ultimo_andamento,
             concat_ws(', ', collect_list(A.tppr_descricao)) as ultimo_andamento,
-            NULL as url_tjrj
+            CAST(NULL as string) as url_tjrj
         FROM DOCU_TOTAIS A
         JOIN DTS_ULTIMOS_ANDAMENTOS ULT
             ON A.DOCU_NR_MP = ULT.DOCU_NR_MP

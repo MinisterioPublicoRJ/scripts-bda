@@ -23,4 +23,4 @@ spark-submit --master yarn --deploy-mode cluster \
     --conf spark.executorEnv.PYTHON_EGG_DIR="/tmp" \
     --conf spark.executorEnv.PYTHON_EGG_CACHE="/tmp" \
     --conf "spark.executor.extraJavaOptions=-XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=35" \
-    --py-files ../utilities/*.py,packages/*.whl,packages/*.egg,packages/*.zip src/tabela_lista_processos.py $@ -t ${OUTPUT_TABLE_NAME}
+    --py-files ../utilities/*.py,packages/*.whl,packages/*.egg,packages/*.zip src/tabela_lista_investigacoes.py $@ -t ${OUTPUT_TABLE_NAME}
