@@ -1,8 +1,9 @@
+#-*-coding:utf-8-*-
+from datetime import datetime, timedelta
 import os
 import pyspark
 import argparse
 
-from datetime import datetime, timedelta
 from happybase_kerberos_patch import KerberosConnection
 
 from generic_utils import execute_compute_stats
@@ -22,13 +23,17 @@ def execute_process(options):
             .appName("criar_tabela_pip_investigados") \
             .enableHiveSupport() \
             .getOrCreate()
+    # Para evitar problemas de memoria causados por broadcast
+    spark.conf.set("spark.sql.autoBroadcastJoinThreshold", -1)
 
     schema_exadata = options['schema_exadata']
     schema_exadata_aux = options['schema_exadata_aux']
     schema_hbase = options['schema_hbase']
 
     lista_pips = spark.sql("""
-        SELECT DISTINCT pip_codigo, pip_codigo_antigo FROM {0}.tb_pip_aisp
+        SELECT DISTINCT pip_codigo FROM {0}.tb_pip_aisp
+        UNION ALL
+        SELECT DISTINCT pip_codigo_antigo AS pip_codigo FROM {0}.tb_pip_aisp
     """.format(schema_exadata_aux))
     lista_pips.createOrReplaceTempView('lista_pips')
     spark.catalog.cacheTable("lista_pips")
@@ -52,73 +57,53 @@ def execute_process(options):
         JOIN lista_pips P ON pip_codigo = docu_orgi_orga_dk_responsavel
         WHERE asdo_dt_fim > current_timestamp()
         GROUP BY asdo_docu_dk
-        UNION ALL
-        SELECT asdo_docu_dk, concat_ws(' --- ', collect_list(hierarquia)) as assuntos
-        FROM {0}.mcpr_assunto_documento
-        JOIN {1}.mmps_assunto_docto ON id = asdo_assu_dk
-        JOIN {0}.mcpr_documento ON asdo_docu_dk = docu_dk
-        JOIN lista_pips P ON pip_codigo_antigo = docu_orgi_orga_dk_responsavel
-        WHERE asdo_dt_fim IS NULL
-        GROUP BY asdo_docu_dk
-        UNION ALL
-        SELECT asdo_docu_dk, concat_ws(' --- ', collect_list(hierarquia)) as assuntos
-        FROM {0}.mcpr_assunto_documento
-        JOIN {1}.mmps_assunto_docto ON id = asdo_assu_dk
-        JOIN {0}.mcpr_documento ON asdo_docu_dk = docu_dk
-        JOIN lista_pips P ON pip_codigo_antigo = docu_orgi_orga_dk_responsavel
-        WHERE asdo_dt_fim > current_timestamp()
-        GROUP BY asdo_docu_dk
     """.format(schema_exadata, schema_exadata_aux))
     assuntos.createOrReplaceTempView('assuntos')
 
     documentos_pips = spark.sql("""
-        SELECT representante_dk, R.pess_dk, tppe_descricao, pip_codigo, docu_dk, docu_nr_mp, docu_dt_cadastro, docu_cldc_dk, docu_fsdc_dk, docu_tx_etiqueta
+        SELECT representante_dk, R.pess_dk, concat_ws(', ', collect_list(tppe_descricao)) as tppe_descricao, pip_codigo, docu_dk, docu_nr_mp, docu_dt_cadastro, docu_cldc_dk, docu_fsdc_dk, docu_tx_etiqueta,
+            MIN(CASE WHEN pers_dt_fim <= current_timestamp() THEN 'Data Fim Atingida' ELSE 'Ativo' END) AS status_personagem,
+            concat_ws(', ', collect_list(pers_dk)) as pers_dk
         FROM {0}.mcpr_personagem
         JOIN {0}.mcpr_tp_personagem ON tppe_dk = pers_tppe_dk
         JOIN {1}.tb_pip_investigados_representantes R ON pers_pess_dk = R.pess_dk
         JOIN {0}.mcpr_documento ON docu_dk = pers_docu_dk
         JOIN lista_pips P ON pip_codigo = docu_orgi_orga_dk_responsavel
-        WHERE pers_tppe_dk IN (290, 7, 21, 317, 20, 14, 32, 345, 40, 5)
+        WHERE pers_tppe_dk IN (290, 7, 21, 317, 20, 14, 32, 345, 40, 5, 24)
         AND docu_tpst_dk != 11
-        AND pers_dt_fim IS NULL OR pers_dt_fim > current_timestamp()
-        UNION ALL
-        SELECT representante_dk, R.pess_dk, tppe_descricao, pip_codigo_antigo as pip_codigo, docu_dk, docu_nr_mp, docu_dt_cadastro, docu_cldc_dk, docu_fsdc_dk, docu_tx_etiqueta
-        FROM {0}.mcpr_personagem
-        JOIN {0}.mcpr_tp_personagem ON tppe_dk = pers_tppe_dk
-        JOIN {1}.tb_pip_investigados_representantes R ON pers_pess_dk = R.pess_dk
-        JOIN {0}.mcpr_documento ON docu_dk = pers_docu_dk
-        JOIN lista_pips P ON pip_codigo_antigo = docu_orgi_orga_dk_responsavel
-        WHERE pers_tppe_dk IN (290, 7, 21, 317, 20, 14, 32, 345, 40, 5)
-        AND docu_tpst_dk != 11
-        AND pers_dt_fim IS NULL OR pers_dt_fim > current_timestamp()
+        GROUP BY representante_dk, R.pess_dk, pip_codigo, docu_dk, docu_nr_mp, docu_dt_cadastro, docu_cldc_dk, docu_fsdc_dk, docu_tx_etiqueta
     """.format(schema_exadata, schema_exadata_aux))
     documentos_pips.createOrReplaceTempView('documentos_pips')
 
     documentos_investigados = spark.sql("""
-        WITH tb_coautores AS (
-            SELECT A.docu_nr_mp, A.representante_dk,
+        WITH docs_representantes AS (
+            SELECT DISTINCT docu_dk, representante_dk
+            FROM documentos_pips
+        ),
+        tb_coautores AS (
+            SELECT A.docu_dk, A.representante_dk,
                 concat_ws(', ', collect_list(C.pess_nm_pessoa)) as coautores
-            FROM documentos_pips A
-            JOIN documentos_pips B ON A.docu_nr_mp = B.docu_nr_mp AND A.representante_dk != B.representante_dk
+            FROM docs_representantes A
+            JOIN docs_representantes B ON A.docu_dk = B.docu_dk AND A.representante_dk != B.representante_dk
             JOIN {0}.mcpr_pessoa C ON C.pess_dk = B.representante_dk
-            GROUP BY A.docu_nr_mp, A.representante_dk
+            GROUP BY A.docu_dk, A.representante_dk
         ),
         ultimos_andamentos AS (
-            SELECT docu_nr_mp, pcao_dt_andamento, tppr_descricao, row_number() over (partition by docu_dk order by pcao_dt_andamento desc) as nr_and
-            FROM (SELECT DISTINCT docu_nr_mp, docu_dk FROM documentos_pips) p
-            LEFT JOIN exadata_dev.mcpr_vista ON vist_docu_dk = docu_dk
-            LEFT JOIN exadata_dev.mcpr_andamento ON pcao_vist_dk = vist_dk
-            LEFT JOIN exadata_dev.mcpr_sub_andamento ON stao_pcao_dk = pcao_dk
-            LEFT JOIN exadata_dev.mcpr_tp_andamento ON stao_tppr_dk = tppr_dk
+            SELECT docu_dk, pcao_dt_andamento, tppr_descricao, row_number() over (partition by docu_dk order by pcao_dt_andamento desc) as nr_and
+            FROM (SELECT DISTINCT docu_dk FROM documentos_pips) p
+            LEFT JOIN {0}.mcpr_vista ON vist_docu_dk = docu_dk
+            LEFT JOIN {0}.mcpr_andamento ON pcao_vist_dk = vist_dk
+            LEFT JOIN {0}.mcpr_sub_andamento ON stao_pcao_dk = pcao_dk
+            LEFT JOIN {0}.mcpr_tp_andamento ON stao_tppr_dk = tppr_dk
         )
-        SELECT D.representante_dk, coautores, tppe_descricao, pip_codigo, D.docu_nr_mp, docu_dt_cadastro, cldc_ds_classe, orgi_nm_orgao, docu_tx_etiqueta, assuntos, fsdc_ds_fase, pcao_dt_andamento as dt_ultimo_andamento, tppr_descricao as desc_ultimo_andamento, D.pess_dk
+        SELECT D.representante_dk, coautores, tppe_descricao, pip_codigo, D.docu_dk, D.docu_nr_mp, docu_dt_cadastro, cldc_ds_classe, orgi_nm_orgao, docu_tx_etiqueta, assuntos, fsdc_ds_fase, pcao_dt_andamento as dt_ultimo_andamento, tppr_descricao as desc_ultimo_andamento, D.pess_dk, status_personagem, pers_dk
         FROM documentos_pips D
-        LEFT JOIN tb_coautores CA ON CA.docu_nr_mp = D.docu_nr_mp AND CA.representante_dk = D.representante_dk
-        LEFT JOIN (SELECT * FROM ultimos_andamentos WHERE nr_and = 1) UA ON UA.docu_nr_mp = D.docu_nr_mp
+        LEFT JOIN tb_coautores CA ON CA.docu_dk = D.docu_dk AND CA.representante_dk = D.representante_dk
+        LEFT JOIN (SELECT * FROM ultimos_andamentos WHERE nr_and = 1) UA ON UA.docu_dk = D.docu_dk
         JOIN {0}.orgi_orgao ON orgi_dk = pip_codigo
         LEFT JOIN {0}.mcpr_classe_docto_mp ON cldc_dk = docu_cldc_dk
-        LEFT JOIN assuntos TASSU ON asdo_docu_dk = docu_dk
-        JOIN {0}.mcpr_fases_documento ON docu_fsdc_dk = fsdc_dk
+        LEFT JOIN assuntos TASSU ON asdo_docu_dk = D.docu_dk
+        LEFT JOIN {0}.mcpr_fases_documento ON docu_fsdc_dk = fsdc_dk
     """.format(schema_exadata, schema_exadata_aux))
 
     table_name_procedimentos = options['table_name_procedimentos']
@@ -133,16 +118,17 @@ def execute_process(options):
     spark.catalog.clearCache()
 
     table = spark.sql("""
+        WITH DISTINCT_DOCS_COUNT AS (
+            SELECT representante_dk, COUNT(DISTINCT docu_dk) as nr_investigacoes, MAX(docu_dt_cadastro) as max_docu_date
+            FROM {1}.tb_pip_investigados_procedimentos
+            JOIN {0}.mcpr_pessoa P ON P.pess_dk = representante_dk
+            WHERE P.pess_nm_pessoa NOT REGEXP 'IDENTIFICADO|IGNORAD[OA]|P[UÚ]BLICO|JUSTI[CÇ]A P[UÚ]BLICA|APURA[CÇ][AÃ]O'
+            GROUP BY representante_dk
+        )
         SELECT pess_nm_pessoa, t.*, MULTI.flag_multipromotoria, TOPN.flag_top50
         FROM (
             SELECT c.representante_dk, pip_codigo, nr_investigacoes
-            FROM (
-                SELECT representante_dk, COUNT(1) as nr_investigacoes
-                FROM {1}.tb_pip_investigados_procedimentos
-                JOIN {0}.mcpr_pessoa P ON P.pess_dk = representante_dk
-                WHERE P.pess_nm_pessoa NOT REGEXP 'IDENTIFICADO|IGNORAD[OA]|P.BLICO|JUSTI.A P.BLICA'
-                GROUP BY representante_dk
-            ) c
+            FROM DISTINCT_DOCS_COUNT c
             JOIN (
                 SELECT representante_dk, pip_codigo
                 FROM {1}.tb_pip_investigados_procedimentos
@@ -158,9 +144,8 @@ def execute_process(options):
         ) MULTI ON MULTI.representante_dk = t.representante_dk
         LEFT JOIN (
             SELECT representante_dk, True as flag_top50
-            FROM {1}.tb_pip_investigados_procedimentos
-            GROUP BY representante_dk
-            ORDER BY COUNT(1) DESC, MAX(docu_dt_cadastro) DESC
+            FROM DISTINCT_DOCS_COUNT
+            ORDER BY nr_investigacoes DESC, max_docu_date DESC
             LIMIT 50
         ) TOPN ON TOPN.representante_dk = t.representante_dk
         JOIN {0}.mcpr_pessoa ON pess_dk = t.representante_dk
