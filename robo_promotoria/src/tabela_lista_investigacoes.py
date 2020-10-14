@@ -27,7 +27,7 @@ def execute_process(options):
 
     spark = pyspark.sql.session.SparkSession \
             .builder \
-            .appName("criar_tabela_andamento_processos") \
+            .appName("criar_tabela_andamento_investigacoes") \
             .enableHiveSupport() \
             .getOrCreate()
 
@@ -65,7 +65,7 @@ def execute_process(options):
         JOIN {0}.MCPR_SUB_ANDAMENTO ON STAO_PCAO_DK = PCAO_DK
         JOIN {0}.MCPR_TP_ANDAMENTO ON TPPR_DK = STAO_TPPR_DK
         JOIN {1}.atualizacao_pj_pacote ON docu_orgi_orga_dk_responsavel = id_orgao
-        JOIN {1}.tb_regra_negocio_processo
+        JOIN {1}.tb_regra_negocio_investigacao
             ON cod_pct = cod_atribuicao
             AND classe_documento = docu_cldc_dk
         JOIN {0}.mcpr_classe_docto_mp ON cldc_dk = docu_cldc_dk
@@ -147,7 +147,8 @@ def execute_process(options):
     ).createOrReplaceTempView('DTS_ULTIMOS_ANDAMENTOS')
 
 
-    lista_processos = spark.sql(
+    # url_tjrj sempre NULL, para poder aproveitar o mesmo formato dos dados no front
+    lista_investigacoes = spark.sql(
         """
         SELECT
             A.orgao_dk,
@@ -158,17 +159,7 @@ def execute_process(options):
             P.personagens,
             A.pcao_dt_andamento as dt_ultimo_andamento,
             concat_ws(', ', collect_list(A.tppr_descricao)) as ultimo_andamento,
-            CASE WHEN length(docu_nr_externo) = 20 THEN
-                concat('http://www4.tjrj.jus.br/numeracaoUnica/faces/index.jsp?numProcesso=',
-                    concat(concat(concat(concat(concat(concat(
-                    concat(substr(docu_nr_externo, 1, 7), '-')),
-                    concat(substr(docu_nr_externo, 8, 2), '.')),
-                    concat(substr(docu_nr_externo, 10, 4), '.')),
-                    concat(substr(docu_nr_externo, 14, 1), '.')),
-                    concat(substr(docu_nr_externo, 15, 2), '.')),
-                    substr(docu_nr_externo, 17, 4)))
-                ELSE NULL
-            END as url_tjrj
+            CAST(NULL as string) as url_tjrj
         FROM DOCU_TOTAIS A
         JOIN DTS_ULTIMOS_ANDAMENTOS ULT
             ON A.DOCU_NR_MP = ULT.DOCU_NR_MP
@@ -182,18 +173,18 @@ def execute_process(options):
 
     table_name = "{}.{}".format(schema_exadata_aux, table_name)
 
-    lista_processos.write.mode("overwrite").saveAsTable("temp_table_lista_processos")
-    temp_table = spark.table("temp_table_lista_processos")
+    lista_investigacoes.write.mode("overwrite").saveAsTable("temp_table_lista_investigacoes")
+    temp_table = spark.table("temp_table_lista_investigacoes")
 
     temp_table.write.mode("overwrite").saveAsTable(table_name)
-    spark.sql("drop table temp_table_lista_processos")
+    spark.sql("drop table temp_table_lista_investigacoes")
 
     execute_compute_stats(table_name)
 
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description="Create table distribuicao entradas")
+    parser = argparse.ArgumentParser(description="Create table lista investigacoes")
     parser.add_argument('-e','--schemaExadata', metavar='schemaExadata', type=str, help='')
     parser.add_argument('-a','--schemaExadataAux', metavar='schemaExadataAux', type=str, help='')
     parser.add_argument('-i','--impalaHost', metavar='impalaHost', type=str, help='')
