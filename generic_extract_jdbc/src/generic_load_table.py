@@ -4,7 +4,7 @@ import ast
 import params_table_promotron
 import params_table_oraupsert
 import params_table_oracle
-import params_table_postgre
+import params_table_postgresql
 import params_table_oracle_views
 from pyspark.sql.functions import base64, col, date_format
 from generic_utils import execute_compute_stats
@@ -15,7 +15,7 @@ dic_params = {
                 "ORACLE_UPSERT" : params_table_oraupsert.params,
                 "ORACLE": params_table_oracle.params,
                 "ORACLE_VIEWS": params_table_oracle_views.params, 
-                "POSTGRE" : params_table_postgre.params
+                "POSTGRESQL" : params_table_postgresql.params
             }
 
 spark = spark_session("GENERIC_LOAD_TABLE")            
@@ -115,7 +115,7 @@ def load_all_data(table, options):
 
         jdbc_table = load_table(table, total_min_max_table, query_table, options)
 
-        table_hive = "%s.%s" % (options['schema_exadata'],
+        table_hive = "%s.%s" % (options['schema_hive'],
                                 table['table_hive'])
 
         print('Inserting data into final table %s' % table_hive)
@@ -168,13 +168,13 @@ def load_part_data(table, options):
     print("Start process load part data")
 
     # Check if table exist in hive
-    spark.sql("use %s" % options['schema_exadata'])
+    spark.sql("use %s" % options['schema_hive'])
     result_table_check = spark \
         .sql("SHOW TABLES LIKE '%s'" % table['table_hive']).count()
 
     if result_table_check > 0 and not table.get('no_partition_column'):
 
-        table_hive = "%s.%s" % (options['schema_exadata'],
+        table_hive = "%s.%s" % (options['schema_hive'],
                                 table['table_hive'])
 
         # Get count and max from hive table.
@@ -288,7 +288,7 @@ def transform_col_binary(data_frame):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Load all table from same JDBC connection")
-    parser.add_argument('-e','--schemaExadata', metavar='schemaExadata', type=str, help='')
+    parser.add_argument('-e','--schemaHive', metavar='schemaHive', type=str, help='')
     parser.add_argument('-s','--jdbcServer', metavar='jdbcServer', type=str, help='')
     parser.add_argument('-u','--jdbcUser', metavar='jdbcUser', type=str, help='')
     parser.add_argument('-p','--jdbcPassword', metavar='jdbcPassword', type=str, help='')
@@ -299,7 +299,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     options = {
-                'schema_exadata': args.schemaExadata, 
+                'schema_hive': args.schemaHive, 
                 'jdbc_server' : args.jdbcServer,
                 'jdbc_user' : args.jdbcUser,
                 'jdbc_password' : args.jdbcPassword,
