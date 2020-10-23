@@ -100,10 +100,10 @@ def execute_process(args):
 
                 export_to_postgres(df, args, table_postgres)
 
-                send_log(SUCCESS_MESSAGE.format(directory), app_name, SUCCESS, args.solrServer)
+                send_log(SUCCESS_MESSAGE.format(directory), app_name, SUCCESS, args.solrServer, args.source)
 
         except Exception as message:
-            send_log(ERROR_MESSAGE.format(directory, message), app_name, ERROR, args.solrServer)
+            send_log(ERROR_MESSAGE.format(directory, message), app_name, ERROR, args.solrServer, args.source)
 
 
 if __name__ == "__main__":
@@ -135,6 +135,9 @@ if __name__ == "__main__":
                         metavar='jdbcDatabase', type=str, help='')
     parser.add_argument('-sp', '--schemaPostgres',
                         metavar='schemaPostgres', type=str, help='')
+    parser.add_argument('-sc', '--source',
+                        metavar='source', type=str, help='')
+    
 
     args = parser.parse_args()
 

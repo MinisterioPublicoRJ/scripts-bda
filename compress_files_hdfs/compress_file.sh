@@ -50,14 +50,18 @@ function get_header()
 function move_files()
 {
     echo "Movendo dados para a pasta temporaria"
-    type_files=$1
-    hdfs dfs -mv $dir_path/$type_files $temp_path
+        
+    copy_files=$(hdfs dfs -ls -t $dir_path | grep -v compressed | tail -n+4 |  tr -s ' ' | cut -d' ' -f8)
+
+    hdfs dfs -mv $copy_files $temp_path
 
     data_atual=$(date +%Y%m%d%s)
     echo "Arquivando os arquivos originais"
     backup_dir="/user/mpmapas/backup_staging/"
     hadoop archive -archiveName archive.har -p $temp_path $backup_dir/archive_"$folder_name"_"$data_atual"
 }
+
+
 
 input_file=$1
 
