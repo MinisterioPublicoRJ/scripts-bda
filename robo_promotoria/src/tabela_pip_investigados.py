@@ -108,7 +108,7 @@ def execute_process(options):
 
     table_name_procedimentos = options['table_name_procedimentos']
     table_name = "{}.{}".format(schema_exadata_aux, table_name_procedimentos)
-    documentos_investigados.write.mode("overwrite").saveAsTable("temp_table_pip_investigados_procedimentos")
+    documentos_investigados.repartition(15).write.mode("overwrite").saveAsTable("temp_table_pip_investigados_procedimentos")
     temp_table = spark.table("temp_table_pip_investigados_procedimentos")
     temp_table.write.mode("overwrite").saveAsTable(table_name)
     spark.sql("drop table temp_table_pip_investigados_procedimentos")
@@ -153,7 +153,7 @@ def execute_process(options):
 
     table_name_investigados = options['table_name_investigados']
     table_name = "{}.{}".format(schema_exadata_aux, table_name_investigados)
-    table.write.mode("overwrite").saveAsTable("temp_table_pip_investigados")
+    table.coalesce(15).write.mode("overwrite").saveAsTable("temp_table_pip_investigados")
     temp_table = spark.table("temp_table_pip_investigados")
     temp_table.write.mode("overwrite").saveAsTable(table_name)
     spark.sql("drop table temp_table_pip_investigados")

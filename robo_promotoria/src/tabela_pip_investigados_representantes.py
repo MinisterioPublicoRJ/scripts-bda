@@ -234,7 +234,7 @@ def execute_process(options):
 
     table_name = options['table_name']
     table_name = "{}.{}".format(schema_exadata_aux, table_name)
-    pessoas_representativas_2.write.mode("overwrite").saveAsTable("temp_table_pip_investigados_representantes")
+    pessoas_representativas_2.coalesce(15).write.mode("overwrite").saveAsTable("temp_table_pip_investigados_representantes")
     temp_table = spark.table("temp_table_pip_investigados_representantes")
     temp_table.write.mode("overwrite").saveAsTable(table_name)
     spark.sql("drop table temp_table_pip_investigados_representantes")
