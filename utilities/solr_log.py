@@ -19,7 +19,7 @@ def send_data_to_solr(data, solr_server):
     solr = connect_to_solr(solr_server)
     solr.add(data, overwrite=True)
 
-def send_log(message, module, levelname, solr_server):
+def send_log(message, module, levelname, solr_server, source):
     time_stamp = datetime.datetime.now().isoformat()+'Z'
     date_now = datetime.datetime.now().strftime("%Y-%m-%d")
 
@@ -29,6 +29,7 @@ def send_log(message, module, levelname, solr_server):
             "asctime": time_stamp, 
             "date": date_now, 
             "message": message, 
-            "levelname": levelname
+            "levelname": levelname,
+            "source": source
             }]
     send_data_to_solr(data, solr_server)
