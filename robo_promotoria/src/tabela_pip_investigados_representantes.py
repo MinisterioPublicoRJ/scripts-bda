@@ -34,6 +34,8 @@ def execute_process(options):
             .enableHiveSupport() \
             .getOrCreate()
 
+    spark.conf.set("spark.sql.autoBroadcastJoinThreshold", -1)
+
     spark.udf.register("name_similarity", name_similarity)
     spark.udf.register("clean_name", clean_name)
 
@@ -41,32 +43,23 @@ def execute_process(options):
     schema_exadata_aux = options['schema_exadata_aux']
     LIMIAR_SIMILARIDADE = options["limiar_similaridade"]
 
-    PIP_CODIGOS = spark.sql("""
-        SELECT DISTINCT pip_codigo as pip_codigo FROM {0}.tb_pip_aisp
-        UNION ALL
-        SELECT DISTINCT pip_codigo_antigo as pip_codigo FROM {0}.tb_pip_aisp
-    """.format(schema_exadata_aux))
-    PIP_CODIGOS.createOrReplaceTempView('PIP_CODIGOS')
-
     PERS_DOCS_PIPS = spark.sql("""
-        SELECT DISTINCT pers_pess_dk
+        SELECT pers_pess_dk
         FROM {0}.mcpr_personagem
-        JOIN {0}.mcpr_documento ON docu_dk = pers_docu_dk
-        JOIN PIP_CODIGOS P ON pip_codigo = docu_orgi_orga_dk_responsavel
         WHERE pers_tppe_dk IN (290, 7, 21, 317, 20, 14, 32, 345, 40, 5, 24)
-        AND docu_tpst_dk != 11
     """.format(schema_exadata))
     PERS_DOCS_PIPS.createOrReplaceTempView('PERS_DOCS_PIPS')
     spark.catalog.cacheTable('PERS_DOCS_PIPS')
 
 
     investigados_fisicos_pip_total = spark.sql("""
-        SELECT pesf_pess_dk,
-        clean_name(pesf_nm_pessoa_fisica) as pesf_nm_pessoa_fisica,
-        regexp_replace(pesf_cpf, '[^0-9]', '') as pesf_cpf,
-        clean_name(pesf_nm_mae) as pesf_nm_mae,
-        pesf_dt_nasc,
-        regexp_replace(pesf_nr_rg, '[^0-9]', '') as pesf_nr_rg
+        SELECT 
+            cast(pesf_pess_dk as int) as pesf_pess_dk,
+            clean_name(pesf_nm_pessoa_fisica) as pesf_nm_pessoa_fisica,
+            regexp_replace(pesf_cpf, '[^0-9]', '') as pesf_cpf,
+            clean_name(pesf_nm_mae) as pesf_nm_mae,
+            pesf_dt_nasc,
+            regexp_replace(pesf_nr_rg, '[^0-9]', '') as pesf_nr_rg
         FROM PERS_DOCS_PIPS
         JOIN {0}.mcpr_pessoa_fisica ON pers_pess_dk = pesf_pess_dk
         WHERE pesf_nm_pessoa_fisica NOT REGEXP 'P.BLICO|JUSTI.A P.BLICA'
@@ -76,7 +69,7 @@ def execute_process(options):
     spark.catalog.cacheTable('INVESTIGADOS_FISICOS_PIP_TOTAL')
 
     investigados_juridicos_pip_total = spark.sql("""
-        SELECT pesj_pess_dk,
+        SELECT cast(pesj_pess_dk as int) as pesj_pess_dk,
         clean_name(pesj_nm_pessoa_juridica) as pesj_nm_pessoa_juridica,
         pesj_cnpj
         FROM PERS_DOCS_PIPS
@@ -85,14 +78,15 @@ def execute_process(options):
         AND pesj_nm_pessoa_juridica != 'MP'
     """.format(schema_exadata))
     investigados_juridicos_pip_total.createOrReplaceTempView("INVESTIGADOS_JURIDICOS_PIP_TOTAL")
-    spark.catalog.cacheTable('INVESTIGADOS_JURIDICOS_PIP_TOTAL')
 
+    # PARTITION BY substring(pesf_nm_pessoa_fisica, 1, 1)
     similarity_nome_dtnasc = spark.sql("""
-        SELECT pess_dk, MIN(pess_dk) OVER(PARTITION BY grupo) AS representante_dk
+        SELECT pess_dk, MIN(pess_dk) OVER(PARTITION BY grupo, fl) AS representante_dk
         FROM (
             SELECT
                 pess_dk,
-                SUM(col_grupo) OVER(ORDER BY pesf_dt_nasc, pesf_nm_pessoa_fisica, pess_dk ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) as grupo
+                substring(pesf_nm_pessoa_fisica, 1, 1) as fl,
+                SUM(col_grupo) OVER(PARTITION BY substring(pesf_nm_pessoa_fisica, 1, 1) ORDER BY pesf_dt_nasc, pesf_nm_pessoa_fisica, pess_dk ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) as grupo
             FROM (
                 SELECT
                     pesf_pess_dk as pess_dk,
@@ -111,11 +105,12 @@ def execute_process(options):
     similarity_nome_dtnasc.createOrReplaceTempView("SIMILARITY_NOME_DTNASC")
 
     similarity_nome_nomemae = spark.sql("""
-        SELECT pess_dk, MIN(pess_dk) OVER(PARTITION BY grupo) AS representante_dk
+        SELECT pess_dk, MIN(pess_dk) OVER(PARTITION BY grupo, fl) AS representante_dk
         FROM (
             SELECT
                 pess_dk,
-                SUM(col_grupo + col_grupo_mae) OVER(ORDER BY pesf_nm_pessoa_fisica, pesf_nm_mae, pess_dk ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) as grupo
+                substring(pesf_nm_pessoa_fisica, 1, 1) as fl,
+                SUM(col_grupo + col_grupo_mae) OVER(PARTITION BY substring(pesf_nm_pessoa_fisica, 1, 1) ORDER BY pesf_nm_pessoa_fisica, pesf_nm_mae, pess_dk ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) as grupo
             FROM (
                 SELECT
                     pesf_pess_dk as pess_dk,
@@ -124,13 +119,13 @@ def execute_process(options):
                     CASE
                         name_similarity(
                             pesf_nm_pessoa_fisica,
-                            LAG(pesf_nm_pessoa_fisica) OVER(ORDER BY pesf_nm_pessoa_fisica, pesf_nm_mae, pesf_pess_dk)
+                            LAG(pesf_nm_pessoa_fisica) OVER(PARTITION BY substring(pesf_nm_pessoa_fisica, 1, 1) ORDER BY pesf_nm_pessoa_fisica, pesf_nm_mae, pesf_pess_dk)
                             ) <= {LIMIAR_SIMILARIDADE}
                         WHEN true THEN 1 ELSE 0 END as col_grupo,
                     CASE
                         name_similarity(
                             pesf_nm_mae,
-                            LAG(pesf_nm_mae) OVER(ORDER BY pesf_nm_pessoa_fisica, pesf_nm_mae, pesf_pess_dk)
+                            LAG(pesf_nm_mae) OVER(PARTITION BY substring(pesf_nm_mae, 1, 1) ORDER BY pesf_nm_pessoa_fisica, pesf_nm_mae, pesf_pess_dk)
                             ) <= {LIMIAR_SIMILARIDADE}
                         WHEN true THEN 1 ELSE 0 END as col_grupo_mae
                 FROM INVESTIGADOS_FISICOS_PIP_TOTAL
@@ -142,11 +137,12 @@ def execute_process(options):
     similarity_nome_nomemae.createOrReplaceTempView("SIMILARITY_NOME_NOMEMAE")
 
     similarity_nome_rg = spark.sql("""
-        SELECT pess_dk, MIN(pess_dk) OVER(PARTITION BY grupo) AS representante_dk
+        SELECT pess_dk, MIN(pess_dk) OVER(PARTITION BY grupo, fl) AS representante_dk
         FROM (
             SELECT
                 pess_dk,
-                SUM(col_grupo) OVER(ORDER BY pesf_nr_rg, pesf_nm_pessoa_fisica, pess_dk ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) as grupo
+                substring(pesf_nm_pessoa_fisica, 1, 1) as fl,
+                SUM(col_grupo) OVER(PARTITION BY substring(pesf_nm_pessoa_fisica, 1, 1) ORDER BY pesf_nr_rg, pesf_nm_pessoa_fisica, pess_dk ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) as grupo
             FROM (
                 SELECT
                     pesf_pess_dk as pess_dk,
@@ -225,7 +221,8 @@ def execute_process(options):
         pesf_nr_rg as pess_pesf_nr_rg,
         pesf_dt_nasc as pess_pesf_dt_nasc,
         pesj_nm_pessoa_juridica as pess_pesj_nm_pessoa_juridica,
-        pesj_cnpj as pess_pesj_cnpj
+        pesj_cnpj as pess_pesj_cnpj,
+        cast(substring(cast(B.representante_dk as string), -1, 1) as int) as rep_last_digit
         FROM REPR_1 A
         JOIN REPR_1 B ON A.representante_dk = B.pess_dk
         LEFT JOIN {0}.mcpr_pessoa_fisica ON A.pess_dk = pesf_pess_dk
@@ -234,9 +231,9 @@ def execute_process(options):
 
     table_name = options['table_name']
     table_name = "{}.{}".format(schema_exadata_aux, table_name)
-    pessoas_representativas_2.coalesce(15).write.mode("overwrite").saveAsTable("temp_table_pip_investigados_representantes")
+    pessoas_representativas_2.write.mode("overwrite").saveAsTable("temp_table_pip_investigados_representantes")
     temp_table = spark.table("temp_table_pip_investigados_representantes")
-    temp_table.write.mode("overwrite").saveAsTable(table_name)
+    temp_table.coalesce(15).write.mode("overwrite").partitionBy('rep_last_digit').saveAsTable(table_name)
     spark.sql("drop table temp_table_pip_investigados_representantes")
 
     execute_compute_stats(table_name)
