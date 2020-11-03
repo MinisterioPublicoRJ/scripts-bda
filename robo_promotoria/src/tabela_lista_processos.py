@@ -43,8 +43,8 @@ def execute_process(options):
     dt_inicio = datetime.now() - timedelta(nb_past_days)
 
     REGEX_EXCLUSAO_ORGAOS = (
-        "(MP.*|MINIST[EÉ]RIO\\\\s\\+P[UÚ]BLICO.*|DEFENSORIA\\\\s\\+P[UÚ]BLICA.*"
-        "|MINSTERIO PUBLICO|MPRJ|MINITÉRIO PÚBLICO)"
+        "(^MP$|MINIST[EÉ]RIO P[UÚ]BLICO|DEFENSORIA P[UÚ]BLICA"
+        "|MINSTERIO PUBLICO|MPRJ|MINITÉRIO PÚBLICO|JUSTI[ÇC]A P[UÚ]BLICA)"
     )
 
     spark.sql(
