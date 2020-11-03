@@ -1,3 +1,4 @@
+#-*-coding:utf-8-*-
 import difflib
 import re
 import unicodedata
@@ -43,8 +44,14 @@ def execute_process(options):
     schema_exadata_aux = options['schema_exadata_aux']
     LIMIAR_SIMILARIDADE = options["limiar_similaridade"]
 
+    # Sem espaços pois a função clean_name remove os espaços dos nomes
+    REGEX_EXCLUSAO_ORGAOS = (
+        "(^MP$|MINIST[EÉ]RIOP[UÚ]BLICO|DEFENSORIAP[UÚ]BLICA"
+        "|MINSTERIOPUBLICO|MPRJ|MINITÉRIOPÚBLICO|JUSTI[ÇC]AP[UÚ]BLICA)"
+    )
+
     PERS_DOCS_PIPS = spark.sql("""
-        SELECT pers_pess_dk
+        SELECT DISTINCT pers_pess_dk
         FROM {0}.mcpr_personagem
         WHERE pers_tppe_dk IN (290, 7, 21, 317, 20, 14, 32, 345, 40, 5, 24)
     """.format(schema_exadata))
@@ -62,9 +69,8 @@ def execute_process(options):
             regexp_replace(pesf_nr_rg, '[^0-9]', '') as pesf_nr_rg
         FROM PERS_DOCS_PIPS
         JOIN {0}.mcpr_pessoa_fisica ON pers_pess_dk = pesf_pess_dk
-        WHERE pesf_nm_pessoa_fisica NOT REGEXP 'P.BLICO|JUSTI.A P.BLICA'
-        AND pesf_nm_pessoa_fisica != 'MP'
-    """.format(schema_exadata))
+        WHERE pesf_nm_pessoa_fisica NOT REGEXP '{REGEX_EXCLUSAO_ORGAOS}'
+    """.format(schema_exadata, REGEX_EXCLUSAO_ORGAOS=REGEX_EXCLUSAO_ORGAOS))
     investigados_fisicos_pip_total.createOrReplaceTempView("INVESTIGADOS_FISICOS_PIP_TOTAL")
     spark.catalog.cacheTable('INVESTIGADOS_FISICOS_PIP_TOTAL')
 
@@ -74,9 +80,8 @@ def execute_process(options):
         pesj_cnpj
         FROM PERS_DOCS_PIPS
         JOIN {0}.mcpr_pessoa_juridica ON pers_pess_dk = pesj_pess_dk
-        WHERE pesj_nm_pessoa_juridica NOT REGEXP 'P.BLICO|JUSTI.A P.BLICA'
-        AND pesj_nm_pessoa_juridica != 'MP'
-    """.format(schema_exadata))
+        WHERE pesj_nm_pessoa_juridica NOT REGEXP '{REGEX_EXCLUSAO_ORGAOS}'
+    """.format(schema_exadata, REGEX_EXCLUSAO_ORGAOS=REGEX_EXCLUSAO_ORGAOS))
     investigados_juridicos_pip_total.createOrReplaceTempView("INVESTIGADOS_JURIDICOS_PIP_TOTAL")
 
     # PARTITION BY substring(pesf_nm_pessoa_fisica, 1, 1)
