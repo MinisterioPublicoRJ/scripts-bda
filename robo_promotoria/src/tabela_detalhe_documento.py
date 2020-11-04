@@ -91,7 +91,7 @@ def execute_process(options):
                                     date_mes_old_end, date_mes_current_begin, nm_intervalo, vistas_table=main_table, docs_table=main_table_documentos)
 
     ## Regras Tutelas
-    pacotes = "(20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 180, 181, 182, 183)"
+    pacotes = "(20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33)"
     nm_tipo = 'tutela_investigacoes'
     cldc_dks = "(51219, 51220, 51221, 51222, 51223, 392, 395)"
     tppr_dks = "(-1)"
