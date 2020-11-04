@@ -43,8 +43,8 @@ def execute_process(options):
     dt_inicio = datetime.now() - timedelta(nb_past_days)
 
     REGEX_EXCLUSAO_ORGAOS = (
-        "(MP.*|MINIST[EÉ]RIO\\\\s\\+P[UÚ]BLICO.*|DEFENSORIA\\\\s\\+P[UÚ]BLICA.*"
-        "|MINSTERIO PUBLICO|MPRJ|MINITÉRIO PÚBLICO)"
+        "(^MP$|MINIST[EÉ]RIO P[UÚ]BLICO|DEFENSORIA P[UÚ]BLICA"
+        "|MINSTERIO PUBLICO|MPRJ|MINITÉRIO PÚBLICO|JUSTI[ÇC]A P[UÚ]BLICA)"
     )
 
     spark.sql(
@@ -106,11 +106,13 @@ def execute_process(options):
         SELECT
             docu_nr_mp,
             pess_nm_pessoa,
-            row_number() OVER (PARTITION BY docu_nr_mp ORDER BY pess_dk DESC) as nr_pers
-        FROM PERSONAGENS_SIMILARIDADE
+            B.representante_dk,
+            row_number() OVER (PARTITION BY docu_nr_mp ORDER BY A.pess_dk DESC) as nr_pers
+        FROM PERSONAGENS_SIMILARIDADE A
+        LEFT JOIN {1}.tb_pip_investigados_representantes B ON A.pess_dk = B.pess_dk
         WHERE primeira_aparicao = true
         """.format(
-            schema_exadata,
+            schema_exadata, schema_exadata_aux,
             REGEX_EXCLUSAO_ORGAOS=REGEX_EXCLUSAO_ORGAOS,
             LIMIAR_SIMILARIDADE=LIMIAR_SIMILARIDADE
         )
@@ -120,7 +122,8 @@ def execute_process(options):
         """
         SELECT
             docu_nr_mp,
-            concat_ws(', ', collect_list(nm_personagem)) as personagens
+            concat_ws(', ', collect_list(nm_personagem)) as personagens,
+            MAX(representante_dk) as representante_dk
         FROM (
             SELECT
                 docu_nr_mp,
@@ -128,7 +131,11 @@ def execute_process(options):
                     WHEN nr_pers = {1} THEN 'e outros...'
                     ELSE pess_nm_pessoa END
                 AS nm_personagem,
-                nr_pers
+                nr_pers,
+                CASE
+                    WHEN nr_pers = 1 THEN representante_dk
+                    ELSE NULL END
+                AS representante_dk
             FROM
             PERSONAGENS_SIMILARIDADE
             WHERE nr_pers <= {1})
@@ -156,6 +163,7 @@ def execute_process(options):
             A.docu_nr_externo,
             A.docu_tx_etiqueta,
             P.personagens,
+            P.representante_dk,
             A.pcao_dt_andamento as dt_ultimo_andamento,
             concat_ws(', ', collect_list(A.tppr_descricao)) as ultimo_andamento,
             CASE WHEN length(docu_nr_externo) = 20 THEN
@@ -175,7 +183,7 @@ def execute_process(options):
             AND A.PCAO_DT_ANDAMENTO = ULT.DT_ULTIMO
         JOIN DOCU_PERSONAGENS P ON P.DOCU_NR_MP = A.DOCU_NR_MP
         GROUP BY A.orgao_dk, A.classe_documento, A.docu_nr_mp,
-            A.docu_nr_externo, A.docu_tx_etiqueta, P.personagens,
+            A.docu_nr_externo, A.docu_tx_etiqueta, P.personagens, P.representante_dk,
             A.pcao_dt_andamento
         """
     )

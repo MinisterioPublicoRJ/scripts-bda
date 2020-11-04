@@ -115,8 +115,12 @@ def load_all_data(table, options):
 
         jdbc_table = load_table(table, total_min_max_table, query_table, options)
 
-        table_hive = "%s.%s" % (options['schema_hive'],
-                                table['table_hive'])
+        if table.get('schema_to'):
+
+            table_hive = "%s.%s" % (table['schema_to'],table['table_hive'])
+
+        else:
+            table_hive = "%s.%s" % (options['schema_hive'], table['table_hive'])
 
         print('Inserting data into final table %s' % table_hive)
 
