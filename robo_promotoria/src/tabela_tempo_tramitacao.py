@@ -73,12 +73,12 @@ if __name__ == "__main__":
                     6593,6332,7872,6336,6333,6335,7745,6346,
                     6345,6015,6016,6325,6327,6328,6329,6330,
                     6337,6344,6656,6671,7869,7870,6324,6251)"""
-    pacotes_1 = "(20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33)"
+    pacotes_1 = "(20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 180, 181, 182, 183)"
     nm_table_1 = processa_regra(spark, options, classes_1, andamentos_1, pacotes_1, 'tutela_inqueritos_civis', 5)
     
     classes_2 = "(18, 126, 127, 159, 175, 176, 177, 441)"
     andamentos_2 = "(6374,6375,6376,6377,6378)"
-    pacotes_2 = "(20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33)"
+    pacotes_2 = "(20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 180, 181, 182, 183)"
     nm_table_2 = processa_regra(spark, options, classes_2, andamentos_2, pacotes_2, 'tutela_acoes_sentenca', 5)
 
     acoes_process_2(spark, options)
