@@ -122,6 +122,8 @@ def execute_process(options):
         LEFT JOIN assuntos TASSU ON asdo_docu_dk = D.docu_dk
         LEFT JOIN {0}.mcpr_fases_documento ON docu_fsdc_dk = fsdc_dk
         LEFT JOIN {1}.atualizacao_pj_pacote ON id_orgao = pip_codigo
+        WHERE cod_pct IN (20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 180, 181, 182, 183,
+            200, 201, 202, 203, 204, 205, 206, 207, 208, 209)
     """.format(schema_exadata, schema_exadata_aux))
 
     table_name_procedimentos = options['table_name_procedimentos']
